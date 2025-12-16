@@ -5,19 +5,14 @@
 <title>Adventure, the One and Only</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <style>
-body { margin:0; overflow:hidden; touch-action:none; font-family:Arial; }
-#info {
-  position:fixed; top:10px; left:50%; transform:translateX(-50%);
-  color:white; background:rgba(0,0,0,0.5);
-  padding:6px 12px; border-radius:6px; z-index:10;
-}
-#moveJoy {
+body { margin:0; overflow:hidden; background:black; touch-action:none; }
+#joy {
   position:fixed; bottom:40px; left:40px;
   width:120px; height:120px;
   background:rgba(255,255,255,0.15);
-  border-radius:50%; z-index:20;
+  border-radius:50%;
 }
-#moveStick {
+#stick {
   position:absolute; left:35px; top:35px;
   width:50px; height:50px;
   background:rgba(255,255,255,0.6);
@@ -27,12 +22,11 @@ body { margin:0; overflow:hidden; touch-action:none; font-family:Arial; }
 </head>
 <body>
 
-<div id="info">Move: Joystick • Look: Drag</div>
-<div id="moveJoy"><div id="moveStick"></div></div>
+<div id="joy"><div id="stick"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 <script>
-/* ================= SCENE ================= */
+/* ========= SCENE ========= */
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
 
@@ -41,119 +35,92 @@ const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
-/* ================= LIGHT ================= */
-scene.add(new THREE.AmbientLight(0xffffff,0.6));
-const sun = new THREE.DirectionalLight(0xffffff,1);
-sun.position.set(600,900,400);
+/* ========= LIGHT ========= */
+scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+const sun = new THREE.DirectionalLight(0xffffff, 1);
+sun.position.set(500, 800, 400);
 scene.add(sun);
 
-/* ================= CLOUDS ================= */
-function addCloud(x,y,z,scale){
-  const cloud = new THREE.Group();
-  const puffs = 6 + Math.random()*10;
-  for(let i=0;i<puffs;i++){
-    const size = (15 + Math.random()*25) * scale;
-    const puff = new THREE.Mesh(
-      new THREE.SphereGeometry(size,14,14),
+/* ========= CLOUDS ========= */
+function cloud(x,y,z,s){
+  const g=new THREE.Group();
+  for(let i=0;i<8;i++){
+    const m=new THREE.Mesh(
+      new THREE.SphereGeometry((10+Math.random()*20)*s,12,12),
       new THREE.MeshStandardMaterial({color:0xffffff})
     );
-    puff.position.set(
-      i * size * 0.7,
-      Math.random()*size*0.4,
-      Math.random()*size*0.4
-    );
-    cloud.add(puff);
+    m.position.set(i*12*s,Math.random()*5*s,Math.random()*5*s);
+    g.add(m);
   }
-  cloud.position.set(x,y,z);
-  scene.add(cloud);
+  g.position.set(x,y,z);
+  scene.add(g);
+}
+for(let i=0;i<250;i++){
+  cloud((Math.random()-0.5)*12000,200+Math.random()*400,(Math.random()-0.5)*12000,
+    Math.random()<0.2?3:Math.random()<0.5?2:1);
 }
 
-for(let i=0;i<300;i++){
-  const scale =
-    Math.random()<0.15 ? 4 :
-    Math.random()<0.4  ? 2.5 :
-    Math.random()<0.75 ? 1.5 : 1;
-  addCloud(
-    (Math.random()-0.5)*12000,
-    200 + Math.random()*350,
-    (Math.random()-0.5)*12000,
-    scale
-  );
-}
-
-/* ================= GRASS FLOOR ================= */
-const grass = new THREE.Mesh(
+/* ========= GRASS ========= */
+const grass=new THREE.Mesh(
   new THREE.PlaneGeometry(20000,20000),
   new THREE.MeshStandardMaterial({color:0x2e8b57})
 );
-grass.rotation.x = -Math.PI/2;
-grass.position.y = -2;
+grass.rotation.x=-Math.PI/2;
+grass.position.y=-2;
 scene.add(grass);
 
-/* ================= TERRAIN + RIVERS ================= */
-const terrainSize = 3000;
-const seg = 300;
-const geo = new THREE.PlaneGeometry(terrainSize, terrainSize, seg, seg);
-const riverPaths = [];
+/* ========= TERRAIN + RIVERS ========= */
+const size=3000, seg=300;
+const geo=new THREE.PlaneGeometry(size,size,seg,seg);
+const rivers=[];
 
-for(let i=0;i<12;i++){
-  const path=[];
-  let x=(Math.random()-0.5)*terrainSize;
-  let z=-terrainSize/2;
-  for(let j=0;j<40;j++){
-    path.push({x,z});
-    x += (Math.random()-0.5)*120;
-    z += terrainSize/40;
+for(let i=0;i<14;i++){
+  const p=[];
+  let x=(Math.random()-0.5)*size;
+  let z=-size/2;
+  for(let j=0;j<50;j++){
+    p.push({x,z});
+    x+=(Math.random()-0.5)*120;
+    z+=size/50;
   }
-  riverPaths.push(path);
+  rivers.push(p);
 }
 
 for(let i=0;i<geo.attributes.position.count;i++){
   const x=geo.attributes.position.getX(i);
   const z=geo.attributes.position.getZ(i);
-  let y=Math.sin(x*0.02)*2 + Math.cos(z*0.02)*2;
-
-  riverPaths.forEach(path=>{
-    path.forEach(p=>{
-      const d=Math.hypot(x-p.x,z-p.z);
-      if(d<30) y -= (30-d)*0.15;
-    });
-  });
-
+  let y=Math.sin(x*0.02)*2+Math.cos(z*0.02)*2;
+  rivers.forEach(p=>p.forEach(r=>{
+    const d=Math.hypot(x-r.x,z-r.z);
+    if(d<35) y-=(35-d)*0.15;
+  }));
   geo.attributes.position.setY(i,y);
 }
 geo.computeVertexNormals();
 
-const terrain = new THREE.Mesh(
-  geo,
-  new THREE.MeshStandardMaterial({color:0x3a8f3a})
+const terrain=new THREE.Mesh(
+  geo,new THREE.MeshStandardMaterial({color:0x3a8f3a})
 );
-terrain.rotation.x = -Math.PI/2;
+terrain.rotation.x=-Math.PI/2;
 scene.add(terrain);
 
-riverPaths.forEach(path=>{
-  path.forEach(p=>{
-    const water = new THREE.Mesh(
-      new THREE.CircleGeometry(14,16),
-      new THREE.MeshStandardMaterial({
-        color:0x00bfff, transparent:true, opacity:0.9
-      })
-    );
-    water.rotation.x = -Math.PI/2;
-    water.position.set(p.x,0.1,p.z);
-    scene.add(water);
-  });
-});
+rivers.forEach(p=>p.forEach(r=>{
+  const w=new THREE.Mesh(
+    new THREE.CircleGeometry(16,16),
+    new THREE.MeshStandardMaterial({color:0x00bfff,transparent:true,opacity:0.85})
+  );
+  w.rotation.x=-Math.PI/2;
+  w.position.set(r.x,0.15,r.z);
+  scene.add(w);
+}));
 
 function nearRiver(x,z){
-  return riverPaths.some(path =>
-    path.some(p => Math.hypot(p.x-x,p.z-z) < 35)
-  );
+  return rivers.some(p=>p.some(r=>Math.hypot(r.x-x,r.z-z)<40));
 }
 
-/* ================= DECOR ================= */
-function addTree(x,z){
-  if(nearRiver(x,z)) return;
+/* ========= DECOR ========= */
+function tree(x,z){
+  if(nearRiver(x,z))return;
   const t=new THREE.Mesh(
     new THREE.CylinderGeometry(0.3,0.4,2),
     new THREE.MeshStandardMaterial({color:0x8b5a2b})
@@ -166,48 +133,33 @@ function addTree(x,z){
   l.position.set(x,3,z);
   scene.add(t,l);
 }
-
-function addRock(x,z){
-  if(nearRiver(x,z)) return;
-  const r=new THREE.Mesh(
-    new THREE.DodecahedronGeometry(1),
-    new THREE.MeshStandardMaterial({color:0x777})
-  );
-  r.position.set(x,0.6,z);
-  scene.add(r);
-}
-
-function addFlower(x,z){
-  if(nearRiver(x,z)) return;
+function flower(x,z){
+  if(nearRiver(x,z))return;
   const f=new THREE.Mesh(
-    new THREE.SphereGeometry(0.22),
+    new THREE.SphereGeometry(0.2),
     new THREE.MeshStandardMaterial({color:0xff69b4})
   );
-  f.position.set(x,0.22,z);
+  f.position.set(x,0.2,z);
   scene.add(f);
 }
+for(let i=0;i<400;i++) tree((Math.random()-0.5)*size,(Math.random()-0.5)*size);
+for(let i=0;i<900;i++) flower((Math.random()-0.5)*size,(Math.random()-0.5)*size);
 
-for(let i=0;i<350;i++) addTree((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
-for(let i=0;i<350;i++) addRock((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
-for(let i=0;i<800;i++) addFlower((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
-
-/* ================= PLAYER ================= */
-const player = new THREE.Object3D();
+/* ========= PLAYER ========= */
+const player=new THREE.Object3D();
 scene.add(player);
 
 const cloth=new THREE.MeshStandardMaterial({color:0x3b6ea5});
 const shoe=new THREE.MeshStandardMaterial({color:0x000});
 
-const torso = new THREE.Mesh(
-  new THREE.BoxGeometry(0.5, 0.7, 0.35)
+const torso=new THREE.Mesh(
+  new THREE.BoxGeometry(0.5,0.7,0.35),
   cloth
 );
-
-/* EXTREMELY BACK, CORRECT DIRECTION */
-torso.position.set(0, 0.8, 0.28);
+torso.position.set(0,0.8,0.28);
 player.add(torso);
 
-function makeLeg(x){
+function leg(x){
   const g=new THREE.Object3D();
   const u=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.8,0.3),cloth);
   u.position.y=0.4;
@@ -217,86 +169,68 @@ function makeLeg(x){
   g.position.set(x,0,0.15);
   return g;
 }
+const L=leg(-0.18), R=leg(0.18);
+player.add(L,R);
 
-const leftLeg=makeLeg(-0.18);
-const rightLeg=makeLeg(0.18);
-player.add(leftLeg,rightLeg);
-
-/* Camera */
 const camPivot=new THREE.Object3D();
 camPivot.position.y=1.8;
 player.add(camPivot);
 camPivot.add(camera);
 
-/* ================= CONTROLS ================= */
-let moveX=0, moveZ=0, yaw=0, pitch=0, walk=0;
+/* ========= CONTROLS ========= */
+let moveX=0,moveZ=0,yaw=0,pitch=0,walk=0;
+const joy=document.getElementById("joy");
+const stick=document.getElementById("stick");
+const c={x:60,y:60},m=40;
+let mv=false;
 
-const joy=document.getElementById("moveJoy");
-const stick=document.getElementById("moveStick");
-const center={x:60,y:60}, max=40;
-let moving=false;
+joy.ontouchstart=()=>mv=true;
+joy.ontouchmove=e=>{
+  const r=joy.getBoundingClientRect(),t=e.touches[0];
+  let x=t.clientX-r.left-c.x,y=t.clientY-r.top-c.y;
+  const d=Math.min(Math.hypot(x,y),m),a=Math.atan2(y,x);
+  x=Math.cos(a)*d;y=Math.sin(a)*d;
+  stick.style.left=(c.x+x-25)+"px";
+  stick.style.top=(c.y+y-25)+"px";
+  moveX=x/m*0.12; moveZ=y/m*0.12;
+};
+joy.ontouchend=()=>{
+  mv=false; moveX=moveZ=0;
+  stick.style.left="35px"; stick.style.top="35px";
+};
 
-joy.addEventListener("touchstart",()=>moving=true);
-joy.addEventListener("touchmove",e=>{
-  if(!moving) return;
-  const r=joy.getBoundingClientRect();
-  const t=e.touches[0];
-  let x=t.clientX-r.left-center.x;
-  let y=t.clientY-r.top-center.y;
-  const d=Math.min(Math.hypot(x,y),max);
-  const a=Math.atan2(y,x);
-  x=Math.cos(a)*d; y=Math.sin(a)*d;
-  stick.style.left=(center.x+x-25)+"px";
-  stick.style.top=(center.y+y-25)+"px";
-  moveX=x/max*0.12;
-  moveZ=y/max*0.12;
-});
-
-joy.addEventListener("touchend",()=>{
-  moving=false;
-  stick.style.left="35px";
-  stick.style.top="35px";
-  moveX=moveZ=0;
-});
-
-/* Look */
-let looking=false,lastX=0,lastY=0;
+let look=false,lx=0,ly=0;
 addEventListener("touchstart",e=>{
-  if(e.target.closest("#moveJoy")) return;
-  looking=true;
-  lastX=e.touches[0].clientX;
-  lastY=e.touches[0].clientY;
+  if(e.target.closest("#joy"))return;
+  look=true; lx=e.touches[0].clientX; ly=e.touches[0].clientY;
 });
 addEventListener("touchmove",e=>{
-  if(!looking) return;
+  if(!look)return;
   const t=e.touches[0];
-  yaw -= (t.clientX-lastX)*0.003;
-  pitch -= (t.clientY-lastY)*0.003;
+  yaw-=(t.clientX-lx)*0.003;
+  pitch-=(t.clientY-ly)*0.003;
   pitch=Math.max(-1.3,Math.min(1.3,pitch));
-  lastX=t.clientX; lastY=t.clientY;
+  lx=t.clientX; ly=t.clientY;
 });
-addEventListener("touchend",()=>looking=false);
+addEventListener("touchend",()=>look=false);
 
-/* ================= LOOP ================= */
-function animate(){
-  requestAnimationFrame(animate);
-
-  const movingNow=Math.abs(moveX)+Math.abs(moveZ)>0.01;
-  if(movingNow) walk+=0.12;
+/* ========= LOOP ========= */
+function loop(){
+  requestAnimationFrame(loop);
+  const moving=Math.abs(moveX)+Math.abs(moveZ)>0.01;
+  if(moving) walk+=0.12;
 
   player.rotation.y=yaw;
   camPivot.rotation.x=pitch;
+  player.position.x+=Math.sin(yaw)*moveZ+Math.cos(yaw)*moveX;
+  player.position.z+=Math.cos(yaw)*moveZ-Math.sin(yaw)*moveX;
 
-  player.position.x+=Math.sin(yaw)*moveZ + Math.cos(yaw)*moveX;
-  player.position.z+=Math.cos(yaw)*moveZ - Math.sin(yaw)*moveX;
-
-  const swing=movingNow?Math.sin(walk)*0.8:0;
-  leftLeg.rotation.x=swing;
-  rightLeg.rotation.x=-swing;
+  const s=moving?Math.sin(walk)*0.8:0;
+  L.rotation.x=s; R.rotation.x=-s;
 
   renderer.render(scene,camera);
 }
-animate();
+loop();
 
 addEventListener("resize",()=>{
   camera.aspect=innerWidth/innerHeight;
