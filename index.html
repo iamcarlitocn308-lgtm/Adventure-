@@ -46,7 +46,6 @@ body { margin:0; overflow:hidden; background:#000; touch-action:none; }
 <body>
 
 <div id="info">Move: Joystick • Look: Drag Screen</div>
-
 <div id="moveJoy"><div id="moveStick"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
@@ -55,7 +54,7 @@ body { margin:0; overflow:hidden; background:#000; touch-action:none; }
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
 
-const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 4000);
+const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 5000);
 const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
@@ -66,13 +65,77 @@ const sun = new THREE.DirectionalLight(0xffffff,1);
 sun.position.set(200,300,200);
 scene.add(sun);
 
-/* ===== FLOOR ===== */
-const floor = new THREE.Mesh(
-  new THREE.PlaneGeometry(3000,3000),
+/* ===== BASE FLOOR ===== */
+const baseFloor = new THREE.Mesh(
+  new THREE.PlaneGeometry(4000,4000),
   new THREE.MeshStandardMaterial({color:0x2e8b57})
 );
-floor.rotation.x = -Math.PI/2;
-scene.add(floor);
+baseFloor.rotation.x = -Math.PI/2;
+baseFloor.position.y = -1;
+scene.add(baseFloor);
+
+/* ===== HILLY TERRAIN (OLD STYLE) ===== */
+const terrainSize = 900;
+const seg = 140;
+const tGeo = new THREE.PlaneGeometry(terrainSize, terrainSize, seg, seg);
+
+for (let i = 0; i < tGeo.attributes.position.count; i++) {
+  const x = tGeo.attributes.position.getX(i);
+  const z = tGeo.attributes.position.getZ(i);
+  const y = Math.sin(x*0.03) + Math.cos(z*0.03);
+  tGeo.attributes.position.setY(i, y);
+}
+tGeo.computeVertexNormals();
+
+const terrain = new THREE.Mesh(
+  tGeo,
+  new THREE.MeshStandardMaterial({color:0x3a8f3a})
+);
+terrain.rotation.x = -Math.PI/2;
+scene.add(terrain);
+
+/* ===== DECOR ===== */
+function addTree(x,z){
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.3,0.4,2),
+    new THREE.MeshStandardMaterial({color:0x8b5a2b})
+  );
+  trunk.position.set(x,1,z);
+
+  const leaves = new THREE.Mesh(
+    new THREE.SphereGeometry(1.4,8,8),
+    new THREE.MeshStandardMaterial({color:0x2e8b57})
+  );
+  leaves.position.set(x,3,z);
+
+  scene.add(trunk,leaves);
+}
+
+function addRock(x,z){
+  const rock = new THREE.Mesh(
+    new THREE.DodecahedronGeometry(0.6),
+    new THREE.MeshStandardMaterial({color:0x777777})
+  );
+  rock.position.set(x,0.4,z);
+  scene.add(rock);
+}
+
+function addFlower(x,z){
+  const flower = new THREE.Mesh(
+    new THREE.SphereGeometry(0.15),
+    new THREE.MeshStandardMaterial({color:0xff69b4})
+  );
+  flower.position.set(x,0.15,z);
+  scene.add(flower);
+}
+
+for(let i=0;i<160;i++){
+  const x=(Math.random()-0.5)*terrainSize;
+  const z=(Math.random()-0.5)*terrainSize;
+  addTree(x,z);
+  addRock(x,z);
+  addFlower(x,z);
+}
 
 /* ===== PLAYER ROOT ===== */
 const player = new THREE.Object3D();
@@ -83,25 +146,25 @@ const skin = new THREE.MeshStandardMaterial({color:0xffd1a4});
 const cloth = new THREE.MeshStandardMaterial({color:0x3b6ea5});
 
 const torso = new THREE.Mesh(
-  new THREE.BoxGeometry(0.6,0.8,0.4),
+  new THREE.BoxGeometry(0.7,0.9,0.4),
   cloth
 );
-torso.position.y = 1.2;
+torso.position.y = 1.25;
 
 const leftLeg = new THREE.Mesh(
-  new THREE.BoxGeometry(0.25,0.7,0.25),
+  new THREE.BoxGeometry(0.3,0.8,0.3),
   cloth
 );
 const rightLeg = leftLeg.clone();
 
-leftLeg.position.set(-0.15,0.35,0);
-rightLeg.position.set(0.15,0.35,0);
+leftLeg.position.set(-0.18,0.4,0);
+rightLeg.position.set(0.18,0.4,0);
 
 player.add(torso,leftLeg,rightLeg);
 
 /* ===== CAMERA PIVOT ===== */
 const camPivot = new THREE.Object3D();
-camPivot.position.y = 1.6;
+camPivot.position.y = 1.7;
 player.add(camPivot);
 camPivot.add(camera);
 
@@ -110,8 +173,8 @@ const handGeo = new THREE.BoxGeometry(0.3,0.5,0.3);
 const leftHand = new THREE.Mesh(handGeo, skin);
 const rightHand = new THREE.Mesh(handGeo, skin);
 
-leftHand.position.set(-0.45,-0.3,-0.7);
-rightHand.position.set(0.45,-0.3,-0.7);
+leftHand.position.set(-0.45,-0.35,-0.7);
+rightHand.position.set(0.45,-0.35,-0.7);
 leftHand.rotation.x = -0.6;
 rightHand.rotation.x = -0.6;
 camera.add(leftHand,rightHand);
@@ -149,36 +212,35 @@ joy.addEventListener("touchend",()=>{
   moveX=moveZ=0;
 });
 
-/* ===== DRAG LOOK (FULL) ===== */
+/* ===== FULL TOUCH LOOK ===== */
 let looking=false,lastX=0,lastY=0;
 
-window.addEventListener("touchstart",e=>{
+addEventListener("touchstart",e=>{
   if(e.target.closest("#moveJoy")) return;
   looking=true;
   lastX=e.touches[0].clientX;
   lastY=e.touches[0].clientY;
 });
 
-window.addEventListener("touchmove",e=>{
+addEventListener("touchmove",e=>{
   if(!looking) return;
   const t=e.touches[0];
   const dx=t.clientX-lastX;
   const dy=t.clientY-lastY;
   lastX=t.clientX; lastY=t.clientY;
-
   yaw -= dx*0.003;
   pitch -= dy*0.003;
   pitch=Math.max(-1.2,Math.min(1.2,pitch));
 });
 
-window.addEventListener("touchend",()=>looking=false);
+addEventListener("touchend",()=>looking=false);
 
 /* ===== LOOP ===== */
 function animate(){
   requestAnimationFrame(animate);
 
   const movingNow=Math.abs(moveX)+Math.abs(moveZ)>0.01;
-  if(movingNow) walk+=0.1;
+  if(movingNow) walk+=0.12;
 
   player.rotation.y=yaw;
   camPivot.rotation.x=pitch;
@@ -186,13 +248,13 @@ function animate(){
   player.position.x += Math.sin(yaw)*moveZ + Math.cos(yaw)*moveX;
   player.position.z += Math.cos(yaw)*moveZ - Math.sin(yaw)*moveX;
 
-  const legSwing=movingNow?Math.sin(walk)*0.6:0;
-  leftLeg.rotation.x=legSwing;
-  rightLeg.rotation.x=-legSwing;
+  const swing=movingNow?Math.sin(walk)*0.7:0;
+  leftLeg.rotation.x=swing;
+  rightLeg.rotation.x=-swing;
 
   const bob=movingNow?Math.sin(walk)*0.05:0;
-  leftHand.position.y=-0.3+bob;
-  rightHand.position.y=-0.3-bob;
+  leftHand.position.y=-0.35+bob;
+  rightHand.position.y=-0.35-bob;
 
   renderer.render(scene,camera);
 }
