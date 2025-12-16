@@ -1,9 +1,8 @@
-<!-- FORCE UPDATE -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>ADVENTURE FORCE UPDATE</title>
+<title>Adventure, The One And Only</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
 <style>
@@ -20,7 +19,7 @@ body {
   left: 50%;
   transform: translateX(-50%);
   color: white;
-  font-family: Arial, sans-serif;
+  font-family: Arial;
   background: rgba(0,0,0,0.5);
   padding: 6px 10px;
   border-radius: 6px;
@@ -53,7 +52,7 @@ body {
 </head>
 <body>
 
-<div id="info">Left: Move • Right: Look</div>
+<div id="info">First-Person • Left: Move • Right: Look</div>
 
 <div id="moveJoy" class="joystick"><div class="stick"></div></div>
 <div id="lookJoy" class="joystick"><div class="stick"></div></div>
@@ -65,135 +64,169 @@ body {
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
-
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 3000);
+const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 /* ===== LIGHT ===== */
-scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
 const sun = new THREE.DirectionalLight(0xffffff, 1);
-sun.position.set(50, 100, 50);
+sun.position.set(100,200,100);
 scene.add(sun);
 
 /* ===== TERRAIN ===== */
-const size = 300;
-const segments = 120;
-const geo = new THREE.PlaneGeometry(size, size, segments, segments);
+const terrainSize = 600;
+const segments = 100;
+const geo = new THREE.PlaneGeometry(terrainSize, terrainSize, segments, segments);
 
 for (let i = 0; i < geo.attributes.position.count; i++) {
-  const y = Math.sin(i / 5) * 1.5 + Math.random() * 0.8;
+  const x = geo.attributes.position.getX(i);
+  const z = geo.attributes.position.getZ(i);
+  const y = Math.sin(x * 0.03) + Math.cos(z * 0.03);
   geo.attributes.position.setY(i, y);
 }
-
 geo.computeVertexNormals();
 
 const terrain = new THREE.Mesh(
   geo,
-  new THREE.MeshStandardMaterial({ color: 0x2e8b57 })
+  new THREE.MeshStandardMaterial({ color: 0x3a8f3a })
 );
-terrain.rotation.x = -Math.PI / 2;
+terrain.rotation.x = -Math.PI/2;
 scene.add(terrain);
 
-/* ===== HUMAN PLAYER ===== */
+/* ===== DECOR ===== */
+function addTree(x,z){
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.2,0.3,2),
+    new THREE.MeshStandardMaterial({color:0x8b5a2b})
+  );
+  trunk.position.set(x,1,z);
+
+  const leaves = new THREE.Mesh(
+    new THREE.SphereGeometry(1.2,8,8),
+    new THREE.MeshStandardMaterial({color:0x2e8b57})
+  );
+  leaves.position.set(x,2.5,z);
+  scene.add(trunk, leaves);
+}
+
+function addRock(x,z){
+  const rock = new THREE.Mesh(
+    new THREE.DodecahedronGeometry(0.6),
+    new THREE.MeshStandardMaterial({color:0x777777})
+  );
+  rock.position.set(x,0.4,z);
+  scene.add(rock);
+}
+
+function addFlower(x,z){
+  const flower = new THREE.Mesh(
+    new THREE.SphereGeometry(0.15),
+    new THREE.MeshStandardMaterial({color:0xff69b4})
+  );
+  flower.position.set(x,0.15,z);
+  scene.add(flower);
+}
+
+for(let i=0;i<120;i++){
+  addTree(
+    (Math.random()-0.5)*terrainSize,
+    (Math.random()-0.5)*terrainSize
+  );
+  addRock(
+    (Math.random()-0.5)*terrainSize,
+    (Math.random()-0.5)*terrainSize
+  );
+  addFlower(
+    (Math.random()-0.5)*terrainSize,
+    (Math.random()-0.5)*terrainSize
+  );
+}
+
+/* ===== PLAYER ===== */
 const player = new THREE.Group();
-
-// Body
-const body = new THREE.Mesh(
-  new THREE.BoxGeometry(0.8, 1.2, 0.4),
-  new THREE.MeshStandardMaterial({ color: 0x3366ff })
-);
-body.position.y = 1.4;
-
-// Head
-const head = new THREE.Mesh(
-  new THREE.SphereGeometry(0.35, 16, 16),
-  new THREE.MeshStandardMaterial({ color: 0xffd1a4 })
-);
-head.position.y = 2.3;
-
-// Arms
-const armMat = new THREE.MeshStandardMaterial({ color: 0x3366ff });
-const armL = new THREE.Mesh(new THREE.BoxGeometry(0.25, 1, 0.25), armMat);
-const armR = armL.clone();
-armL.position.set(-0.65, 1.4, 0);
-armR.position.set(0.65, 1.4, 0);
-
-// Legs
-const legMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
-const legL = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1, 0.3), legMat);
-const legR = legL.clone();
-legL.position.set(-0.25, 0.5, 0);
-legR.position.set(0.25, 0.5, 0);
-
-player.add(body, head, armL, armR, legL, legR);
+player.position.y = 1.7;
 scene.add(player);
 
-/* ===== CONTROLS ===== */
-let moveX = 0, moveZ = 0;
-let lookX = 0;
-let yaw = 0;
+/* Hands */
+const handMat = new THREE.MeshStandardMaterial({color:0xffd1a4});
+const leftHand = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.5,0.3), handMat);
+const rightHand = leftHand.clone();
 
-function joystick(base, stick, cb) {
-  const c = { x: 60, y: 60 };
-  const m = 40;
-  let active = false;
+leftHand.position.set(-0.4,-0.4,-0.8);
+rightHand.position.set(0.4,-0.4,-0.8);
 
-  base.addEventListener("touchstart", () => active = true);
-  base.addEventListener("touchmove", e => {
-    if (!active) return;
-    const r = base.getBoundingClientRect();
-    const t = e.touches[0];
-    let x = t.clientX - r.left - c.x;
-    let y = t.clientY - r.top - c.y;
-    const d = Math.min(Math.sqrt(x*x + y*y), m);
-    const a = Math.atan2(y, x);
-    x = Math.cos(a) * d;
-    y = Math.sin(a) * d;
-    stick.style.left = (c.x + x - 25) + "px";
-    stick.style.top  = (c.y + y - 25) + "px";
-    cb(x / m, y / m);
+camera.add(leftHand, rightHand);
+scene.add(camera);
+
+/* ===== INPUT ===== */
+let moveX=0, moveZ=0, lookX=0, yaw=0, walkTime=0;
+
+function joystick(base, stick, cb){
+  const c={x:60,y:60}, m=40;
+  let a=false;
+  base.addEventListener("touchstart",()=>a=true);
+  base.addEventListener("touchmove",e=>{
+    if(!a) return;
+    const r=base.getBoundingClientRect();
+    const t=e.touches[0];
+    let x=t.clientX-r.left-c.x;
+    let y=t.clientY-r.top-c.y;
+    const d=Math.min(Math.hypot(x,y),m);
+    const ang=Math.atan2(y,x);
+    x=Math.cos(ang)*d; y=Math.sin(ang)*d;
+    stick.style.left=(c.x+x-25)+"px";
+    stick.style.top=(c.y+y-25)+"px";
+    cb(x/m,y/m);
   });
-
-  base.addEventListener("touchend", () => {
-    active = false;
-    stick.style.left = "35px";
-    stick.style.top = "35px";
-    cb(0, 0);
+  base.addEventListener("touchend",()=>{
+    a=false;
+    stick.style.left="35px";
+    stick.style.top="35px";
+    cb(0,0);
   });
 }
 
 joystick(
-  document.getElementById("moveJoy"),
-  document.querySelector("#moveJoy .stick"),
-  (x, y) => { moveX = x * 0.12; moveZ = y * 0.12; }
+  moveJoy,
+  moveJoy.querySelector(".stick"),
+  (x,y)=>{ moveX=x*0.15; moveZ=y*0.15; }
 );
 
 joystick(
-  document.getElementById("lookJoy"),
-  document.querySelector("#lookJoy .stick"),
-  (x) => { lookX = x * 0.05; }
+  lookJoy,
+  lookJoy.querySelector(".stick"),
+  (x)=>{ lookX=x*0.06; }
 );
 
 /* ===== LOOP ===== */
-function animate() {
+function animate(){
   requestAnimationFrame(animate);
 
   yaw -= lookX;
   player.rotation.y = yaw;
 
-  player.position.x += Math.sin(yaw) * moveZ + Math.cos(yaw) * moveX;
-  player.position.z += Math.cos(yaw) * moveZ - Math.sin(yaw) * moveX;
+  const moving = Math.abs(moveX)+Math.abs(moveZ) > 0.01;
+  if(moving) walkTime += 0.1;
 
-  camera.position.x = player.position.x - Math.sin(yaw) * 6;
-  camera.position.z = player.position.z - Math.cos(yaw) * 6;
-  camera.position.y = 4;
-  camera.lookAt(player.position.x, player.position.y + 1.5, player.position.z);
+  player.position.x += Math.sin(yaw)*moveZ + Math.cos(yaw)*moveX;
+  player.position.z += Math.cos(yaw)*moveZ - Math.sin(yaw)*moveX;
 
-  renderer.render(scene, camera);
+  camera.position.set(
+    player.position.x,
+    player.position.y,
+    player.position.z
+  );
+  camera.rotation.y = yaw;
+
+  // hand animation
+  const bob = moving ? Math.sin(walkTime)*0.1 : 0;
+  leftHand.position.y = -0.4 + bob;
+  rightHand.position.y = -0.4 - bob;
+
+  renderer.render(scene,camera);
 }
-
 animate();
 </script>
 
