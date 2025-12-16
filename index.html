@@ -215,7 +215,7 @@ function makeHand(x){
     skin
   );
   h.position.set(x, 1.32, -0.45);
-  h.rotation.x = -0.6;
+h.rotation.x = 0.35;
   return h;
 }
 const leftHand = makeHand(-0.28);
@@ -293,8 +293,8 @@ function animate(){
   rightLeg.rotation.x=-swing;
 
   /* Hand animation */
-  leftHand.rotation.x = -0.6 + swing*0.4;
-  rightHand.rotation.x = -0.6 - swing*0.4;
+  leftHand.rotation.x = 0.35 + swing*0.25;
+  rightHand.rotation.x = 0.35 - swing*0.25;
 
   renderer.render(scene,camera);
 }
