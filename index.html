@@ -1,177 +1,199 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Adventure 3D</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta charset="UTF-8">
+<title>Adventure 3D</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: #000;
-      touch-action: none;
-    }
+<style>
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #000;
+  touch-action: none;
+}
 
-    #info {
-      position: fixed;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: white;
-      font-family: Arial, sans-serif;
-      background: rgba(0,0,0,0.5);
-      padding: 6px 10px;
-      border-radius: 6px;
-      z-index: 10;
-    }
+#info {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  font-family: Arial, sans-serif;
+  background: rgba(0,0,0,0.5);
+  padding: 6px 10px;
+  border-radius: 6px;
+  z-index: 10;
+}
 
-    /* Joystick */
-    #joystick {
-      position: fixed;
-      bottom: 40px;
-      left: 40px;
-      width: 120px;
-      height: 120px;
-      background: rgba(255,255,255,0.15);
-      border-radius: 50%;
-      z-index: 20;
-      touch-action: none;
-    }
+.joystick {
+  position: fixed;
+  bottom: 40px;
+  width: 120px;
+  height: 120px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 50%;
+  z-index: 20;
+}
 
-    #stick {
-      position: absolute;
-      left: 35px;
-      top: 35px;
-      width: 50px;
-      height: 50px;
-      background: rgba(255,255,255,0.6);
-      border-radius: 50%;
-    }
-  </style>
+#moveJoy { left: 40px; }
+#lookJoy { right: 40px; }
+
+.stick {
+  position: absolute;
+  left: 35px;
+  top: 35px;
+  width: 50px;
+  height: 50px;
+  background: rgba(255,255,255,0.6);
+  border-radius: 50%;
+}
+</style>
 </head>
 <body>
 
-<div id="info">Joystick (mobile) • Arrow keys (desktop)</div>
+<div id="info">Left: Move • Right: Look</div>
 
-<div id="joystick">
-  <div id="stick"></div>
-</div>
+<div id="moveJoy" class="joystick"><div class="stick"></div></div>
+<div id="lookJoy" class="joystick"><div class="stick"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 
 <script>
-  /* ===== THREE.JS SETUP ===== */
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x87ceeb);
+/* ===== SCENE ===== */
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb);
 
-  const camera = new THREE.PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
-  );
-  camera.position.set(0, 3, 6);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  document.body.appendChild(renderer.domElement);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
-  const light = new THREE.DirectionalLight(0xffffff, 1);
-  light.position.set(5, 10, 5);
-  scene.add(light);
-  scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+/* ===== LIGHT ===== */
+scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+const sun = new THREE.DirectionalLight(0xffffff, 1);
+sun.position.set(50, 100, 50);
+scene.add(sun);
 
-  const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(100, 100),
-    new THREE.MeshStandardMaterial({ color: 0x2e8b57 })
-  );
-  ground.rotation.x = -Math.PI / 2;
-  scene.add(ground);
+/* ===== TERRAIN ===== */
+const size = 300;
+const segments = 120;
+const geo = new THREE.PlaneGeometry(size, size, segments, segments);
 
-  const player = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshStandardMaterial({ color: 0xffd700 })
-  );
-  player.position.y = 0.5;
-  scene.add(player);
+for (let i = 0; i < geo.attributes.position.count; i++) {
+  const y = Math.sin(i / 5) * 1.5 + Math.random() * 0.8;
+  geo.attributes.position.setY(i, y);
+}
 
-  /* ===== INPUT ===== */
-  let moveX = 0;
-  let moveZ = 0;
+geo.computeVertexNormals();
 
-  const keys = {};
-  window.addEventListener("keydown", e => keys[e.key] = true);
-  window.addEventListener("keyup", e => keys[e.key] = false);
+const terrain = new THREE.Mesh(
+  geo,
+  new THREE.MeshStandardMaterial({ color: 0x2e8b57 })
+);
+terrain.rotation.x = -Math.PI / 2;
+scene.add(terrain);
 
-  /* ===== JOYSTICK LOGIC ===== */
-  const joystick = document.getElementById("joystick");
-  const stick = document.getElementById("stick");
+/* ===== HUMAN PLAYER ===== */
+const player = new THREE.Group();
 
-  let dragging = false;
-  const center = { x: 60, y: 60 };
-  const maxDist = 40;
+// Body
+const body = new THREE.Mesh(
+  new THREE.BoxGeometry(0.8, 1.2, 0.4),
+  new THREE.MeshStandardMaterial({ color: 0x3366ff })
+);
+body.position.y = 1.4;
 
-  joystick.addEventListener("touchstart", e => {
-    dragging = true;
+// Head
+const head = new THREE.Mesh(
+  new THREE.SphereGeometry(0.35, 16, 16),
+  new THREE.MeshStandardMaterial({ color: 0xffd1a4 })
+);
+head.position.y = 2.3;
+
+// Arms
+const armMat = new THREE.MeshStandardMaterial({ color: 0x3366ff });
+const armL = new THREE.Mesh(new THREE.BoxGeometry(0.25, 1, 0.25), armMat);
+const armR = armL.clone();
+armL.position.set(-0.65, 1.4, 0);
+armR.position.set(0.65, 1.4, 0);
+
+// Legs
+const legMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+const legL = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1, 0.3), legMat);
+const legR = legL.clone();
+legL.position.set(-0.25, 0.5, 0);
+legR.position.set(0.25, 0.5, 0);
+
+player.add(body, head, armL, armR, legL, legR);
+scene.add(player);
+
+/* ===== CONTROLS ===== */
+let moveX = 0, moveZ = 0;
+let lookX = 0;
+let yaw = 0;
+
+function joystick(base, stick, cb) {
+  const c = { x: 60, y: 60 };
+  const m = 40;
+  let active = false;
+
+  base.addEventListener("touchstart", () => active = true);
+  base.addEventListener("touchmove", e => {
+    if (!active) return;
+    const r = base.getBoundingClientRect();
+    const t = e.touches[0];
+    let x = t.clientX - r.left - c.x;
+    let y = t.clientY - r.top - c.y;
+    const d = Math.min(Math.sqrt(x*x + y*y), m);
+    const a = Math.atan2(y, x);
+    x = Math.cos(a) * d;
+    y = Math.sin(a) * d;
+    stick.style.left = (c.x + x - 25) + "px";
+    stick.style.top  = (c.y + y - 25) + "px";
+    cb(x / m, y / m);
   });
 
-  joystick.addEventListener("touchmove", e => {
-    if (!dragging) return;
-    const rect = joystick.getBoundingClientRect();
-    const touch = e.touches[0];
-
-    let x = touch.clientX - rect.left - center.x;
-    let y = touch.clientY - rect.top - center.y;
-
-    const dist = Math.min(Math.sqrt(x*x + y*y), maxDist);
-    const angle = Math.atan2(y, x);
-
-    x = Math.cos(angle) * dist;
-    y = Math.sin(angle) * dist;
-
-    stick.style.left = (center.x + x - 25) + "px";
-    stick.style.top  = (center.y + y - 25) + "px";
-
-    moveX = x / maxDist * 0.12;
-    moveZ = y / maxDist * 0.12;
-  });
-
-  joystick.addEventListener("touchend", () => {
-    dragging = false;
+  base.addEventListener("touchend", () => {
+    active = false;
     stick.style.left = "35px";
-    stick.style.top  = "35px";
-    moveX = 0;
-    moveZ = 0;
+    stick.style.top = "35px";
+    cb(0, 0);
   });
+}
 
-  /* ===== LOOP ===== */
-  function animate() {
-    requestAnimationFrame(animate);
+joystick(
+  document.getElementById("moveJoy"),
+  document.querySelector("#moveJoy .stick"),
+  (x, y) => { moveX = x * 0.12; moveZ = y * 0.12; }
+);
 
-    // Desktop controls
-    if (keys["ArrowUp"]) moveZ = -0.12;
-    if (keys["ArrowDown"]) moveZ = 0.12;
-    if (keys["ArrowLeft"]) moveX = -0.12;
-    if (keys["ArrowRight"]) moveX = 0.12;
+joystick(
+  document.getElementById("lookJoy"),
+  document.querySelector("#lookJoy .stick"),
+  (x) => { lookX = x * 0.05; }
+);
 
-    player.position.x += moveX;
-    player.position.z += moveZ;
+/* ===== LOOP ===== */
+function animate() {
+  requestAnimationFrame(animate);
 
-    camera.position.x = player.position.x;
-    camera.position.z = player.position.z + 6;
-    camera.lookAt(player.position);
+  yaw -= lookX;
+  player.rotation.y = yaw;
 
-    renderer.render(scene, camera);
-  }
+  player.position.x += Math.sin(yaw) * moveZ + Math.cos(yaw) * moveX;
+  player.position.z += Math.cos(yaw) * moveZ - Math.sin(yaw) * moveX;
 
-  animate();
+  camera.position.x = player.position.x - Math.sin(yaw) * 6;
+  camera.position.z = player.position.z - Math.cos(yaw) * 6;
+  camera.position.y = 4;
+  camera.lookAt(player.position.x, player.position.y + 1.5, player.position.z);
 
-  window.addEventListener("resize", () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-  });
+  renderer.render(scene, camera);
+}
+
+animate();
 </script>
 
 </body>
