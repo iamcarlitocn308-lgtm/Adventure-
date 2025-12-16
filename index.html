@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Adventure, The One And Only</title>
+<title>Adventure, the One and Only</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
 <style>
@@ -19,16 +19,17 @@ body {
   left: 50%;
   transform: translateX(-50%);
   color: white;
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   background: rgba(0,0,0,0.5);
   padding: 6px 10px;
   border-radius: 6px;
   z-index: 10;
 }
 
-.joystick {
+#moveJoy {
   position: fixed;
   bottom: 40px;
+  left: 40px;
   width: 120px;
   height: 120px;
   background: rgba(255,255,255,0.15);
@@ -36,10 +37,7 @@ body {
   z-index: 20;
 }
 
-#moveJoy { left: 40px; }
-#lookJoy { right: 40px; }
-
-.stick {
+#moveStick {
   position: absolute;
   left: 35px;
   top: 35px;
@@ -52,10 +50,11 @@ body {
 </head>
 <body>
 
-<div id="info">First-Person • Left: Move • Right: Look</div>
+<div id="info">Joystick = Move • Drag Screen = Look</div>
 
-<div id="moveJoy" class="joystick"><div class="stick"></div></div>
-<div id="lookJoy" class="joystick"><div class="stick"></div></div>
+<div id="moveJoy">
+  <div id="moveStick"></div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 
@@ -64,20 +63,32 @@ body {
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 3000);
-const renderer = new THREE.WebGLRenderer({ antialias:true });
+const camera = new THREE.PerspectiveCamera(
+  75, window.innerWidth / window.innerHeight, 0.1, 4000
+);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 /* ===== LIGHT ===== */
 scene.add(new THREE.AmbientLight(0xffffff, 0.5));
 const sun = new THREE.DirectionalLight(0xffffff, 1);
-sun.position.set(100,200,100);
+sun.position.set(200, 300, 200);
 scene.add(sun);
 
+/* ===== BASE FLOOR ===== */
+const baseFloor = new THREE.Mesh(
+  new THREE.PlaneGeometry(3000, 3000),
+  new THREE.MeshStandardMaterial({ color: 0x2e8b57 })
+);
+baseFloor.rotation.x = -Math.PI / 2;
+baseFloor.position.y = -1;
+scene.add(baseFloor);
+
 /* ===== TERRAIN ===== */
-const terrainSize = 600;
-const segments = 100;
+const terrainSize = 800;
+const segments = 120;
 const geo = new THREE.PlaneGeometry(terrainSize, terrainSize, segments, segments);
 
 for (let i = 0; i < geo.attributes.position.count; i++) {
@@ -92,137 +103,141 @@ const terrain = new THREE.Mesh(
   geo,
   new THREE.MeshStandardMaterial({ color: 0x3a8f3a })
 );
-terrain.rotation.x = -Math.PI/2;
+terrain.rotation.x = -Math.PI / 2;
 scene.add(terrain);
-  /* ===== BASE FLOOR ===== */
-const baseFloor = new THREE.Mesh(
-  new THREE.PlaneGeometry(2000, 2000),
-  new THREE.MeshStandardMaterial({ color: 0x2e8b57 })
-);
-baseFloor.rotation.x = -Math.PI / 2;
-baseFloor.position.y = -1;
-scene.add(baseFloor);
 
 /* ===== DECOR ===== */
-function addTree(x,z){
+function addTree(x, z) {
   const trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.2,0.3,2),
-    new THREE.MeshStandardMaterial({color:0x8b5a2b})
+    new THREE.CylinderGeometry(0.3, 0.4, 2),
+    new THREE.MeshStandardMaterial({ color: 0x8b5a2b })
   );
-  trunk.position.set(x,1,z);
+  trunk.position.set(x, 1, z);
 
   const leaves = new THREE.Mesh(
-    new THREE.SphereGeometry(1.2,8,8),
-    new THREE.MeshStandardMaterial({color:0x2e8b57})
+    new THREE.SphereGeometry(1.3, 8, 8),
+    new THREE.MeshStandardMaterial({ color: 0x2e8b57 })
   );
-  leaves.position.set(x,2.5,z);
+  leaves.position.set(x, 2.7, z);
+
   scene.add(trunk, leaves);
 }
 
-function addRock(x,z){
+function addRock(x, z) {
   const rock = new THREE.Mesh(
     new THREE.DodecahedronGeometry(0.6),
-    new THREE.MeshStandardMaterial({color:0x777777})
+    new THREE.MeshStandardMaterial({ color: 0x777777 })
   );
-  rock.position.set(x,0.4,z);
+  rock.position.set(x, 0.4, z);
   scene.add(rock);
 }
 
-function addFlower(x,z){
+function addFlower(x, z) {
   const flower = new THREE.Mesh(
     new THREE.SphereGeometry(0.15),
-    new THREE.MeshStandardMaterial({color:0xff69b4})
+    new THREE.MeshStandardMaterial({ color: 0xff69b4 })
   );
-  flower.position.set(x,0.15,z);
+  flower.position.set(x, 0.15, z);
   scene.add(flower);
 }
 
-for(let i=0;i<120;i++){
-  addTree(
-    (Math.random()-0.5)*terrainSize,
-    (Math.random()-0.5)*terrainSize
-  );
-  addRock(
-    (Math.random()-0.5)*terrainSize,
-    (Math.random()-0.5)*terrainSize
-  );
-  addFlower(
-    (Math.random()-0.5)*terrainSize,
-    (Math.random()-0.5)*terrainSize
-  );
+for (let i = 0; i < 150; i++) {
+  const x = (Math.random() - 0.5) * terrainSize;
+  const z = (Math.random() - 0.5) * terrainSize;
+  addTree(x, z);
+  addRock(x, z);
+  addFlower(x, z);
 }
 
-/* ===== PLAYER ===== */
-const player = new THREE.Group();
+/* ===== PLAYER & CAMERA ===== */
+const player = new THREE.Object3D();
 player.position.y = 1.7;
 scene.add(player);
 
 /* Hands */
-const handMat = new THREE.MeshStandardMaterial({color:0xffd1a4});
-const leftHand = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.5,0.3), handMat);
+const handMat = new THREE.MeshStandardMaterial({ color: 0xffd1a4 });
+const leftHand = new THREE.Mesh(
+  new THREE.BoxGeometry(0.3, 0.5, 0.3),
+  handMat
+);
 const rightHand = leftHand.clone();
 
-leftHand.position.set(-0.45,-0.2,-0.7);
-rightHand.position.set(0.45,-0.2,-0.7);
-
+leftHand.position.set(-0.45, -0.2, -0.7);
+rightHand.position.set(0.45, -0.2, -0.7);
 leftHand.rotation.x = -0.6;
 rightHand.rotation.x = -0.6;
 
 camera.add(leftHand, rightHand);
 scene.add(camera);
 
-/* ===== INPUT ===== */
-let moveX=0, moveZ=0, lookX=0, yaw=0, walkTime=0;
+/* ===== INPUT STATE ===== */
+let moveX = 0, moveZ = 0;
+let yaw = 0;
+let walkTime = 0;
 
-function joystick(base, stick, cb){
-  const c={x:60,y:60}, m=40;
-  let a=false;
-  base.addEventListener("touchstart",()=>a=true);
-  base.addEventListener("touchmove",e=>{
-    if(!a) return;
-    const r=base.getBoundingClientRect();
-    const t=e.touches[0];
-    let x=t.clientX-r.left-c.x;
-    let y=t.clientY-r.top-c.y;
-    const d=Math.min(Math.hypot(x,y),m);
-    const ang=Math.atan2(y,x);
-    x=Math.cos(ang)*d; y=Math.sin(ang)*d;
-    stick.style.left=(c.x+x-25)+"px";
-    stick.style.top=(c.y+y-25)+"px";
-    cb(x/m,y/m);
-  });
-  base.addEventListener("touchend",()=>{
-    a=false;
-    stick.style.left="35px";
-    stick.style.top="35px";
-    cb(0,0);
-  });
-}
+/* ===== MOVE JOYSTICK ===== */
+const joy = document.getElementById("moveJoy");
+const stick = document.getElementById("moveStick");
+const center = { x: 60, y: 60 };
+const max = 40;
+let moving = false;
 
-joystick(
-  moveJoy,
-  moveJoy.querySelector(".stick"),
-  (x,y)=>{ moveX=x*0.15; moveZ=y*0.15; }
-);
+joy.addEventListener("touchstart", () => moving = true);
 
-joystick(
-  lookJoy,
-  lookJoy.querySelector(".stick"),
-  (x)=>{ lookX=x*0.06; }
-);
+joy.addEventListener("touchmove", e => {
+  if (!moving) return;
+  const rect = joy.getBoundingClientRect();
+  const t = e.touches[0];
+  let x = t.clientX - rect.left - center.x;
+  let y = t.clientY - rect.top - center.y;
+  const d = Math.min(Math.hypot(x, y), max);
+  const a = Math.atan2(y, x);
+  x = Math.cos(a) * d;
+  y = Math.sin(a) * d;
+  stick.style.left = (center.x + x - 25) + "px";
+  stick.style.top = (center.y + y - 25) + "px";
+  moveX = x / max * 0.15;
+  moveZ = y / max * 0.15;
+});
+
+joy.addEventListener("touchend", () => {
+  moving = false;
+  stick.style.left = "35px";
+  stick.style.top = "35px";
+  moveX = 0;
+  moveZ = 0;
+});
+
+/* ===== DRAG TO LOOK ===== */
+let looking = false;
+let lastTouchX = 0;
+
+window.addEventListener("touchstart", e => {
+  if (e.target.closest("#moveJoy")) return;
+  looking = true;
+  lastTouchX = e.touches[0].clientX;
+});
+
+window.addEventListener("touchmove", e => {
+  if (!looking) return;
+  const x = e.touches[0].clientX;
+  const dx = x - lastTouchX;
+  lastTouchX = x;
+  yaw -= dx * 0.003;
+});
+
+window.addEventListener("touchend", () => looking = false);
 
 /* ===== LOOP ===== */
-function animate(){
+function animate() {
   requestAnimationFrame(animate);
 
-  yaw -= lookX;
+  const isMoving = Math.abs(moveX) + Math.abs(moveZ) > 0.01;
+  if (isMoving) walkTime += 0.1;
+
   player.rotation.y = yaw;
-
-  const moving = Math.abs(moveX)+Math.abs(moveZ) > 0.01;
-  if(moving) walkTime += 0.1;
-
-  player.position.x += Math.sin(yaw)*moveZ + Math.cos(yaw)*moveX;
-  player.position.z += Math.cos(yaw)*moveZ - Math.sin(yaw)*moveX;
+  player.position.x += Math.sin(yaw) * moveZ + Math.cos(yaw) * moveX;
+  player.position.z += Math.cos(yaw) * moveZ - Math.sin(yaw) * moveX;
 
   camera.position.set(
     player.position.x,
@@ -231,14 +246,20 @@ function animate(){
   );
   camera.rotation.y = yaw;
 
-  // hand animation
-  const bob = moving ? Math.sin(walkTime)*0.1 : 0;
-  leftHand.position.y = -0.4 + bob;
-  rightHand.position.y = -0.4 - bob;
+  const bob = isMoving ? Math.sin(walkTime) * 0.1 : 0;
+  leftHand.position.y = -0.2 + bob;
+  rightHand.position.y = -0.2 - bob;
 
-  renderer.render(scene,camera);
+  renderer.render(scene, camera);
 }
+
 animate();
+
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
 </script>
 
 </body>
