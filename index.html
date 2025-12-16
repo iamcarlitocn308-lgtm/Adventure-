@@ -8,6 +8,7 @@
 <style>
 body { margin:0; overflow:hidden; background:#000; touch-action:none; }
 
+/* UI */
 #info {
   position:fixed;
   top:10px;
@@ -41,12 +42,39 @@ body { margin:0; overflow:hidden; background:#000; touch-action:none; }
   background:rgba(255,255,255,0.6);
   border-radius:50%;
 }
+
+/* Inventory */
+#inventory {
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  display:grid;
+  grid-template-columns:repeat(4,50px);
+  gap:6px;
+  z-index:20;
+}
+
+.slot {
+  width:50px;
+  height:50px;
+  background:rgba(0,0,0,0.5);
+  border:2px solid #aaa;
+  border-radius:6px;
+}
 </style>
 </head>
 <body>
 
-<div id="info">Move: Joystick • Look: Drag • Tap near water to fish</div>
+<div id="info">Move: Joystick • Look: Drag • Inventory Ready</div>
+
 <div id="moveJoy"><div id="moveStick"></div></div>
+
+<div id="inventory">
+  <div class="slot"></div><div class="slot"></div>
+  <div class="slot"></div><div class="slot"></div>
+  <div class="slot"></div><div class="slot"></div>
+  <div class="slot"></div><div class="slot"></div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 <script>
@@ -65,10 +93,10 @@ const sun = new THREE.DirectionalLight(0xffffff,1);
 sun.position.set(300,400,200);
 scene.add(sun);
 
-/* ===== CLOUDS ===== */
+/* ===== CLOUDS (MORE) ===== */
 function addCloud(x,y,z){
   const cloud = new THREE.Group();
-  for(let i=0;i<4;i++){
+  for(let i=0;i<5;i++){
     const puff = new THREE.Mesh(
       new THREE.SphereGeometry(8,8,8),
       new THREE.MeshStandardMaterial({color:0xffffff})
@@ -79,13 +107,17 @@ function addCloud(x,y,z){
   cloud.position.set(x,y,z);
   scene.add(cloud);
 }
-for(let i=0;i<10;i++){
-  addCloud((Math.random()-0.5)*3000,300+Math.random()*200,(Math.random()-0.5)*3000);
+for(let i=0;i<20;i++){
+  addCloud(
+    (Math.random()-0.5)*4000,
+    300 + Math.random()*250,
+    (Math.random()-0.5)*4000
+  );
 }
 
 /* ===== FLOOR ===== */
 const baseFloor = new THREE.Mesh(
-  new THREE.PlaneGeometry(5000,5000),
+  new THREE.PlaneGeometry(6000,6000),
   new THREE.MeshStandardMaterial({color:0x2e8b57})
 );
 baseFloor.rotation.x = -Math.PI/2;
@@ -93,7 +125,7 @@ baseFloor.position.y = -1;
 scene.add(baseFloor);
 
 /* ===== TERRAIN ===== */
-const terrainSize = 1000;
+const terrainSize = 1200;
 const seg = 160;
 const tGeo = new THREE.PlaneGeometry(terrainSize, terrainSize, seg, seg);
 
@@ -111,18 +143,23 @@ const terrain = new THREE.Mesh(
 terrain.rotation.x = -Math.PI/2;
 scene.add(terrain);
 
-/* ===== WATER ===== */
-const water = new THREE.Mesh(
-  new THREE.PlaneGeometry(800,800),
-  new THREE.MeshStandardMaterial({
-    color:0x1e90ff,
-    transparent:true,
-    opacity:0.75
-  })
-);
-water.rotation.x = -Math.PI/2;
-water.position.set(300,0.2,300);
-scene.add(water);
+/* ===== RIVERS (WALKABLE) ===== */
+function addRiver(x,z,length){
+  const river = new THREE.Mesh(
+    new THREE.PlaneGeometry(length,6),
+    new THREE.MeshStandardMaterial({color:0x1e90ff,transparent:true,opacity:0.6})
+  );
+  river.rotation.x = -Math.PI/2;
+  river.position.set(x,0.15,z);
+  scene.add(river);
+}
+for(let i=0;i<5;i++){
+  addRiver(
+    (Math.random()-0.5)*terrainSize,
+    (Math.random()-0.5)*terrainSize,
+    300 + Math.random()*300
+  );
+}
 
 /* ===== DECOR ===== */
 const treeSpots=[];
@@ -161,15 +198,9 @@ function addFlower(x,z){
   scene.add(flower);
 }
 
-for(let i=0;i<120;i++){
-  addTree((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
-}
-for(let i=0;i<120;i++){
-  addRock((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
-}
-for(let i=0;i<300;i++){
-  addFlower((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
-}
+for(let i=0;i<150;i++) addTree((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
+for(let i=0;i<150;i++) addRock((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
+for(let i=0;i<350;i++) addFlower((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
 
 /* ===== PLAYER ===== */
 const player = new THREE.Object3D();
@@ -179,28 +210,28 @@ const cloth = new THREE.MeshStandardMaterial({color:0x3b6ea5});
 const shoeMat = new THREE.MeshStandardMaterial({color:0x000000});
 const skin = new THREE.MeshStandardMaterial({color:0xffd1a4});
 
-/* Body */
+/* Torso (REAL BODY) */
 const torso = new THREE.Mesh(
-  new THREE.BoxGeometry(0.7,0.9,0.5),
+  new THREE.BoxGeometry(0.7,1.0,0.5),
   cloth
 );
-torso.position.y = 1.35;
+torso.position.y = 1.1;
 player.add(torso);
 
-/* Legs (correct height) */
+/* Legs (PROPER HEIGHT) */
 function makeLeg(x){
   const leg = new THREE.Object3D();
   const upper = new THREE.Mesh(
     new THREE.BoxGeometry(0.3,0.8,0.3),
     cloth
   );
-  upper.position.y = 0.8;
+  upper.position.y = 0.4;
 
   const shoe = new THREE.Mesh(
     new THREE.BoxGeometry(0.32,0.2,0.5),
     shoeMat
   );
-  shoe.position.set(0,0.1,0.1);
+  shoe.position.set(0,-0.1,0.1);
 
   leg.add(upper,shoe);
   leg.position.set(x,0,0);
@@ -274,16 +305,6 @@ addEventListener("touchmove",e=>{
   lastX=t.clientX; lastY=t.clientY;
 });
 addEventListener("touchend",()=>looking=false);
-
-/* ===== FISHING ===== */
-addEventListener("click",()=>{
-  const dx=player.position.x-water.position.x;
-  const dz=player.position.z-water.position.z;
-  if(Math.hypot(dx,dz)<60){
-    document.getElementById("info").textContent =
-      Math.random()>0.5 ? "🎣 You caught a fish!" : "Nothing bit...";
-  }
-});
 
 /* ===== LOOP ===== */
 function animate(){
