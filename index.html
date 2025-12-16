@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Adventure, the One and Only</title>
+<title>Adventure, the One and Onyly</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
 <style>
@@ -54,36 +54,58 @@ body { margin:0; overflow:hidden; background:#000; touch-action:none; }
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
 
-const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 5000);
+const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 6000);
 const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
 /* ===== LIGHT ===== */
-scene.add(new THREE.AmbientLight(0xffffff,0.5));
+scene.add(new THREE.AmbientLight(0xffffff,0.6));
 const sun = new THREE.DirectionalLight(0xffffff,1);
-sun.position.set(200,300,200);
+sun.position.set(300,400,200);
 scene.add(sun);
+
+/* ===== CLOUDS ===== */
+function addCloud(x,y,z){
+  const cloud = new THREE.Group();
+  for(let i=0;i<4;i++){
+    const puff = new THREE.Mesh(
+      new THREE.SphereGeometry(8,8,8),
+      new THREE.MeshStandardMaterial({color:0xffffff})
+    );
+    puff.position.set(i*6,0,Math.random()*4);
+    cloud.add(puff);
+  }
+  cloud.position.set(x,y,z);
+  scene.add(cloud);
+}
+for(let i=0;i<12;i++){
+  addCloud(
+    (Math.random()-0.5)*3000,
+    300 + Math.random()*200,
+    (Math.random()-0.5)*3000
+  );
+}
 
 /* ===== BASE FLOOR ===== */
 const baseFloor = new THREE.Mesh(
-  new THREE.PlaneGeometry(4000,4000),
+  new THREE.PlaneGeometry(5000,5000),
   new THREE.MeshStandardMaterial({color:0x2e8b57})
 );
 baseFloor.rotation.x = -Math.PI/2;
 baseFloor.position.y = -1;
 scene.add(baseFloor);
 
-/* ===== HILLY TERRAIN (OLD STYLE) ===== */
-const terrainSize = 900;
-const seg = 140;
+/* ===== TERRAIN ===== */
+const terrainSize = 1000;
+const seg = 160;
 const tGeo = new THREE.PlaneGeometry(terrainSize, terrainSize, seg, seg);
 
-for (let i = 0; i < tGeo.attributes.position.count; i++) {
-  const x = tGeo.attributes.position.getX(i);
-  const z = tGeo.attributes.position.getZ(i);
-  const y = Math.sin(x*0.03) + Math.cos(z*0.03);
-  tGeo.attributes.position.setY(i, y);
+for(let i=0;i<tGeo.attributes.position.count;i++){
+  const x=tGeo.attributes.position.getX(i);
+  const z=tGeo.attributes.position.getZ(i);
+  const y=Math.sin(x*0.03)+Math.cos(z*0.03);
+  tGeo.attributes.position.setY(i,y);
 }
 tGeo.computeVertexNormals();
 
@@ -94,8 +116,11 @@ const terrain = new THREE.Mesh(
 terrain.rotation.x = -Math.PI/2;
 scene.add(terrain);
 
-/* ===== DECOR ===== */
+/* ===== DECOR HELPERS ===== */
+const treeSpots=[];
+
 function addTree(x,z){
+  treeSpots.push({x,z});
   const trunk = new THREE.Mesh(
     new THREE.CylinderGeometry(0.3,0.4,2),
     new THREE.MeshStandardMaterial({color:0x8b5a2b})
@@ -103,64 +128,99 @@ function addTree(x,z){
   trunk.position.set(x,1,z);
 
   const leaves = new THREE.Mesh(
-    new THREE.SphereGeometry(1.4,8,8),
+    new THREE.SphereGeometry(1.5,8,8),
     new THREE.MeshStandardMaterial({color:0x2e8b57})
   );
   leaves.position.set(x,3,z);
-
   scene.add(trunk,leaves);
 }
 
+function nearTree(x,z){
+  return treeSpots.some(t =>
+    Math.hypot(t.x-x, t.z-z) < 4
+  );
+}
+
 function addRock(x,z){
+  if(nearTree(x,z)) return;
   const rock = new THREE.Mesh(
-    new THREE.DodecahedronGeometry(0.6),
+    new THREE.DodecahedronGeometry(0.7),
     new THREE.MeshStandardMaterial({color:0x777777})
   );
-  rock.position.set(x,0.4,z);
+  rock.position.set(x,0.45,z);
   scene.add(rock);
 }
 
 function addFlower(x,z){
   const flower = new THREE.Mesh(
-    new THREE.SphereGeometry(0.15),
+    new THREE.SphereGeometry(0.18),
     new THREE.MeshStandardMaterial({color:0xff69b4})
   );
-  flower.position.set(x,0.15,z);
+  flower.position.set(x,0.18,z);
   scene.add(flower);
 }
 
-for(let i=0;i<160;i++){
+/* ===== SPAWN DECOR ===== */
+for(let i=0;i<120;i++){
   const x=(Math.random()-0.5)*terrainSize;
   const z=(Math.random()-0.5)*terrainSize;
   addTree(x,z);
+}
+
+for(let i=0;i<120;i++){
+  const x=(Math.random()-0.5)*terrainSize;
+  const z=(Math.random()-0.5)*terrainSize;
   addRock(x,z);
+}
+
+for(let i=0;i<300;i++){
+  const x=(Math.random()-0.5)*terrainSize;
+  const z=(Math.random()-0.5)*terrainSize;
   addFlower(x,z);
 }
 
-/* ===== PLAYER ROOT ===== */
+/* ===== PLAYER ===== */
 const player = new THREE.Object3D();
 scene.add(player);
 
 /* ===== BODY ===== */
-const skin = new THREE.MeshStandardMaterial({color:0xffd1a4});
 const cloth = new THREE.MeshStandardMaterial({color:0x3b6ea5});
+const shoeMat = new THREE.MeshStandardMaterial({color:0x000000});
+const skin = new THREE.MeshStandardMaterial({color:0xffd1a4});
 
+/* Stomach / torso */
 const torso = new THREE.Mesh(
-  new THREE.BoxGeometry(0.7,0.9,0.4),
+  new THREE.BoxGeometry(0.7,0.9,0.5),
   cloth
 );
 torso.position.y = 1.25;
+player.add(torso);
 
-const leftLeg = new THREE.Mesh(
-  new THREE.BoxGeometry(0.3,0.8,0.3),
-  cloth
-);
-const rightLeg = leftLeg.clone();
+/* Legs */
+function makeLeg(x){
+  const leg = new THREE.Object3D();
 
-leftLeg.position.set(-0.18,0.4,0);
-rightLeg.position.set(0.18,0.4,0);
+  const upper = new THREE.Mesh(
+    new THREE.BoxGeometry(0.3,0.8,0.3),
+    cloth
+  );
+  upper.position.y = 0.8;
 
-player.add(torso,leftLeg,rightLeg);
+  const shoe = new THREE.Mesh(
+    new THREE.BoxGeometry(0.32,0.2,0.5),
+    shoeMat
+  );
+  shoe.position.y = 0.1;
+  shoe.position.z = 0.1;
+
+  leg.add(upper,shoe);
+  leg.position.x = x;
+  return leg;
+}
+
+const leftLeg = makeLeg(-0.18);
+const rightLeg = makeLeg(0.18);
+player.add(leftLeg,rightLeg);
 
 /* ===== CAMERA PIVOT ===== */
 const camPivot = new THREE.Object3D();
@@ -172,7 +232,6 @@ camPivot.add(camera);
 const handGeo = new THREE.BoxGeometry(0.3,0.5,0.3);
 const leftHand = new THREE.Mesh(handGeo, skin);
 const rightHand = new THREE.Mesh(handGeo, skin);
-
 leftHand.position.set(-0.45,-0.35,-0.7);
 rightHand.position.set(0.45,-0.35,-0.7);
 leftHand.rotation.x = -0.6;
@@ -212,27 +271,22 @@ joy.addEventListener("touchend",()=>{
   moveX=moveZ=0;
 });
 
-/* ===== FULL TOUCH LOOK ===== */
+/* ===== LOOK ===== */
 let looking=false,lastX=0,lastY=0;
-
 addEventListener("touchstart",e=>{
   if(e.target.closest("#moveJoy")) return;
   looking=true;
   lastX=e.touches[0].clientX;
   lastY=e.touches[0].clientY;
 });
-
 addEventListener("touchmove",e=>{
   if(!looking) return;
   const t=e.touches[0];
-  const dx=t.clientX-lastX;
-  const dy=t.clientY-lastY;
-  lastX=t.clientX; lastY=t.clientY;
-  yaw -= dx*0.003;
-  pitch -= dy*0.003;
+  yaw -= (t.clientX-lastX)*0.003;
+  pitch -= (t.clientY-lastY)*0.003;
   pitch=Math.max(-1.2,Math.min(1.2,pitch));
+  lastX=t.clientX; lastY=t.clientY;
 });
-
 addEventListener("touchend",()=>looking=false);
 
 /* ===== LOOP ===== */
