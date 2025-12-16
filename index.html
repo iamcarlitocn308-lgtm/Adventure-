@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Adventure, the One and Onyly</title>
+<title>Adventure, the One and Only</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
 <style>
@@ -16,7 +16,7 @@ body { margin:0; overflow:hidden; background:#000; touch-action:none; }
   color:white;
   font-family:Arial;
   background:rgba(0,0,0,0.5);
-  padding:6px 10px;
+  padding:6px 12px;
   border-radius:6px;
   z-index:10;
 }
@@ -45,7 +45,7 @@ body { margin:0; overflow:hidden; background:#000; touch-action:none; }
 </head>
 <body>
 
-<div id="info">Move: Joystick • Look: Drag Screen</div>
+<div id="info">Move: Joystick • Look: Drag • Tap near water to fish</div>
 <div id="moveJoy"><div id="moveStick"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
@@ -79,15 +79,11 @@ function addCloud(x,y,z){
   cloud.position.set(x,y,z);
   scene.add(cloud);
 }
-for(let i=0;i<12;i++){
-  addCloud(
-    (Math.random()-0.5)*3000,
-    300 + Math.random()*200,
-    (Math.random()-0.5)*3000
-  );
+for(let i=0;i<10;i++){
+  addCloud((Math.random()-0.5)*3000,300+Math.random()*200,(Math.random()-0.5)*3000);
 }
 
-/* ===== BASE FLOOR ===== */
+/* ===== FLOOR ===== */
 const baseFloor = new THREE.Mesh(
   new THREE.PlaneGeometry(5000,5000),
   new THREE.MeshStandardMaterial({color:0x2e8b57})
@@ -104,8 +100,7 @@ const tGeo = new THREE.PlaneGeometry(terrainSize, terrainSize, seg, seg);
 for(let i=0;i<tGeo.attributes.position.count;i++){
   const x=tGeo.attributes.position.getX(i);
   const z=tGeo.attributes.position.getZ(i);
-  const y=Math.sin(x*0.03)+Math.cos(z*0.03);
-  tGeo.attributes.position.setY(i,y);
+  tGeo.attributes.position.setY(i, Math.sin(x*0.03)+Math.cos(z*0.03));
 }
 tGeo.computeVertexNormals();
 
@@ -116,9 +111,21 @@ const terrain = new THREE.Mesh(
 terrain.rotation.x = -Math.PI/2;
 scene.add(terrain);
 
-/* ===== DECOR HELPERS ===== */
-const treeSpots=[];
+/* ===== WATER ===== */
+const water = new THREE.Mesh(
+  new THREE.PlaneGeometry(800,800),
+  new THREE.MeshStandardMaterial({
+    color:0x1e90ff,
+    transparent:true,
+    opacity:0.75
+  })
+);
+water.rotation.x = -Math.PI/2;
+water.position.set(300,0.2,300);
+scene.add(water);
 
+/* ===== DECOR ===== */
+const treeSpots=[];
 function addTree(x,z){
   treeSpots.push({x,z});
   const trunk = new THREE.Mesh(
@@ -126,7 +133,6 @@ function addTree(x,z){
     new THREE.MeshStandardMaterial({color:0x8b5a2b})
   );
   trunk.position.set(x,1,z);
-
   const leaves = new THREE.Mesh(
     new THREE.SphereGeometry(1.5,8,8),
     new THREE.MeshStandardMaterial({color:0x2e8b57})
@@ -134,13 +140,9 @@ function addTree(x,z){
   leaves.position.set(x,3,z);
   scene.add(trunk,leaves);
 }
-
 function nearTree(x,z){
-  return treeSpots.some(t =>
-    Math.hypot(t.x-x, t.z-z) < 4
-  );
+  return treeSpots.some(t=>Math.hypot(t.x-x,t.z-z)<4);
 }
-
 function addRock(x,z){
   if(nearTree(x,z)) return;
   const rock = new THREE.Mesh(
@@ -150,7 +152,6 @@ function addRock(x,z){
   rock.position.set(x,0.45,z);
   scene.add(rock);
 }
-
 function addFlower(x,z){
   const flower = new THREE.Mesh(
     new THREE.SphereGeometry(0.18),
@@ -160,46 +161,35 @@ function addFlower(x,z){
   scene.add(flower);
 }
 
-/* ===== SPAWN DECOR ===== */
 for(let i=0;i<120;i++){
-  const x=(Math.random()-0.5)*terrainSize;
-  const z=(Math.random()-0.5)*terrainSize;
-  addTree(x,z);
+  addTree((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
 }
-
 for(let i=0;i<120;i++){
-  const x=(Math.random()-0.5)*terrainSize;
-  const z=(Math.random()-0.5)*terrainSize;
-  addRock(x,z);
+  addRock((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
 }
-
 for(let i=0;i<300;i++){
-  const x=(Math.random()-0.5)*terrainSize;
-  const z=(Math.random()-0.5)*terrainSize;
-  addFlower(x,z);
+  addFlower((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
 }
 
 /* ===== PLAYER ===== */
 const player = new THREE.Object3D();
 scene.add(player);
 
-/* ===== BODY ===== */
 const cloth = new THREE.MeshStandardMaterial({color:0x3b6ea5});
 const shoeMat = new THREE.MeshStandardMaterial({color:0x000000});
 const skin = new THREE.MeshStandardMaterial({color:0xffd1a4});
 
-/* Stomach / torso */
+/* Body */
 const torso = new THREE.Mesh(
   new THREE.BoxGeometry(0.7,0.9,0.5),
   cloth
 );
-torso.position.y = 1.25;
+torso.position.y = 1.35;
 player.add(torso);
 
-/* Legs */
+/* Legs (correct height) */
 function makeLeg(x){
   const leg = new THREE.Object3D();
-
   const upper = new THREE.Mesh(
     new THREE.BoxGeometry(0.3,0.8,0.3),
     cloth
@@ -210,25 +200,23 @@ function makeLeg(x){
     new THREE.BoxGeometry(0.32,0.2,0.5),
     shoeMat
   );
-  shoe.position.y = 0.1;
-  shoe.position.z = 0.1;
+  shoe.position.set(0,0.1,0.1);
 
   leg.add(upper,shoe);
-  leg.position.x = x;
+  leg.position.set(x,0,0);
   return leg;
 }
-
 const leftLeg = makeLeg(-0.18);
 const rightLeg = makeLeg(0.18);
 player.add(leftLeg,rightLeg);
 
-/* ===== CAMERA PIVOT ===== */
+/* Camera */
 const camPivot = new THREE.Object3D();
 camPivot.position.y = 1.7;
 player.add(camPivot);
 camPivot.add(camera);
 
-/* ===== HANDS ===== */
+/* Hands */
 const handGeo = new THREE.BoxGeometry(0.3,0.5,0.3);
 const leftHand = new THREE.Mesh(handGeo, skin);
 const rightHand = new THREE.Mesh(handGeo, skin);
@@ -239,11 +227,9 @@ rightHand.rotation.x = -0.6;
 camera.add(leftHand,rightHand);
 
 /* ===== INPUT ===== */
-let moveX=0, moveZ=0;
-let yaw=0, pitch=0;
-let walk=0;
+let moveX=0, moveZ=0, yaw=0, pitch=0, walk=0;
 
-/* ===== JOYSTICK ===== */
+/* Joystick */
 const joy=document.getElementById("moveJoy");
 const stick=document.getElementById("moveStick");
 const center={x:60,y:60}, max=40;
@@ -271,7 +257,7 @@ joy.addEventListener("touchend",()=>{
   moveX=moveZ=0;
 });
 
-/* ===== LOOK ===== */
+/* Look */
 let looking=false,lastX=0,lastY=0;
 addEventListener("touchstart",e=>{
   if(e.target.closest("#moveJoy")) return;
@@ -289,6 +275,16 @@ addEventListener("touchmove",e=>{
 });
 addEventListener("touchend",()=>looking=false);
 
+/* ===== FISHING ===== */
+addEventListener("click",()=>{
+  const dx=player.position.x-water.position.x;
+  const dz=player.position.z-water.position.z;
+  if(Math.hypot(dx,dz)<60){
+    document.getElementById("info").textContent =
+      Math.random()>0.5 ? "🎣 You caught a fish!" : "Nothing bit...";
+  }
+});
+
 /* ===== LOOP ===== */
 function animate(){
   requestAnimationFrame(animate);
@@ -305,10 +301,6 @@ function animate(){
   const swing=movingNow?Math.sin(walk)*0.7:0;
   leftLeg.rotation.x=swing;
   rightLeg.rotation.x=-swing;
-
-  const bob=movingNow?Math.sin(walk)*0.05:0;
-  leftHand.position.y=-0.35+bob;
-  rightHand.position.y=-0.35-bob;
 
   renderer.render(scene,camera);
 }
