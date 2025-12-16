@@ -6,261 +6,203 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
 <style>
-body {
-  margin: 0;
-  overflow: hidden;
-  background: #000;
-  touch-action: none;
-}
+body { margin:0; overflow:hidden; background:#000; touch-action:none; }
 
 #info {
-  position: fixed;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: white;
-  font-family: Arial, sans-serif;
-  background: rgba(0,0,0,0.5);
-  padding: 6px 10px;
-  border-radius: 6px;
-  z-index: 10;
+  position:fixed;
+  top:10px;
+  left:50%;
+  transform:translateX(-50%);
+  color:white;
+  font-family:Arial;
+  background:rgba(0,0,0,0.5);
+  padding:6px 10px;
+  border-radius:6px;
+  z-index:10;
 }
 
 #moveJoy {
-  position: fixed;
-  bottom: 40px;
-  left: 40px;
-  width: 120px;
-  height: 120px;
-  background: rgba(255,255,255,0.15);
-  border-radius: 50%;
-  z-index: 20;
+  position:fixed;
+  bottom:40px;
+  left:40px;
+  width:120px;
+  height:120px;
+  background:rgba(255,255,255,0.15);
+  border-radius:50%;
+  z-index:20;
 }
 
 #moveStick {
-  position: absolute;
-  left: 35px;
-  top: 35px;
-  width: 50px;
-  height: 50px;
-  background: rgba(255,255,255,0.6);
-  border-radius: 50%;
+  position:absolute;
+  left:35px;
+  top:35px;
+  width:50px;
+  height:50px;
+  background:rgba(255,255,255,0.6);
+  border-radius:50%;
 }
 </style>
 </head>
 <body>
 
-<div id="info">Joystick = Move • Drag Screen = Look</div>
+<div id="info">Move: Joystick • Look: Drag Screen</div>
 
-<div id="moveJoy">
-  <div id="moveStick"></div>
-</div>
+<div id="moveJoy"><div id="moveStick"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
-
 <script>
 /* ===== SCENE ===== */
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
 
-const camera = new THREE.PerspectiveCamera(
-  75, window.innerWidth / window.innerHeight, 0.1, 4000
-);
-
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
+const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 4000);
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
 /* ===== LIGHT ===== */
-scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-const sun = new THREE.DirectionalLight(0xffffff, 1);
-sun.position.set(200, 300, 200);
+scene.add(new THREE.AmbientLight(0xffffff,0.5));
+const sun = new THREE.DirectionalLight(0xffffff,1);
+sun.position.set(200,300,200);
 scene.add(sun);
 
-/* ===== BASE FLOOR ===== */
-const baseFloor = new THREE.Mesh(
-  new THREE.PlaneGeometry(3000, 3000),
-  new THREE.MeshStandardMaterial({ color: 0x2e8b57 })
+/* ===== FLOOR ===== */
+const floor = new THREE.Mesh(
+  new THREE.PlaneGeometry(3000,3000),
+  new THREE.MeshStandardMaterial({color:0x2e8b57})
 );
-baseFloor.rotation.x = -Math.PI / 2;
-baseFloor.position.y = -1;
-scene.add(baseFloor);
+floor.rotation.x = -Math.PI/2;
+scene.add(floor);
 
-/* ===== TERRAIN ===== */
-const terrainSize = 800;
-const segments = 120;
-const geo = new THREE.PlaneGeometry(terrainSize, terrainSize, segments, segments);
-
-for (let i = 0; i < geo.attributes.position.count; i++) {
-  const x = geo.attributes.position.getX(i);
-  const z = geo.attributes.position.getZ(i);
-  const y = Math.sin(x * 0.03) + Math.cos(z * 0.03);
-  geo.attributes.position.setY(i, y);
-}
-geo.computeVertexNormals();
-
-const terrain = new THREE.Mesh(
-  geo,
-  new THREE.MeshStandardMaterial({ color: 0x3a8f3a })
-);
-terrain.rotation.x = -Math.PI / 2;
-scene.add(terrain);
-
-/* ===== DECOR ===== */
-function addTree(x, z) {
-  const trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.3, 0.4, 2),
-    new THREE.MeshStandardMaterial({ color: 0x8b5a2b })
-  );
-  trunk.position.set(x, 1, z);
-
-  const leaves = new THREE.Mesh(
-    new THREE.SphereGeometry(1.3, 8, 8),
-    new THREE.MeshStandardMaterial({ color: 0x2e8b57 })
-  );
-  leaves.position.set(x, 2.7, z);
-
-  scene.add(trunk, leaves);
-}
-
-function addRock(x, z) {
-  const rock = new THREE.Mesh(
-    new THREE.DodecahedronGeometry(0.6),
-    new THREE.MeshStandardMaterial({ color: 0x777777 })
-  );
-  rock.position.set(x, 0.4, z);
-  scene.add(rock);
-}
-
-function addFlower(x, z) {
-  const flower = new THREE.Mesh(
-    new THREE.SphereGeometry(0.15),
-    new THREE.MeshStandardMaterial({ color: 0xff69b4 })
-  );
-  flower.position.set(x, 0.15, z);
-  scene.add(flower);
-}
-
-for (let i = 0; i < 150; i++) {
-  const x = (Math.random() - 0.5) * terrainSize;
-  const z = (Math.random() - 0.5) * terrainSize;
-  addTree(x, z);
-  addRock(x, z);
-  addFlower(x, z);
-}
-
-/* ===== PLAYER & CAMERA ===== */
+/* ===== PLAYER ROOT ===== */
 const player = new THREE.Object3D();
-player.position.y = 1.7;
 scene.add(player);
 
-/* Hands */
-const handMat = new THREE.MeshStandardMaterial({ color: 0xffd1a4 });
-const leftHand = new THREE.Mesh(
-  new THREE.BoxGeometry(0.3, 0.5, 0.3),
-  handMat
-);
-const rightHand = leftHand.clone();
+/* ===== BODY ===== */
+const skin = new THREE.MeshStandardMaterial({color:0xffd1a4});
+const cloth = new THREE.MeshStandardMaterial({color:0x3b6ea5});
 
-leftHand.position.set(-0.45, -0.2, -0.7);
-rightHand.position.set(0.45, -0.2, -0.7);
+const torso = new THREE.Mesh(
+  new THREE.BoxGeometry(0.6,0.8,0.4),
+  cloth
+);
+torso.position.y = 1.2;
+
+const leftLeg = new THREE.Mesh(
+  new THREE.BoxGeometry(0.25,0.7,0.25),
+  cloth
+);
+const rightLeg = leftLeg.clone();
+
+leftLeg.position.set(-0.15,0.35,0);
+rightLeg.position.set(0.15,0.35,0);
+
+player.add(torso,leftLeg,rightLeg);
+
+/* ===== CAMERA PIVOT ===== */
+const camPivot = new THREE.Object3D();
+camPivot.position.y = 1.6;
+player.add(camPivot);
+camPivot.add(camera);
+
+/* ===== HANDS ===== */
+const handGeo = new THREE.BoxGeometry(0.3,0.5,0.3);
+const leftHand = new THREE.Mesh(handGeo, skin);
+const rightHand = new THREE.Mesh(handGeo, skin);
+
+leftHand.position.set(-0.45,-0.3,-0.7);
+rightHand.position.set(0.45,-0.3,-0.7);
 leftHand.rotation.x = -0.6;
 rightHand.rotation.x = -0.6;
+camera.add(leftHand,rightHand);
 
-camera.add(leftHand, rightHand);
-scene.add(camera);
+/* ===== INPUT ===== */
+let moveX=0, moveZ=0;
+let yaw=0, pitch=0;
+let walk=0;
 
-/* ===== INPUT STATE ===== */
-let moveX = 0, moveZ = 0;
-let yaw = 0;
-let walkTime = 0;
+/* ===== JOYSTICK ===== */
+const joy=document.getElementById("moveJoy");
+const stick=document.getElementById("moveStick");
+const center={x:60,y:60}, max=40;
+let moving=false;
 
-/* ===== MOVE JOYSTICK ===== */
-const joy = document.getElementById("moveJoy");
-const stick = document.getElementById("moveStick");
-const center = { x: 60, y: 60 };
-const max = 40;
-let moving = false;
-
-joy.addEventListener("touchstart", () => moving = true);
-
-joy.addEventListener("touchmove", e => {
-  if (!moving) return;
-  const rect = joy.getBoundingClientRect();
-  const t = e.touches[0];
-  let x = t.clientX - rect.left - center.x;
-  let y = t.clientY - rect.top - center.y;
-  const d = Math.min(Math.hypot(x, y), max);
-  const a = Math.atan2(y, x);
-  x = Math.cos(a) * d;
-  y = Math.sin(a) * d;
-  stick.style.left = (center.x + x - 25) + "px";
-  stick.style.top = (center.y + y - 25) + "px";
-  moveX = x / max * 0.15;
-  moveZ = y / max * 0.15;
+joy.addEventListener("touchstart",()=>moving=true);
+joy.addEventListener("touchmove",e=>{
+  if(!moving) return;
+  const r=joy.getBoundingClientRect();
+  const t=e.touches[0];
+  let x=t.clientX-r.left-center.x;
+  let y=t.clientY-r.top-center.y;
+  const d=Math.min(Math.hypot(x,y),max);
+  const a=Math.atan2(y,x);
+  x=Math.cos(a)*d; y=Math.sin(a)*d;
+  stick.style.left=(center.x+x-25)+"px";
+  stick.style.top=(center.y+y-25)+"px";
+  moveX=x/max*0.12;
+  moveZ=y/max*0.12;
+});
+joy.addEventListener("touchend",()=>{
+  moving=false;
+  stick.style.left="35px";
+  stick.style.top="35px";
+  moveX=moveZ=0;
 });
 
-joy.addEventListener("touchend", () => {
-  moving = false;
-  stick.style.left = "35px";
-  stick.style.top = "35px";
-  moveX = 0;
-  moveZ = 0;
+/* ===== DRAG LOOK (FULL) ===== */
+let looking=false,lastX=0,lastY=0;
+
+window.addEventListener("touchstart",e=>{
+  if(e.target.closest("#moveJoy")) return;
+  looking=true;
+  lastX=e.touches[0].clientX;
+  lastY=e.touches[0].clientY;
 });
 
-/* ===== DRAG TO LOOK ===== */
-let looking = false;
-let lastTouchX = 0;
+window.addEventListener("touchmove",e=>{
+  if(!looking) return;
+  const t=e.touches[0];
+  const dx=t.clientX-lastX;
+  const dy=t.clientY-lastY;
+  lastX=t.clientX; lastY=t.clientY;
 
-window.addEventListener("touchstart", e => {
-  if (e.target.closest("#moveJoy")) return;
-  looking = true;
-  lastTouchX = e.touches[0].clientX;
+  yaw -= dx*0.003;
+  pitch -= dy*0.003;
+  pitch=Math.max(-1.2,Math.min(1.2,pitch));
 });
 
-window.addEventListener("touchmove", e => {
-  if (!looking) return;
-  const x = e.touches[0].clientX;
-  const dx = x - lastTouchX;
-  lastTouchX = x;
-  yaw -= dx * 0.003;
-});
-
-window.addEventListener("touchend", () => looking = false);
+window.addEventListener("touchend",()=>looking=false);
 
 /* ===== LOOP ===== */
-function animate() {
+function animate(){
   requestAnimationFrame(animate);
 
-  const isMoving = Math.abs(moveX) + Math.abs(moveZ) > 0.01;
-  if (isMoving) walkTime += 0.1;
+  const movingNow=Math.abs(moveX)+Math.abs(moveZ)>0.01;
+  if(movingNow) walk+=0.1;
 
-  player.rotation.y = yaw;
-  player.position.x += Math.sin(yaw) * moveZ + Math.cos(yaw) * moveX;
-  player.position.z += Math.cos(yaw) * moveZ - Math.sin(yaw) * moveX;
+  player.rotation.y=yaw;
+  camPivot.rotation.x=pitch;
 
-  camera.position.set(
-    player.position.x,
-    player.position.y,
-    player.position.z
-  );
-  camera.rotation.y = yaw;
+  player.position.x += Math.sin(yaw)*moveZ + Math.cos(yaw)*moveX;
+  player.position.z += Math.cos(yaw)*moveZ - Math.sin(yaw)*moveX;
 
-  const bob = isMoving ? Math.sin(walkTime) * 0.1 : 0;
-  leftHand.position.y = -0.2 + bob;
-  rightHand.position.y = -0.2 - bob;
+  const legSwing=movingNow?Math.sin(walk)*0.6:0;
+  leftLeg.rotation.x=legSwing;
+  rightLeg.rotation.x=-legSwing;
 
-  renderer.render(scene, camera);
+  const bob=movingNow?Math.sin(walk)*0.05:0;
+  leftHand.position.y=-0.3+bob;
+  rightHand.position.y=-0.3-bob;
+
+  renderer.render(scene,camera);
 }
-
 animate();
 
-window.addEventListener("resize", () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
+addEventListener("resize",()=>{
+  camera.aspect=innerWidth/innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(innerWidth,innerHeight);
 });
 </script>
-
 </body>
 </html>
