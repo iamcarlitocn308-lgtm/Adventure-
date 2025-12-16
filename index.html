@@ -94,6 +94,14 @@ const terrain = new THREE.Mesh(
 );
 terrain.rotation.x = -Math.PI/2;
 scene.add(terrain);
+  /* ===== BASE FLOOR ===== */
+const baseFloor = new THREE.Mesh(
+  new THREE.PlaneGeometry(2000, 2000),
+  new THREE.MeshStandardMaterial({ color: 0x2e8b57 })
+);
+baseFloor.rotation.x = -Math.PI / 2;
+baseFloor.position.y = -1;
+scene.add(baseFloor);
 
 /* ===== DECOR ===== */
 function addTree(x,z){
@@ -154,8 +162,11 @@ const handMat = new THREE.MeshStandardMaterial({color:0xffd1a4});
 const leftHand = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.5,0.3), handMat);
 const rightHand = leftHand.clone();
 
-leftHand.position.set(-0.4,-0.4,-0.8);
-rightHand.position.set(0.4,-0.4,-0.8);
+leftHand.position.set(-0.45,-0.2,-0.7);
+rightHand.position.set(0.45,-0.2,-0.7);
+
+leftHand.rotation.x = -0.6;
+rightHand.rotation.x = -0.6;
 
 camera.add(leftHand, rightHand);
 scene.add(camera);
