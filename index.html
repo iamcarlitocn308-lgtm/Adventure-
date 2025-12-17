@@ -65,7 +65,9 @@ body {
   height: 60px;
   border-radius: 50%;
   border: none;
-  font-size: 22px;
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 1px;
   background: rgba(255,255,255,0.25);
   color: white;
 }
@@ -82,9 +84,9 @@ body {
 </div>
 
 <div id="actions">
-  <button id="jumpBtn">⤴</button>
-  <button id="crouchBtn">⬇</button>
-  <button id="sprintBtn">⚡</button>
+  <button id="jumpBtn">JUMP</button>
+  <button id="crouchBtn">CROUCH</button>
+  <button id="sprintBtn">SPRINT</button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
@@ -100,7 +102,7 @@ renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
 /* ================= LIGHT ================= */
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.9); // optional boost
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
 scene.add(ambientLight);
 
 const sun = new THREE.DirectionalLight(0xffffff, 1.2);
@@ -127,7 +129,7 @@ const terrain = new THREE.Mesh(
 terrain.rotation.x = -Math.PI/2;
 scene.add(terrain);
 
-/* Base grass (always visible) */
+/* Base grass */
 const grassBase = new THREE.Mesh(
   new THREE.PlaneGeometry(20000,20000),
   new THREE.MeshLambertMaterial({ color:0x2e8b57 })
@@ -174,7 +176,6 @@ for(let i=0;i<800;i++) flower((Math.random()-0.5)*terrainSize,(Math.random()-0.5
 const player = new THREE.Object3D();
 scene.add(player);
 
-/* Body */
 const cloth = new THREE.MeshLambertMaterial({ color:0x3b6ea5 });
 const skin = new THREE.MeshLambertMaterial({ color:0xffccaa });
 
@@ -195,11 +196,15 @@ const leftLeg = leg(-0.2);
 const rightLeg = leg(0.2);
 player.add(leftLeg, rightLeg);
 
-/* Shoulders + Arms */
+/* Arms (forward-facing) */
 function arm(x){
   const shoulder = new THREE.Object3D();
   shoulder.position.set(x,0.3,0);
-  const upper = new THREE.Mesh(new THREE.BoxGeometry(0.15,0.4,0.15), skin);
+
+  const upper = new THREE.Mesh(
+    new THREE.BoxGeometry(0.15,0.4,0.15),
+    skin
+  );
   upper.position.y = -0.2;
   shoulder.add(upper);
   return shoulder;
@@ -218,6 +223,7 @@ camPivot.add(camera);
 let moveX=0, moveZ=0;
 let yaw=0, pitch=0, walk=0;
 
+/* Joystick */
 const joy=document.getElementById("joystick");
 const stick=document.getElementById("stick");
 const center={x:60,y:60}, max=40;
@@ -241,7 +247,7 @@ joy.ontouchend=()=>{
   stick.style.top="35px";
 };
 
-/* Look (safe) */
+/* Look */
 let looking=false,lastX=0,lastY=0;
 addEventListener("touchstart",e=>{
   if(e.target.closest("#joystick")) return;
@@ -263,17 +269,16 @@ addEventListener("touchend",()=>looking=false);
 /* Sprint / crouch / jump */
 let sprint=false, crouch=false;
 let vy=0, grounded=true;
-const sprintBtn=document.getElementById("sprintBtn");
-const crouchBtn=document.getElementById("crouchBtn");
-const jumpBtn=document.getElementById("jumpBtn");
 
-sprintBtn.ontouchstart=()=>sprint=true;
-sprintBtn.ontouchend=()=>sprint=false;
-crouchBtn.ontouchstart=()=>{
+document.getElementById("sprintBtn").ontouchstart=()=>sprint=true;
+document.getElementById("sprintBtn").ontouchend=()=>sprint=false;
+
+document.getElementById("crouchBtn").ontouchstart=()=>{
   crouch=!crouch;
   camPivot.position.y=crouch?1.6:2.4;
 };
-jumpBtn.ontouchstart=()=>{
+
+document.getElementById("jumpBtn").ontouchstart=()=>{
   if(grounded){ vy=0.28; grounded=false; }
 };
 
@@ -294,10 +299,12 @@ function animate(){
   const moving=Math.abs(moveX)+Math.abs(moveZ)>0.01;
   if(moving) walk+= sprint?0.22:0.12;
   const swing=moving?Math.sin(walk)*0.8:0;
+
   leftLeg.rotation.x=swing;
   rightLeg.rotation.x=-swing;
-  leftArm.rotation.x=-swing*0.3;
-  rightArm.rotation.x=swing*0.3;
+
+  leftArm.rotation.x=0.35+swing*0.3;
+  rightArm.rotation.x=0.35-swing*0.3;
 
   camPivot.rotation.x=pitch;
   renderer.render(scene,camera);
@@ -309,7 +316,6 @@ addEventListener("resize",()=>{
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight);
 });
-
 </script>
 </body>
 </html>
