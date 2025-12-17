@@ -50,23 +50,20 @@ body { margin:0; overflow:hidden; background:#000; touch-action:none; font-famil
 <script>
 /* ================= SCENE SETUP ================= */
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87ceeb);
 
 const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 50000);
 const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
-/* ================= LIGHTING ================= */
-const ambientLight = new THREE.AmbientLight(0xffffff,0.6);
+/* ================= LIGHTS ================= */
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
 scene.add(ambientLight);
 
 const sun = new THREE.DirectionalLight(0xffffff,1);
-sun.position.set(500,800,400);
 scene.add(sun);
 
-const moon = new THREE.DirectionalLight(0x8888ff,0.4);
-moon.position.set(-500,800,-400);
+const moon = new THREE.DirectionalLight(0x8888ff,1);
 scene.add(moon);
 
 /* ================= CLOUDS ================= */
@@ -295,31 +292,61 @@ addEventListener("touchmove",e=>{
 });
 addEventListener("touchend",()=>looking=false);
 
-/* ================= ANIMATE LOOP ================= */
+/* ================= STARFIELD ================= */
+const stars = new THREE.Points(
+  new THREE.BufferGeometry(),
+  new THREE.PointsMaterial({ color: 0xffffff, size: 1 })
+);
+const starPositions = [];
+for(let i=0;i<2000;i++){
+  starPositions.push((Math.random()-0.5)*20000);
+  starPositions.push((Math.random()-0.5)*20000);
+  starPositions.push((Math.random()-0.5)*20000);
+}
+stars.geometry.setAttribute('position', new THREE.Float32BufferAttribute(starPositions,3));
+scene.add(stars);
+
+/* ================= LOOP ================= */
+const DAY_DURATION = 5*60*1000; // 5 min
+const NIGHT_DURATION = 5*60*1000;
+const CYCLE_DURATION = DAY_DURATION + NIGHT_DURATION;
+
 function animate(){
   requestAnimationFrame(animate);
 
-  const movingNow=Math.abs(moveX)+Math.abs(moveZ)>0.01;
-  if(movingNow) walk+=0.12;
+  const now = Date.now() % CYCLE_DURATION;
+
+  // Day/night
+  if(now < DAY_DURATION){
+    sun.intensity = 1;
+    moon.intensity = 0;
+    ambientLight.intensity = 0.6;
+    scene.background.set(0x87ceeb);
+    stars.visible = false;
+  } else {
+    sun.intensity = 0;
+    moon.intensity = 1;
+    ambientLight.intensity = 0.6;
+    scene.background.set(0x000022);
+    stars.visible = true;
+  }
 
   player.rotation.y=yaw;
   camPivot.rotation.x=pitch;
 
-  // Move player in local forward/right relative to camera yaw
   const dx = Math.sin(yaw)*moveZ + Math.cos(yaw)*moveX;
   const dz = Math.cos(yaw)*moveZ - Math.sin(yaw)*moveX;
-  player.position.x+=dx;
-  player.position.z+=dz;
+  player.position.x+=dx; player.position.z+=dz;
 
-  // Legs swing diagonally
+  const movingNow=Math.abs(moveX)+Math.abs(moveZ)>0.01;
+  if(movingNow) walk+=0.12;
+
   const moveAngle=Math.atan2(dx,dz);
   const swing = movingNow?Math.sin(walk)*0.8:0;
-  leftLeg.hip.rotation.x=swing;
-  rightLeg.hip.rotation.x=-swing;
-  leftLeg.foot.rotation.y=moveAngle-yaw;
-  rightLeg.foot.rotation.y=moveAngle-yaw;
 
-  // Arms swing opposite legs
+  leftLeg.hip.rotation.x=swing; rightLeg.hip.rotation.x=-swing;
+  leftLeg.foot.rotation.y=moveAngle-yaw; rightLeg.foot.rotation.y=moveAngle-yaw;
+
   const armSwing=swing*0.7;
   const sideSwing=swing*0.3;
   leftArm.shoulder.rotation.x=-armSwing; leftArm.shoulder.rotation.z=sideSwing;
@@ -327,16 +354,7 @@ function animate(){
   rightArm.shoulder.rotation.x=armSwing; rightArm.shoulder.rotation.z=-sideSwing;
   rightArm.elbow.rotation.x=Math.max(0,armSwing*0.6);
 
-  // Torso idle sway
   torso.rotation.y=Math.sin(Date.now()*0.001)*0.005;
-
-  // Daylight cycle
-  const time = Date.now()*0.00005; // slow rotation
-  sun.position.set(Math.sin(time)*500,Math.cos(time)*500,Math.cos(time)*500);
-  sun.intensity = Math.max(0,Math.cos(time));
-  ambientLight.intensity = 0.3+Math.max(0,Math.cos(time))*0.7;
-  moon.position.set(-Math.sin(time)*500,Math.cos(time)*500,-Math.cos(time)*500);
-  moon.intensity = 0.4*(1-Math.max(0,Math.cos(time)));
 
   renderer.render(scene,camera);
 }
