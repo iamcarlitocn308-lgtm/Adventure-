@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Adventure</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Adventure, the One and Only</title>
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
 <style>
 body {
@@ -12,6 +13,12 @@ body {
   background: #000;
   touch-action: none;
   font-family: Arial;
+}
+
+/* Disable zoom on buttons */
+button {
+  touch-action: manipulation;
+  user-select: none;
 }
 
 /* Joystick */
@@ -55,20 +62,20 @@ body {
 #actions {
   position: fixed;
   right: 30px;
-  bottom: 110px;
+  bottom: 130px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 #actions button {
-  width: 60px;
-  height: 60px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   border: none;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: bold;
   letter-spacing: 1px;
-  background: rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.28);
   color: white;
 }
 </style>
@@ -102,8 +109,7 @@ renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
 /* ================= LIGHT ================= */
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
-scene.add(ambientLight);
+scene.add(new THREE.AmbientLight(0xffffff, 0.9));
 
 const sun = new THREE.DirectionalLight(0xffffff, 1.2);
 sun.position.set(10000, 20000, 10000);
@@ -111,14 +117,12 @@ scene.add(sun);
 
 /* ================= TERRAIN ================= */
 const terrainSize = 3000;
-const seg = 300;
-const geo = new THREE.PlaneGeometry(terrainSize, terrainSize, seg, seg);
+const geo = new THREE.PlaneGeometry(terrainSize, terrainSize, 300, 300);
 
-for (let i=0;i<geo.attributes.position.count;i++) {
+for (let i = 0; i < geo.attributes.position.count; i++) {
   const x = geo.attributes.position.getX(i);
   const z = geo.attributes.position.getZ(i);
-  const y = Math.sin(x*0.02)*4 + Math.cos(z*0.02)*4;
-  geo.attributes.position.setY(i, y);
+  geo.attributes.position.setY(i, Math.sin(x*0.02)*4 + Math.cos(z*0.02)*4);
 }
 geo.computeVertexNormals();
 
@@ -126,51 +130,17 @@ const terrain = new THREE.Mesh(
   geo,
   new THREE.MeshLambertMaterial({ color: 0x4caf50 })
 );
-terrain.rotation.x = -Math.PI/2;
+terrain.rotation.x = -Math.PI / 2;
 scene.add(terrain);
 
-/* Base grass */
-const grassBase = new THREE.Mesh(
+/* Grass base */
+const grass = new THREE.Mesh(
   new THREE.PlaneGeometry(20000,20000),
   new THREE.MeshLambertMaterial({ color:0x2e8b57 })
 );
-grassBase.rotation.x = -Math.PI/2;
-grassBase.position.y = -3;
-scene.add(grassBase);
-
-/* ================= DECOR ================= */
-function tree(x,z){
-  const trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.3,0.4,2),
-    new THREE.MeshLambertMaterial({color:0x8b5a2b})
-  );
-  trunk.position.set(x,1,z);
-
-  const leaves = new THREE.Mesh(
-    new THREE.SphereGeometry(1.6,8,8),
-    new THREE.MeshLambertMaterial({color:0x2e8b57})
-  );
-  leaves.position.set(x,3,z);
-  scene.add(trunk, leaves);
-}
-
-function flower(x,z){
-  const stem = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.05,0.05,0.4),
-    new THREE.MeshLambertMaterial({color:0x228b22})
-  );
-  stem.position.set(x,0.2,z);
-
-  const petal = new THREE.Mesh(
-    new THREE.SphereGeometry(0.2,8,8),
-    new THREE.MeshLambertMaterial({color:0xff69b4})
-  );
-  petal.position.set(x,0.5,z);
-  scene.add(stem, petal);
-}
-
-for(let i=0;i<400;i++) tree((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
-for(let i=0;i<800;i++) flower((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
+grass.rotation.x = -Math.PI/2;
+grass.position.y = -3;
+scene.add(grass);
 
 /* ================= PLAYER ================= */
 const player = new THREE.Object3D();
@@ -179,16 +149,18 @@ scene.add(player);
 const cloth = new THREE.MeshLambertMaterial({ color:0x3b6ea5 });
 const skin = new THREE.MeshLambertMaterial({ color:0xffccaa });
 
-const torso = new THREE.Mesh(new THREE.BoxGeometry(0.45,0.6,0.3), cloth);
+const torso = new THREE.Mesh(
+  new THREE.BoxGeometry(0.45,0.6,0.3), cloth
+);
 torso.position.y = 1.1;
 player.add(torso);
 
 /* Legs */
 function leg(x){
   const g = new THREE.Object3D();
-  const upper = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.8,0.3), cloth);
-  upper.position.y = 0.4;
-  g.add(upper);
+  const m = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.8,0.3), cloth);
+  m.position.y = 0.4;
+  g.add(m);
   g.position.x = x;
   return g;
 }
@@ -196,19 +168,21 @@ const leftLeg = leg(-0.2);
 const rightLeg = leg(0.2);
 player.add(leftLeg, rightLeg);
 
-/* Arms (forward-facing) */
+/* ARMS – FIXED FORWARD POSE */
 function arm(x){
   const shoulder = new THREE.Object3D();
   shoulder.position.set(x,0.3,0);
+  shoulder.rotation.x = 0.35; // forward resting angle
 
   const upper = new THREE.Mesh(
-    new THREE.BoxGeometry(0.15,0.4,0.15),
-    skin
+    new THREE.BoxGeometry(0.15,0.4,0.15), skin
   );
-  upper.position.y = -0.2;
+  upper.position.y = -0.25;
   shoulder.add(upper);
+
   return shoulder;
 }
+
 const leftArm = arm(-0.35);
 const rightArm = arm(0.35);
 torso.add(leftArm, rightArm);
@@ -229,56 +203,52 @@ const stick=document.getElementById("stick");
 const center={x:60,y:60}, max=40;
 
 joy.ontouchmove=e=>{
+  e.preventDefault();
   const r=joy.getBoundingClientRect();
   const t=e.touches[0];
   let x=t.clientX-r.left-center.x;
   let y=t.clientY-r.top-center.y;
   const d=Math.min(Math.hypot(x,y),max);
   const a=Math.atan2(y,x);
-  x=Math.cos(a)*d; y=Math.sin(a)*d;
-  stick.style.left=(center.x+x-25)+"px";
-  stick.style.top=(center.y+y-25)+"px";
-  moveX=x/max;
-  moveZ=y/max;
+  moveX=Math.cos(a)*(d/max);
+  moveZ=Math.sin(a)*(d/max);
 };
-joy.ontouchend=()=>{
-  moveX=moveZ=0;
-  stick.style.left="35px";
-  stick.style.top="35px";
-};
+joy.ontouchend=()=>{ moveX=moveZ=0; };
 
 /* Look */
 let looking=false,lastX=0,lastY=0;
 addEventListener("touchstart",e=>{
-  if(e.target.closest("#joystick")) return;
+  if(e.target.closest("#joystick") || e.target.tagName==="BUTTON") return;
   looking=true;
   lastX=e.touches[0].clientX;
   lastY=e.touches[0].clientY;
-});
+},{passive:false});
+
 addEventListener("touchmove",e=>{
   if(!looking) return;
-  const x=e.touches[0].clientX;
-  const y=e.touches[0].clientY;
-  yaw -= (x-lastX)*0.003;
-  pitch -= (y-lastY)*0.003;
+  const t=e.touches[0];
+  yaw -= (t.clientX-lastX)*0.003;
+  pitch -= (t.clientY-lastY)*0.003;
   pitch=Math.max(-1.3,Math.min(1.3,pitch));
-  lastX=x; lastY=y;
-});
+  lastX=t.clientX; lastY=t.clientY;
+},{passive:false});
+
 addEventListener("touchend",()=>looking=false);
 
 /* Sprint / crouch / jump */
-let sprint=false, crouch=false;
-let vy=0, grounded=true;
+let sprint=false, crouch=false, vy=0, grounded=true;
 
-document.getElementById("sprintBtn").ontouchstart=()=>sprint=true;
-document.getElementById("sprintBtn").ontouchend=()=>sprint=false;
+sprintBtn.ontouchstart=e=>{e.preventDefault(); sprint=true;};
+sprintBtn.ontouchend=e=>{e.preventDefault(); sprint=false;};
 
-document.getElementById("crouchBtn").ontouchstart=()=>{
+crouchBtn.ontouchstart=e=>{
+  e.preventDefault();
   crouch=!crouch;
   camPivot.position.y=crouch?1.6:2.4;
 };
 
-document.getElementById("jumpBtn").ontouchstart=()=>{
+jumpBtn.ontouchstart=e=>{
+  e.preventDefault();
   if(grounded){ vy=0.28; grounded=false; }
 };
 
@@ -297,7 +267,7 @@ function animate(){
   if(player.position.y<=0){player.position.y=0;vy=0;grounded=true;}
 
   const moving=Math.abs(moveX)+Math.abs(moveZ)>0.01;
-  if(moving) walk+= sprint?0.22:0.12;
+  if(moving) walk+=sprint?0.22:0.12;
   const swing=moving?Math.sin(walk)*0.8:0;
 
   leftLeg.rotation.x=swing;
