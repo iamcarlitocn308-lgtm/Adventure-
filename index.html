@@ -208,21 +208,28 @@ const leftLeg = leg(-0.18);
 const rightLeg = leg(0.18);
 player.add(leftLeg, rightLeg);
 
-/* Arms */
-function makeHand(x){
-  const pivot = new THREE.Object3D();
-  pivot.position.set(x,0.25,0);
-  const hand = new THREE.Mesh(
-    new THREE.BoxGeometry(0.15,0.25,0.5),
-    skin
-  );
-  hand.position.set(0,0,-0.25);
-  pivot.add(hand);
-  return pivot;
+/* Arms with elbows */
+function makeArm(x){
+  const upperPivot = new THREE.Object3D();
+  upperPivot.position.set(x,0.25,0); // shoulder height relative to torso
+
+  const upperArm = new THREE.Mesh(new THREE.BoxGeometry(0.15,0.25,0.4), skin);
+  upperArm.position.set(0,0,-0.2);
+  upperPivot.add(upperArm);
+
+  const lowerPivot = new THREE.Object3D();
+  lowerPivot.position.set(0,0,-0.4); // elbow
+  const lowerArm = new THREE.Mesh(new THREE.BoxGeometry(0.15,0.25,0.4), skin);
+  lowerArm.position.set(0,0,-0.2);
+  lowerPivot.add(lowerArm);
+
+  upperPivot.add(lowerPivot);
+  return {upperPivot, lowerPivot};
 }
-const leftHand = makeHand(-0.35);
-const rightHand = makeHand(0.35);
-torso.add(leftHand,rightHand);
+
+const leftArm = makeArm(-0.35);
+const rightArm = makeArm(0.35);
+torso.add(leftArm.upperPivot,rightArm.upperPivot);
 
 /* Camera */
 const camPivot = new THREE.Object3D();
@@ -290,11 +297,20 @@ function animate(){
   player.position.z += Math.cos(yaw)*moveZ - Math.sin(yaw)*moveX;
 
   const swing = movingNow ? Math.sin(walk)*0.8 : 0;
+
   leftLeg.rotation.x = swing;
   rightLeg.rotation.x = -swing;
 
-  leftHand.rotation.x = swing*0.25;
-  rightHand.rotation.x = -swing*0.25;
+  // Smooth arm swing with elbow
+  const swingAmplitude = 0.25;
+  const elbowAmplitude = 0.15;
+  leftArm.upperPivot.rotation.x = swing * swingAmplitude + Math.sin(Date.now()*0.002)*0.02;
+  leftArm.lowerPivot.rotation.x = swing * elbowAmplitude + Math.sin(Date.now()*0.002)*0.02;
+  rightArm.upperPivot.rotation.x = -swing * swingAmplitude + Math.sin(Date.now()*0.002)*-0.02;
+  rightArm.lowerPivot.rotation.x = -swing * elbowAmplitude + Math.sin(Date.now()*0.002)*-0.02;
+
+  // Idle subtle movement
+  torso.rotation.y = Math.sin(Date.now()*0.001)*0.005;
 
   renderer.render(scene,camera);
 }
