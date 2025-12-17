@@ -50,13 +50,14 @@ body { margin:0; overflow:hidden; background:#000; touch-action:none; font-famil
 /* ================= SCENE ================= */
 const scene = new THREE.Scene();
 
+/* ================= CAMERA ================= */
 const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 50000);
 const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
 /* ================= LIGHTS ================= */
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+const ambientLight = new THREE.AmbientLight(0xffffff,0.3);
 scene.add(ambientLight);
 
 const sun = new THREE.DirectionalLight(0xffffff,1);
@@ -66,10 +67,14 @@ scene.add(sun);
 scene.add(sun.target);
 
 const moon = new THREE.DirectionalLight(0x8888ff,1.2);
-moon.position.set(0,800,0);
+moon.position.set(100,400,100);
 moon.target.position.set(0,0,0);
 scene.add(moon);
 scene.add(moon.target);
+
+const nightLight = new THREE.HemisphereLight(0x8888ff,0x000022,0.8);
+scene.add(nightLight);
+nightLight.visible = false;
 
 /* ================= CLOUDS ================= */
 function addCloud(x,y,z,scale){
@@ -100,9 +105,9 @@ const terrainSize = 3000;
 const seg = 300;
 const geo = new THREE.PlaneGeometry(terrainSize,terrainSize,seg,seg);
 const rivers=[];
-
 const simplex = new SimplexNoise();
 
+// Rivers
 for(let i=0;i<14;i++){
   const path=[];
   let x=(Math.random()-0.5)*terrainSize;
@@ -115,10 +120,11 @@ for(let i=0;i<14;i++){
   rivers.push(path);
 }
 
+// Terrain vertices + mountains
 for(let i=0;i<geo.attributes.position.count;i++){
   const x = geo.attributes.position.getX(i);
   const z = geo.attributes.position.getZ(i);
-  let y = Math.sin(x*0.02)*2 + Math.cos(z*0.02)*2; // base terrain
+  let y = Math.sin(x*0.02)*2 + Math.cos(z*0.02)*2;
   y += simplex.noise2D(x*0.001,z*0.001)*30; // mountains
   rivers.forEach(p=>p.forEach(r=>{
     const d=Math.hypot(x-r.x,z-r.z);
@@ -145,7 +151,6 @@ rivers.forEach(p=>p.forEach(r=>{
   water.position.set(r.x,0.1,r.z);
   scene.add(water);
 }));
-
 function nearRiver(x,z){
   return rivers.some(p=>p.some(r=>Math.hypot(r.x-x,r.z-z)<40));
 }
@@ -187,15 +192,11 @@ for(let i=0;i<900;i++) flower((Math.random()-0.5)*terrainSize,(Math.random()-0.5
 /* ================= PLAYER ================= */
 const player = new THREE.Object3D();
 scene.add(player);
-
 const clothMat = new THREE.MeshStandardMaterial({ color:0x3b6ea5 });
 const skinMat = new THREE.MeshStandardMaterial({ color:0xffccaa });
 const shoeMat = new THREE.MeshStandardMaterial({ color:0x000 });
 
-const torso = new THREE.Mesh(
-  new THREE.BoxGeometry(0.42,0.6,0.28),
-  clothMat
-);
+const torso = new THREE.Mesh(new THREE.BoxGeometry(0.42,0.6,0.28), clothMat);
 torso.position.set(0,1.1,0);
 player.add(torso);
 
@@ -218,7 +219,7 @@ const leftLeg = makeLeg(-0.18);
 const rightLeg = makeLeg(0.18);
 player.add(leftLeg.hip,rightLeg.hip);
 
-// Arms
+// Arms with shoulders and elbows
 function makeArm(xPos){
   const shoulder = new THREE.Object3D();
   shoulder.position.set(xPos,0.35,0);
@@ -264,10 +265,7 @@ joy.ontouchmove=e=>{
   moveX=x/max*0.12;
   moveZ=y/max*0.12;
 };
-joy.ontouchend=()=>{
-  moving=false; moveX=moveZ=0;
-  stick.style.left="35px"; stick.style.top="35px";
-};
+joy.ontouchend=()=>{ moving=false; moveX=moveZ=0; stick.style.left="35px"; stick.style.top="35px"; };
 
 // Look
 let looking=false,lastX=0,lastY=0;
@@ -301,28 +299,27 @@ stars.geometry.setAttribute('position', new THREE.Float32BufferAttribute(starPos
 scene.add(stars);
 
 /* ================= LOOP ================= */
-const DAY_DURATION = 5*60*1000; // 5 min
-const NIGHT_DURATION = 5*60*1000;
-const CYCLE_DURATION = DAY_DURATION + NIGHT_DURATION;
+const CYCLE_DURATION = 10*60*1000; // 10 min
+const DAY_DURATION = 5*60*1000;
 
 function animate(){
   requestAnimationFrame(animate);
 
   const now = Date.now() % CYCLE_DURATION;
 
-  // Day/night
+  // Day/night cycle
   if(now < DAY_DURATION){
     sun.intensity = 1;
     moon.intensity = 0;
-    ambientLight.intensity = 0.8;
+    nightLight.visible = false;
     scene.background.set(0x87ceeb);
     stars.visible = false;
   } else {
     sun.intensity = 0;
     moon.intensity = 1.2;
-    moon.position.set(0,800,0);
-    moon.target.position.set(0,0,0);
-    ambientLight.intensity = 0.4;
+    moon.position.set(100,400,100);
+    moon.lookAt(0,0,0);
+    nightLight.visible = true;
     scene.background.set(0x000022);
     stars.visible = true;
   }
