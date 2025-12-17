@@ -37,7 +37,6 @@ body { margin:0; overflow:hidden; background:#000; touch-action:none; font-famil
 <body>
 
 <div id="joystick"><div id="stick"></div></div>
-
 <div id="inventory">
   <div class="slot"></div>
   <div class="slot"></div>
@@ -66,8 +65,8 @@ sun.target.position.set(0,0,0);
 scene.add(sun);
 scene.add(sun.target);
 
-const moon = new THREE.DirectionalLight(0x8888ff,1);
-moon.position.set(-500, 800, -400);
+const moon = new THREE.DirectionalLight(0x8888ff,1.2);
+moon.position.set(0,800,0);
 moon.target.position.set(0,0,0);
 scene.add(moon);
 scene.add(moon.target);
@@ -96,16 +95,7 @@ for(let i=0;i<320;i++){
   );
 }
 
-/* ================= GRASS ================= */
-const grass = new THREE.Mesh(
-  new THREE.PlaneGeometry(20000,20000),
-  new THREE.MeshStandardMaterial({ color:0x2e8b57 })
-);
-grass.rotation.x = -Math.PI/2;
-grass.position.y = -2;
-scene.add(grass);
-
-/* ================= TERRAIN + MOUNTAINS + RIVERS ================= */
+/* ================= TERRAIN ================= */
 const terrainSize = 3000;
 const seg = 300;
 const geo = new THREE.PlaneGeometry(terrainSize,terrainSize,seg,seg);
@@ -130,12 +120,10 @@ for(let i=0;i<geo.attributes.position.count;i++){
   const z = geo.attributes.position.getZ(i);
   let y = Math.sin(x*0.02)*2 + Math.cos(z*0.02)*2; // base terrain
   y += simplex.noise2D(x*0.001,z*0.001)*30; // mountains
-
   rivers.forEach(p=>p.forEach(r=>{
     const d=Math.hypot(x-r.x,z-r.z);
     if(d<35) y-=(35-d)*0.15;
   }));
-
   geo.attributes.position.setY(i,y);
 }
 geo.computeVertexNormals();
@@ -331,8 +319,10 @@ function animate(){
     stars.visible = false;
   } else {
     sun.intensity = 0;
-    moon.intensity = 1;
-    ambientLight.intensity = 0.8;
+    moon.intensity = 1.2;
+    moon.position.set(0,800,0);
+    moon.target.position.set(0,0,0);
+    ambientLight.intensity = 0.4;
     scene.background.set(0x000022);
     stars.visible = true;
   }
