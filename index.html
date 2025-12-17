@@ -193,20 +193,37 @@ const torso = new THREE.Mesh(
 torso.position.set(0,1.1,0);
 player.add(torso);
 
-/* Legs */
-function leg(x){
-  const g = new THREE.Object3D();
-  const upper = new THREE.Mesh(new THREE.BoxGeometry(0.28,0.8,0.28), cloth);
-  upper.position.y = -0.4;
+/* Legs with hip pivot, lower leg, foot for diagonal rotation */
+function makeLeg(x){
+  const hipPivot = new THREE.Object3D();
+  hipPivot.position.set(x,0.7,0);
+
+  const upperLegPivot = new THREE.Object3D();
+  const upperLeg = new THREE.Mesh(new THREE.BoxGeometry(0.28,0.8,0.28), cloth);
+  upperLeg.position.set(0,-0.4,0);
+  upperLegPivot.add(upperLeg);
+
+  const lowerLegPivot = new THREE.Object3D();
+  lowerLegPivot.position.set(0,-0.8,0);
+  const lowerLeg = new THREE.Mesh(new THREE.BoxGeometry(0.25,0.8,0.25), cloth);
+  lowerLeg.position.set(0,-0.4,0);
+  lowerLegPivot.add(lowerLeg);
+
+  const footPivot = new THREE.Object3D();
+  footPivot.position.set(0,-0.8,0.1);
   const foot = new THREE.Mesh(new THREE.BoxGeometry(0.32,0.2,0.55), shoe);
-  foot.position.set(0,-0.6,0.1);
-  g.add(upper, foot);
-  g.position.set(x,0.7,0);
-  return g;
+  foot.position.set(0,-0.1,0.25);
+  footPivot.add(foot);
+
+  lowerLegPivot.add(footPivot);
+  upperLegPivot.add(lowerLegPivot);
+  hipPivot.add(upperLegPivot);
+  return {hipPivot, upperLegPivot, lowerLegPivot, footPivot};
 }
-const leftLeg = leg(-0.18);
-const rightLeg = leg(0.18);
-player.add(leftLeg, rightLeg);
+
+const leftLeg = makeLeg(-0.18);
+const rightLeg = makeLeg(0.18);
+player.add(leftLeg.hipPivot, rightLeg.hipPivot);
 
 /* Arms with shoulders and elbows */
 function makeArm(x){
@@ -296,22 +313,24 @@ function animate(){
   player.rotation.y = yaw;
   camPivot.rotation.x = pitch;
 
+  // Move player
+  const moveDir = Math.atan2(moveX, moveZ);
+  const speed = Math.sqrt(moveX*moveX + moveZ*moveZ);
   player.position.x += Math.sin(yaw)*moveZ + Math.cos(yaw)*moveX;
   player.position.z += Math.cos(yaw)*moveZ - Math.sin(yaw)*moveX;
 
-  // Direction of movement for leg swing
-  const moveAngle = Math.atan2(moveX, moveZ);
-
+  // Legs swing
   const swing = movingNow ? Math.sin(walk) : 0;
   const swingAmp = 0.8;
 
-  leftLeg.rotation.x = swing * swingAmp * Math.cos(moveAngle);
-  rightLeg.rotation.x = -swing * swingAmp * Math.cos(moveAngle);
+  leftLeg.hipPivot.rotation.x = swing * swingAmp;
+  rightLeg.hipPivot.rotation.x = -swing * swingAmp;
 
-  // Arm swing
-  const swingAmplitude = 0.25;
-  const elbowAmplitude = 0.15;
+  // Rotate feet toward movement angle
+  leftLeg.footPivot.rotation.y = moveDir - yaw;
+  rightLeg.footPivot.rotation.y = moveDir - yaw;
 
+  // Arms swing
   leftArm.shoulderPivot.rotation.x = swing * 0.3 + Math.sin(Date.now()*0.002)*0.02;
   leftArm.upperPivot.rotation.x = swing * 0.2;
   leftArm.lowerPivot.rotation.x = swing * 0.15;
