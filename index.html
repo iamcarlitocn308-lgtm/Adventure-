@@ -210,17 +210,18 @@ player.add(leftLeg, rightLeg);
 
 /* Hands — connected to torso */
 function makeHand(x){
-  const handPivot = new THREE.Object3D(); // Pivot point for rotation
-  handPivot.position.set(x, 0.2, 0);      // Local position relative to torso
+  const handPivot = new THREE.Object3D();
+  // Pivot near shoulder
+  handPivot.position.set(x, 0.25, 0); 
 
   const h = new THREE.Mesh(
     new THREE.BoxGeometry(0.15,0.25,0.5),
     skin
   );
-  h.position.set(0, 0.5, -0.25); // Position relative to pivot
-  h.rotation.x = 0.35;
-
+  // Hand geometry relative to pivot
+  h.position.set(0, 0, -0.25);
   handPivot.add(h);
+
   return handPivot;
 }
 
@@ -229,7 +230,7 @@ const rightHand = makeHand(0.35);
 
 // Attach hands to torso, not player
 torso.add(leftHand, rightHand);
-  
+
   /* Hand animation */
 leftHand.rotation.x = 0.35 + swing*0.25;
 rightHand.rotation.x = 0.35 - swing*0.25;
