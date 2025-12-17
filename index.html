@@ -48,7 +48,7 @@ body { margin:0; overflow:hidden; background:#000; touch-action:none; font-famil
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/simplex-noise@3.0.0/simplex-noise.min.js"></script>
 <script>
-/* ================= SCENE SETUP ================= */
+/* ================= SCENE ================= */
 const scene = new THREE.Scene();
 
 const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 50000);
@@ -57,14 +57,20 @@ renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
 /* ================= LIGHTS ================= */
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
 scene.add(ambientLight);
 
 const sun = new THREE.DirectionalLight(0xffffff,1);
+sun.position.set(500, 800, 400);
+sun.target.position.set(0,0,0);
 scene.add(sun);
+scene.add(sun.target);
 
 const moon = new THREE.DirectionalLight(0x8888ff,1);
+moon.position.set(-500, 800, -400);
+moon.target.position.set(0,0,0);
 scene.add(moon);
+scene.add(moon.target);
 
 /* ================= CLOUDS ================= */
 function addCloud(x,y,z,scale){
@@ -320,17 +326,18 @@ function animate(){
   if(now < DAY_DURATION){
     sun.intensity = 1;
     moon.intensity = 0;
-    ambientLight.intensity = 0.6;
+    ambientLight.intensity = 0.8;
     scene.background.set(0x87ceeb);
     stars.visible = false;
   } else {
     sun.intensity = 0;
     moon.intensity = 1;
-    ambientLight.intensity = 0.6;
+    ambientLight.intensity = 0.8;
     scene.background.set(0x000022);
     stars.visible = true;
   }
 
+  // Player movement
   player.rotation.y=yaw;
   camPivot.rotation.x=pitch;
 
