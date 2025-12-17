@@ -5,281 +5,387 @@
 <title>Adventure, the One and Only</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <style>
-body { margin:0; overflow:hidden; background:#000; touch-action:none; font-family:Arial; }
+/* ================= GENERAL STYLES ================= */
+body { 
+    margin: 0; 
+    overflow: hidden; 
+    background: #000; 
+    touch-action: none; 
+    font-family: Arial; 
+}
 
+/* ================= JOYSTICK STYLES ================= */
 #joystick {
-  position:fixed; bottom:30px; left:30px;
-  width:120px; height:120px;
-  background:rgba(255,255,255,0.15);
-  border-radius:50%;
-}
-#stick {
-  position:absolute; left:35px; top:35px;
-  width:50px; height:50px;
-  background:rgba(255,255,255,0.6);
-  border-radius:50%;
+    position: fixed; 
+    bottom: 30px; 
+    left: 30px; 
+    width: 120px; 
+    height: 120px; 
+    background: rgba(255,255,255,0.15); 
+    border-radius: 50%;
 }
 
+#stick {
+    position: absolute; 
+    left: 35px; 
+    top: 35px; 
+    width: 50px; 
+    height: 50px; 
+    background: rgba(255,255,255,0.6); 
+    border-radius: 50%;
+}
+
+/* ================= INVENTORY STYLES ================= */
 #inventory {
-  position:fixed; bottom:30px; right:30px;
-  display:grid;
-  grid-template-columns:repeat(4,50px);
-  gap:8px;
+    position: fixed; 
+    bottom: 30px; 
+    right: 30px; 
+    display: grid; 
+    grid-template-columns: repeat(4,50px); 
+    gap: 8px;
 }
+
 .slot {
-  width:50px; height:50px;
-  background:rgba(0,0,0,0.5);
-  border:2px solid #aaa;
-  border-radius:6px;
+    width: 50px; 
+    height: 50px; 
+    background: rgba(0,0,0,0.5); 
+    border: 2px solid #aaa; 
+    border-radius: 6px;
 }
+
 </style>
 </head>
 <body>
 
+<!-- ================= JOYSTICK ================= -->
 <div id="joystick"><div id="stick"></div></div>
 
+<!-- ================= INVENTORY ================= -->
 <div id="inventory">
-  <div class="slot"></div>
-  <div class="slot"></div>
-  <div class="slot"></div>
-  <div class="slot"></div>
+    <div class="slot"></div>
+    <div class="slot"></div>
+    <div class="slot"></div>
+    <div class="slot"></div>
 </div>
 
+<!-- ================= THREE.JS ================= -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 <script>
-/* ================= SCENE ================= */
+/* ================= SCENE SETUP ================= */
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
 
-const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 50000);
-const renderer = new THREE.WebGLRenderer({ antialias:true });
-renderer.setSize(innerWidth, innerHeight);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 50000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+/* ================= LIGHTING ================= */
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+scene.add(ambientLight);
+
 const sun = new THREE.DirectionalLight(0xffffff, 1);
 sun.position.set(500, 800, 400);
 scene.add(sun);
 
 /* ================= CLOUDS ================= */
-function addCloud(x,y,z,scale){
-  const g = new THREE.Group();
-  const count = 6 + Math.random()*10;
-  for(let i=0;i<count;i++){
-    const puff = new THREE.Mesh(
-      new THREE.SphereGeometry((10+Math.random()*20)*scale,12,12),
-      new THREE.MeshStandardMaterial({ color:0xffffff })
-    );
-    puff.position.set(i*12*scale,Math.random()*6*scale,Math.random()*6*scale);
-    g.add(puff);
-  }
-  g.position.set(x,y,z);
-  scene.add(g);
+function addCloud(x, y, z, scale) {
+    const g = new THREE.Group();
+    const count = 6 + Math.random()*10;
+    for (let i = 0; i < count; i++) {
+        const puff = new THREE.Mesh(
+            new THREE.SphereGeometry((10 + Math.random()*20)*scale, 12, 12),
+            new THREE.MeshStandardMaterial({ color: 0xffffff })
+        );
+        puff.position.set(i*12*scale, Math.random()*6*scale, Math.random()*6*scale);
+        g.add(puff);
+    }
+    g.position.set(x, y, z);
+    scene.add(g);
 }
-for(let i=0;i<320;i++){
-  addCloud(
-    (Math.random()-0.5)*12000,
-    200 + Math.random()*400,
-    (Math.random()-0.5)*12000,
-    Math.random()<0.2?3:Math.random()<0.5?2:1
-  );
+
+for (let i = 0; i < 320; i++) {
+    addCloud(
+        (Math.random() - 0.5) * 12000,
+        200 + Math.random() * 400,
+        (Math.random() - 0.5) * 12000,
+        Math.random() < 0.2 ? 3 : Math.random() < 0.5 ? 2 : 1
+    );
 }
 
 /* ================= GRASS ================= */
 const grass = new THREE.Mesh(
-  new THREE.PlaneGeometry(20000,20000),
-  new THREE.MeshStandardMaterial({ color:0x2e8b57 })
+    new THREE.PlaneGeometry(20000, 20000),
+    new THREE.MeshStandardMaterial({ color: 0x2e8b57 })
 );
 grass.rotation.x = -Math.PI/2;
 grass.position.y = -2;
 scene.add(grass);
 
-/* ================= TERRAIN + RIVERS ================= */
+/* ================= TERRAIN & RIVERS ================= */
 const terrainSize = 3000;
-const seg = 300;
-const geo = new THREE.PlaneGeometry(terrainSize, terrainSize, seg, seg);
+const segments = 300;
+const geo = new THREE.PlaneGeometry(terrainSize, terrainSize, segments, segments);
 const rivers = [];
 
-for(let i=0;i<14;i++){
-  const path=[];
-  let x=(Math.random()-0.5)*terrainSize;
-  let z=-terrainSize/2;
-  for(let j=0;j<50;j++){
-    path.push({x,z});
-    x+=(Math.random()-0.5)*120;
-    z+=terrainSize/50;
-  }
-  rivers.push(path);
+// Generate river paths
+for (let i = 0; i < 14; i++) {
+    const path = [];
+    let x = (Math.random() - 0.5) * terrainSize;
+    let z = -terrainSize / 2;
+    for (let j = 0; j < 50; j++) {
+        path.push({x, z});
+        x += (Math.random() - 0.5) * 120;
+        z += terrainSize / 50;
+    }
+    rivers.push(path);
 }
 
-for(let i=0;i<geo.attributes.position.count;i++){
-  const x=geo.attributes.position.getX(i);
-  const z=geo.attributes.position.getZ(i);
-  let y=Math.sin(x*0.02)*2 + Math.cos(z*0.02)*2;
-  rivers.forEach(p=>p.forEach(r=>{
-    const d=Math.hypot(x-r.x,z-r.z);
-    if(d<35) y-=(35-d)*0.15;
-  }));
-  geo.attributes.position.setY(i,y);
+// Apply terrain height & river dips
+for (let i = 0; i < geo.attributes.position.count; i++) {
+    const x = geo.attributes.position.getX(i);
+    const z = geo.attributes.position.getZ(i);
+    let y = Math.sin(x * 0.02) * 2 + Math.cos(z * 0.02) * 2;
+
+    rivers.forEach(path => path.forEach(r => {
+        const d = Math.hypot(x - r.x, z - r.z);
+        if (d < 35) y -= (35 - d) * 0.15;
+    }));
+
+    geo.attributes.position.setY(i, y);
 }
 geo.computeVertexNormals();
 
-const terrain = new THREE.Mesh(
-  geo,
-  new THREE.MeshStandardMaterial({ color:0x3a8f3a })
-);
+const terrain = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0x3a8f3a }));
 terrain.rotation.x = -Math.PI/2;
 scene.add(terrain);
 
-rivers.forEach(p=>p.forEach(r=>{
-  const water = new THREE.Mesh(
-    new THREE.CircleGeometry(16,16),
-    new THREE.MeshStandardMaterial({color:0x00bfff, transparent:true, opacity:0.85})
-  );
-  water.rotation.x = -Math.PI/2;
-  water.position.set(r.x,0.1,r.z);
-  scene.add(water);
+// Render river water
+rivers.forEach(path => path.forEach(r => {
+    const water = new THREE.Mesh(
+        new THREE.CircleGeometry(16, 16),
+        new THREE.MeshStandardMaterial({ color: 0x00bfff, transparent: true, opacity: 0.85 })
+    );
+    water.rotation.x = -Math.PI/2;
+    water.position.set(r.x, 0.1, r.z);
+    scene.add(water);
 }));
 
-function nearRiver(x,z){
-  return rivers.some(p=>p.some(r=>Math.hypot(r.x-x,r.z-r.z)<40));
+function nearRiver(x, z) {
+    return rivers.some(path => path.some(r => Math.hypot(x - r.x, z - r.z) < 40));
 }
 
-/* ================= DECOR ================= */
-function tree(x,z){
-  if(nearRiver(x,z)) return;
-  const trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.4,2),new THREE.MeshStandardMaterial({color:0x8b5a2b}));
-  trunk.position.set(x,1,z);
-  const leaves=new THREE.Mesh(new THREE.SphereGeometry(1.6,8,8),new THREE.MeshStandardMaterial({color:0x2e8b57}));
-  leaves.position.set(x,3,z);
-  scene.add(trunk,leaves);
+/* ================= TREES & FLOWERS ================= */
+function tree(x, z) {
+    if (nearRiver(x, z)) return;
+    const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.3, 0.4, 2),
+        new THREE.MeshStandardMaterial({ color: 0x8b5a2b })
+    );
+    trunk.position.set(x, 1, z);
+
+    const leaves = new THREE.Mesh(
+        new THREE.SphereGeometry(1.6, 8, 8),
+        new THREE.MeshStandardMaterial({ color: 0x2e8b57 })
+    );
+    leaves.position.set(x, 3, z);
+
+    scene.add(trunk, leaves);
 }
-function flower(x,z){
-  if(nearRiver(x,z)) return;
-  const stem=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.3),new THREE.MeshStandardMaterial({color:0x228B22}));
-  stem.position.set(x,0.15,z);
-  const bloom=new THREE.Mesh(new THREE.SphereGeometry(0.15,8,8),new THREE.MeshStandardMaterial({color:0xff69b4}));
-  bloom.position.set(x,0.4,z);
-  scene.add(stem,bloom);
+
+function flower(x, z) {
+    if (nearRiver(x, z)) return;
+    const stemHeight = 0.3 + Math.random() * 0.2;
+    const stem = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.05, 0.05, stemHeight),
+        new THREE.MeshStandardMaterial({ color: 0x228B22 })
+    );
+    stem.position.set(x, stemHeight / 2, z);
+
+    const bloomSize = 0.15 + Math.random() * 0.1;
+    const bloom = new THREE.Mesh(
+        new THREE.SphereGeometry(bloomSize, 8, 8),
+        new THREE.MeshStandardMaterial({ color: 0xff69b4 })
+    );
+    bloom.position.set(x, stemHeight + bloomSize / 2, z);
+
+    scene.add(stem, bloom);
 }
-for(let i=0;i<400;i++) tree((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
-for(let i=0;i<900;i++) flower((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
+
+// Place trees and flowers
+for (let i = 0; i < 400; i++) tree((Math.random()-0.5)*terrainSize, (Math.random()-0.5)*terrainSize);
+for (let i = 0; i < 900; i++) flower((Math.random()-0.5)*terrainSize, (Math.random()-0.5)*terrainSize);
 
 /* ================= PLAYER ================= */
 const player = new THREE.Object3D();
 scene.add(player);
 
-const cloth = new THREE.MeshStandardMaterial({ color:0x3b6ea5 });
-const skin  = new THREE.MeshStandardMaterial({ color:0xffccaa });
-const shoe  = new THREE.MeshStandardMaterial({ color:0x000 });
+const clothMat = new THREE.MeshStandardMaterial({ color: 0x3b6ea5 });
+const skinMat = new THREE.MeshStandardMaterial({ color: 0xffccaa });
+const shoeMat = new THREE.MeshStandardMaterial({ color: 0x000 });
 
-const torso = new THREE.Mesh(new THREE.BoxGeometry(0.42,0.6,0.28), cloth);
-torso.position.set(0,1.1,0);
+// ---------------- TORSO ----------------
+const torso = new THREE.Mesh(
+    new THREE.BoxGeometry(0.42, 0.6, 0.28),
+    clothMat
+);
+torso.position.set(0, 1.1, 0);
 player.add(torso);
 
-/* Legs */
-function makeLeg(x){
-  const hip = new THREE.Object3D(); hip.position.set(x,0.7,0);
-  const upper = new THREE.Mesh(new THREE.BoxGeometry(0.28,0.8,0.28), cloth); upper.position.set(0,-0.4,0);
-  const lower = new THREE.Mesh(new THREE.BoxGeometry(0.25,0.8,0.25), cloth); lower.position.set(0,-1.2,0);
-  const foot = new THREE.Mesh(new THREE.BoxGeometry(0.32,0.2,0.55), shoe); foot.position.set(0,-1.6,0.15);
-  upper.add(lower); lower.add(foot); hip.add(upper);
-  return {hip, upper, lower, foot};
+// ---------------- LEGS ----------------
+function makeLeg(xPos) {
+    const hip = new THREE.Object3D();
+    hip.position.set(xPos, 0.7, 0);
+
+    const upper = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.8, 0.28), clothMat);
+    upper.position.set(0, -0.4, 0);
+
+    const lower = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.8, 0.25), clothMat);
+    lower.position.set(0, -1.2, 0);
+
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.2, 0.55), shoeMat);
+    foot.position.set(0, -1.6, 0.15);
+
+    upper.add(lower);
+    lower.add(foot);
+    hip.add(upper);
+
+    return { hip, upper, lower, foot };
 }
+
 const leftLeg = makeLeg(-0.18);
 const rightLeg = makeLeg(0.18);
-player.add(leftLeg.hip,rightLeg.hip);
+player.add(leftLeg.hip, rightLeg.hip);
 
-/* Arms with shoulders */
-function makeArm(x){
-  const shoulder = new THREE.Object3D(); shoulder.position.set(x,0.35,0);
-  const upper = new THREE.Mesh(new THREE.BoxGeometry(0.15,0.25,0.4), skin); upper.position.set(0,0,-0.2);
-  const lower = new THREE.Mesh(new THREE.BoxGeometry(0.15,0.25,0.4), skin); lower.position.set(0,0,-0.2);
-  upper.add(lower); shoulder.add(upper);
-  return {shoulder, upper, lower};
+// ---------------- ARMS WITH SHOULDERS & ELBOWS ----------------
+function makeArm(xPos) {
+    const shoulder = new THREE.Object3D();
+    shoulder.position.set(xPos, 0.35, 0);
+
+    const upper = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.25, 0.4), skinMat);
+    upper.position.set(0, 0, -0.2);
+
+    const elbow = new THREE.Object3D();
+    elbow.position.set(0, 0, -0.2);
+
+    const lower = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.25, 0.4), skinMat);
+    lower.position.set(0, 0, -0.2);
+
+    upper.add(elbow);
+    elbow.add(lower);
+    shoulder.add(upper);
+
+    return { shoulder, upper, elbow, lower };
 }
+
 const leftArm = makeArm(-0.35);
 const rightArm = makeArm(0.35);
-torso.add(leftArm.shoulder,rightArm.shoulder);
+torso.add(leftArm.shoulder, rightArm.shoulder);
 
-/* Camera */
-const camPivot = new THREE.Object3D(); camPivot.position.y = 1.8; player.add(camPivot); camPivot.add(camera);
+// ---------------- CAMERA ----------------
+const camPivot = new THREE.Object3D();
+camPivot.position.y = 1.8;
+player.add(camPivot);
+camPivot.add(camera);
 
 /* ================= CONTROLS ================= */
-let moveX=0, moveZ=0, yaw=0, pitch=0, walk=0;
+let moveX = 0, moveZ = 0, yaw = 0, pitch = 0, walk = 0;
 
-const joy=document.getElementById("joystick");
-const stick=document.getElementById("stick");
-const center={x:60,y:60}, max=40;
+const joy = document.getElementById("joystick");
+const stick = document.getElementById("stick");
+const center = { x: 60, y: 60 };
+const max = 40;
 
-joy.ontouchstart=()=>{};
-joy.ontouchmove=e=>{
-  const r=joy.getBoundingClientRect();
-  const t=e.touches[0];
-  let x=t.clientX-r.left-center.x; let y=t.clientY-r.top-center.y;
-  const d=Math.min(Math.hypot(x,y),max);
-  const a=Math.atan2(y,x);
-  x=Math.cos(a)*d; y=Math.sin(a)*d;
-  stick.style.left=(center.x+x-25)+"px";
-  stick.style.top=(center.y+y-25)+"px";
-  moveX=x/max*0.12; moveZ=y/max*0.12;
+joy.ontouchstart = () => {};
+joy.ontouchmove = e => {
+    const r = joy.getBoundingClientRect();
+    const t = e.touches[0];
+    let x = t.clientX - r.left - center.x;
+    let y = t.clientY - r.top - center.y;
+    const d = Math.min(Math.hypot(x, y), max);
+    const a = Math.atan2(y, x);
+    x = Math.cos(a)*d; y = Math.sin(a)*d;
+    stick.style.left = (center.x + x - 25) + "px";
+    stick.style.top = (center.y + y - 25) + "px";
+    moveX = x/max * 0.12;
+    moveZ = y/max * 0.12;
 };
-joy.ontouchend=()=>{ moveX=moveZ=0; stick.style.left="35px"; stick.style.top="35px"; };
+joy.ontouchend = () => { moveX = moveZ = 0; stick.style.left = "35px"; stick.style.top = "35px"; };
 
-let looking=false,lastX=0,lastY=0;
-addEventListener("touchstart",e=>{
-  if(e.target.closest("#joystick")) return;
-  looking=true; lastX=e.touches[0].clientX; lastY=e.touches[0].clientY;
+let looking = false;
+let lastX = 0, lastY = 0;
+
+addEventListener("touchstart", e => {
+    if (e.target.closest("#joystick")) return;
+    looking = true;
+    lastX = e.touches[0].clientX;
+    lastY = e.touches[0].clientY;
 });
-addEventListener("touchmove",e=>{
-  if(!looking) return;
-  const t=e.touches[0];
-  yaw -= (t.clientX-lastX)*0.003; pitch -= (t.clientY-lastY)*0.003;
-  pitch=Math.max(-1.3,Math.min(1.3,pitch));
-  lastX=t.clientX; lastY=t.clientY;
+
+addEventListener("touchmove", e => {
+    if (!looking) return;
+    const t = e.touches[0];
+    yaw -= (t.clientX - lastX) * 0.003;
+    pitch -= (t.clientY - lastY) * 0.003;
+    pitch = Math.max(-1.3, Math.min(1.3, pitch));
+    lastX = t.clientX;
+    lastY = t.clientY;
 });
-addEventListener("touchend",()=>looking=false);
 
-/* ================= ANIMATION ================= */
-function animate(){
-  requestAnimationFrame(animate);
-  const movingNow = Math.abs(moveX)+Math.abs(moveZ) > 0.01;
-  if(movingNow) walk+=0.12;
-  player.rotation.y=yaw;
-  camPivot.rotation.x=pitch;
+addEventListener("touchend", () => { looking = false; });
 
-  const forwardX = Math.sin(yaw)*moveZ + Math.cos(yaw)*moveX;
-  const forwardZ = Math.cos(yaw)*moveZ - Math.sin(yaw)*moveX;
-  player.position.x+=forwardX; player.position.z+=forwardZ;
+/* ================= ANIMATION LOOP ================= */
+function animate() {
+    requestAnimationFrame(animate);
 
-  const moveAngle = Math.atan2(forwardX, forwardZ);
-  const swing = movingNow ? Math.sin(walk) : 0;
-  const swingAmp = 0.6;
+    const movingNow = Math.abs(moveX) + Math.abs(moveZ) > 0.01;
+    if (movingNow) walk += 0.12;
 
-  // Legs
-  leftLeg.hip.rotation.x = swing*swingAmp;
-  rightLeg.hip.rotation.x = -swing*swingAmp;
-  leftLeg.foot.rotation.y = moveAngle-yaw;
-  rightLeg.foot.rotation.y = moveAngle-yaw;
+    player.rotation.y = yaw;
+    camPivot.rotation.x = pitch;
 
-  // Arms swing opposite legs
-  const armSwing = swing*swingAmp*0.7;
-  const sideSwing = swing*swingAmp*0.3;
-  leftArm.shoulder.rotation.x = -armSwing;
-  leftArm.shoulder.rotation.z = sideSwing;
-  rightArm.shoulder.rotation.x = armSwing;
-  rightArm.shoulder.rotation.z = -sideSwing;
+    // Player moves in looking direction
+    const forwardX = Math.sin(yaw) * moveZ + Math.cos(yaw) * moveX;
+    const forwardZ = Math.cos(yaw) * moveZ - Math.sin(yaw) * moveX;
+    player.position.x += forwardX;
+    player.position.z += forwardZ;
 
-  torso.rotation.y = Math.sin(Date.now()*0.001)*0.005;
+    // Diagonal leg movement
+    const moveAngle = Math.atan2(forwardX, forwardZ);
+    const swing = movingNow ? Math.sin(walk) : 0;
+    const swingAmp = 0.6;
 
-  renderer.render(scene,camera);
+    leftLeg.hip.rotation.x = swing*swingAmp;
+    rightLeg.hip.rotation.x = -swing*swingAmp;
+    leftLeg.foot.rotation.y = moveAngle - yaw;
+    rightLeg.foot.rotation.y = moveAngle - yaw;
+
+    // Arms swing opposite legs + elbow bend
+    const armSwing = swing*swingAmp*0.7;
+    const sideSwing = swing*swingAmp*0.3;
+
+    leftArm.shoulder.rotation.x = -armSwing;
+    leftArm.shoulder.rotation.z = sideSwing;
+    leftArm.elbow.rotation.x = Math.max(0, armSwing*0.6);
+
+    rightArm.shoulder.rotation.x = armSwing;
+    rightArm.shoulder.rotation.z = -sideSwing;
+    rightArm.elbow.rotation.x = Math.max(0, armSwing*0.6);
+
+    // Idle torso subtle sway
+    torso.rotation.y = Math.sin(Date.now()*0.001)*0.005;
+
+    renderer.render(scene, camera);
 }
+
 animate();
 
-addEventListener("resize",()=>{
-  camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth,innerHeight);
+window.addEventListener("resize", () => {
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
 </script>
 </body>
 </html>
