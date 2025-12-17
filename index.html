@@ -76,7 +76,7 @@ const torso = new THREE.Mesh(
   new THREE.BoxGeometry(0.45, 0.6, 0.3),
   cloth
 );
-torso.position.y = 1.1;
+torso.position.y = 0.95; // lower torso = more centered
 player.add(torso);
 
 /* Legs */
@@ -95,10 +95,12 @@ const leftLeg = makeLeg(-0.18);
 const rightLeg = makeLeg(0.18);
 player.add(leftLeg, rightLeg);
 
-/* Arms with shoulders + elbows */
+/* OPTIONAL – Arms with shoulders + elbows (better attachment) */
 function makeArm(x){
   const shoulder = new THREE.Object3D();
-  shoulder.position.set(x, 0.3, -0.1);
+
+  // Slightly forward + centered shoulder
+  shoulder.position.set(x, 0.3, 0.05);
 
   const upper = new THREE.Mesh(
     new THREE.BoxGeometry(0.15, 0.35, 0.15),
@@ -107,7 +109,7 @@ function makeArm(x){
   upper.position.y = -0.2;
 
   const elbow = new THREE.Object3D();
-  elbow.position.y = -0.35;
+  elbow.position.y = -0.32;
 
   const lower = new THREE.Mesh(
     new THREE.BoxGeometry(0.14, 0.3, 0.14),
@@ -126,11 +128,11 @@ const leftArm = makeArm(-0.35);
 const rightArm = makeArm(0.35);
 torso.add(leftArm.shoulder, rightArm.shoulder);
 
-/* Default arm pose */
-leftArm.shoulder.rotation.x = 0.4;
-rightArm.shoulder.rotation.x = 0.4;
-leftArm.elbow.rotation.x = 0.3;
-rightArm.elbow.rotation.x = 0.3;
+/* Default arm pose (slightly raised) */
+leftArm.shoulder.rotation.x = 0.65;
+rightArm.shoulder.rotation.x = 0.65;
+leftArm.elbow.rotation.x = 0.45;
+rightArm.elbow.rotation.x = 0.45;
 
 /* ================= CLOUDS ================= */
 function addCloud(x,y,z,scale){
