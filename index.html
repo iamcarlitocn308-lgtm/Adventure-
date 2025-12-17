@@ -56,7 +56,6 @@ const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
-/* ================= LIGHT ================= */
 scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 const sun = new THREE.DirectionalLight(0xffffff, 1);
 sun.position.set(500, 800, 400);
@@ -117,12 +116,10 @@ for(let i=0;i<geo.attributes.position.count;i++){
   const x=geo.attributes.position.getX(i);
   const z=geo.attributes.position.getZ(i);
   let y=Math.sin(x*0.02)*2 + Math.cos(z*0.02)*2;
-
   rivers.forEach(p=>p.forEach(r=>{
     const d=Math.hypot(x-r.x,z-r.z);
     if(d<35) y-=(35-d)*0.15;
   }));
-
   geo.attributes.position.setY(i,y);
 }
 geo.computeVertexNormals();
@@ -137,9 +134,7 @@ scene.add(terrain);
 rivers.forEach(p=>p.forEach(r=>{
   const water = new THREE.Mesh(
     new THREE.CircleGeometry(16,16),
-    new THREE.MeshStandardMaterial({
-      color:0x00bfff, transparent:true, opacity:0.85
-    })
+    new THREE.MeshStandardMaterial({color:0x00bfff, transparent:true, opacity:0.85})
   );
   water.rotation.x = -Math.PI/2;
   water.position.set(r.x,0.1,r.z);
@@ -147,44 +142,30 @@ rivers.forEach(p=>p.forEach(r=>{
 }));
 
 function nearRiver(x,z){
-  return rivers.some(p=>p.some(r=>Math.hypot(r.x-x,r.z-z)<40));
+  return rivers.some(p=>p.some(r=>Math.hypot(r.x-x,r.z-r.z)<40));
 }
 
 /* ================= DECOR ================= */
 function tree(x,z){
   if(nearRiver(x,z)) return;
-  const t=new THREE.Mesh(
-    new THREE.CylinderGeometry(0.3,0.4,2),
-    new THREE.MeshStandardMaterial({color:0x8b5a2b})
-  );
-  t.position.set(x,1,z);
-  const l=new THREE.Mesh(
-    new THREE.SphereGeometry(1.6,8,8),
-    new THREE.MeshStandardMaterial({color:0x2e8b57})
-  );
-  l.position.set(x,3,z);
-  scene.add(t,l);
+  const trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.4,2),new THREE.MeshStandardMaterial({color:0x8b5a2b}));
+  trunk.position.set(x,1,z);
+  const leaves=new THREE.Mesh(new THREE.SphereGeometry(1.6,8,8),new THREE.MeshStandardMaterial({color:0x2e8b57}));
+  leaves.position.set(x,3,z);
+  scene.add(trunk,leaves);
 }
 function flower(x,z){
   if(nearRiver(x,z)) return;
-  // stem
-  const stem = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.05,0.05,0.3),
-    new THREE.MeshStandardMaterial({color:0x228B22})
-  );
+  const stem=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.3),new THREE.MeshStandardMaterial({color:0x228B22}));
   stem.position.set(x,0.15,z);
-  // flower
-  const bloom = new THREE.Mesh(
-    new THREE.SphereGeometry(0.15,8,8),
-    new THREE.MeshStandardMaterial({color:0xff69b4})
-  );
+  const bloom=new THREE.Mesh(new THREE.SphereGeometry(0.15,8,8),new THREE.MeshStandardMaterial({color:0xff69b4}));
   bloom.position.set(x,0.4,z);
   scene.add(stem,bloom);
 }
 for(let i=0;i<400;i++) tree((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
 for(let i=0;i<900;i++) flower((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
 
-/* ================= PLAYER BODY ================= */
+/* ================= PLAYER ================= */
 const player = new THREE.Object3D();
 scene.add(player);
 
@@ -192,77 +173,37 @@ const cloth = new THREE.MeshStandardMaterial({ color:0x3b6ea5 });
 const skin  = new THREE.MeshStandardMaterial({ color:0xffccaa });
 const shoe  = new THREE.MeshStandardMaterial({ color:0x000 });
 
-/* Torso */
-const torso = new THREE.Mesh(
-  new THREE.BoxGeometry(0.42,0.6,0.28),
-  cloth
-);
+const torso = new THREE.Mesh(new THREE.BoxGeometry(0.42,0.6,0.28), cloth);
 torso.position.set(0,1.1,0);
 player.add(torso);
 
 /* Legs */
 function makeLeg(x){
-  const hipPivot = new THREE.Object3D();
-  hipPivot.position.set(x,0.7,0);
-
-  const upperLegPivot = new THREE.Object3D();
-  const upperLeg = new THREE.Mesh(new THREE.BoxGeometry(0.28,0.8,0.28), cloth);
-  upperLeg.position.set(0,-0.4,0);
-  upperLegPivot.add(upperLeg);
-
-  const lowerLegPivot = new THREE.Object3D();
-  lowerLegPivot.position.set(0,-0.8,0);
-  const lowerLeg = new THREE.Mesh(new THREE.BoxGeometry(0.25,0.8,0.25), cloth);
-  lowerLeg.position.set(0,-0.4,0);
-  lowerLegPivot.add(lowerLeg);
-
-  const footPivot = new THREE.Object3D();
-  footPivot.position.set(0,-0.8,0.1);
-  const foot = new THREE.Mesh(new THREE.BoxGeometry(0.32,0.2,0.55), shoe);
-  foot.position.set(0,-0.1,0.25);
-  footPivot.add(foot);
-
-  lowerLegPivot.add(footPivot);
-  upperLegPivot.add(lowerLegPivot);
-  hipPivot.add(upperLegPivot);
-  return {hipPivot, upperLegPivot, lowerLegPivot, footPivot};
+  const hip = new THREE.Object3D(); hip.position.set(x,0.7,0);
+  const upper = new THREE.Mesh(new THREE.BoxGeometry(0.28,0.8,0.28), cloth); upper.position.set(0,-0.4,0);
+  const lower = new THREE.Mesh(new THREE.BoxGeometry(0.25,0.8,0.25), cloth); lower.position.set(0,-1.2,0);
+  const foot = new THREE.Mesh(new THREE.BoxGeometry(0.32,0.2,0.55), shoe); foot.position.set(0,-1.6,0.15);
+  upper.add(lower); lower.add(foot); hip.add(upper);
+  return {hip, upper, lower, foot};
 }
-
 const leftLeg = makeLeg(-0.18);
 const rightLeg = makeLeg(0.18);
-player.add(leftLeg.hipPivot, rightLeg.hipPivot);
+player.add(leftLeg.hip,rightLeg.hip);
 
-/* Arms */
+/* Arms with shoulders */
 function makeArm(x){
-  const shoulderPivot = new THREE.Object3D();
-  shoulderPivot.position.set(x,0.35,0);
-
-  const upperPivot = new THREE.Object3D();
-  const upperArm = new THREE.Mesh(new THREE.BoxGeometry(0.15,0.25,0.4), skin);
-  upperArm.position.set(0,0,-0.2);
-  upperPivot.add(upperArm);
-
-  const lowerPivot = new THREE.Object3D();
-  lowerPivot.position.set(0,0,-0.4);
-  const lowerArm = new THREE.Mesh(new THREE.BoxGeometry(0.15,0.25,0.4), skin);
-  lowerArm.position.set(0,0,-0.2);
-  lowerPivot.add(lowerArm);
-
-  upperPivot.add(lowerPivot);
-  shoulderPivot.add(upperPivot);
-
-  return {shoulderPivot, upperPivot, lowerPivot};
+  const shoulder = new THREE.Object3D(); shoulder.position.set(x,0.35,0);
+  const upper = new THREE.Mesh(new THREE.BoxGeometry(0.15,0.25,0.4), skin); upper.position.set(0,0,-0.2);
+  const lower = new THREE.Mesh(new THREE.BoxGeometry(0.15,0.25,0.4), skin); lower.position.set(0,0,-0.2);
+  upper.add(lower); shoulder.add(upper);
+  return {shoulder, upper, lower};
 }
-
 const leftArm = makeArm(-0.35);
 const rightArm = makeArm(0.35);
-torso.add(leftArm.shoulderPivot, rightArm.shoulderPivot);
+torso.add(leftArm.shoulder,rightArm.shoulder);
 
 /* Camera */
-const camPivot = new THREE.Object3D();
-camPivot.position.y = 1.8;
-player.add(camPivot);
-camPivot.add(camera);
+const camPivot = new THREE.Object3D(); camPivot.position.y = 1.8; player.add(camPivot); camPivot.add(camera);
 
 /* ================= CONTROLS ================= */
 let moveX=0, moveZ=0, yaw=0, pitch=0, walk=0;
@@ -270,86 +211,65 @@ let moveX=0, moveZ=0, yaw=0, pitch=0, walk=0;
 const joy=document.getElementById("joystick");
 const stick=document.getElementById("stick");
 const center={x:60,y:60}, max=40;
-let moving=false;
 
-joy.ontouchstart=()=>moving=true;
+joy.ontouchstart=()=>{};
 joy.ontouchmove=e=>{
   const r=joy.getBoundingClientRect();
   const t=e.touches[0];
-  let x=t.clientX-r.left-center.x;
-  let y=t.clientY-r.top-center.y;
+  let x=t.clientX-r.left-center.x; let y=t.clientY-r.top-center.y;
   const d=Math.min(Math.hypot(x,y),max);
   const a=Math.atan2(y,x);
   x=Math.cos(a)*d; y=Math.sin(a)*d;
   stick.style.left=(center.x+x-25)+"px";
   stick.style.top=(center.y+y-25)+"px";
-  moveX=x/max*0.12;
-  moveZ=y/max*0.12;
+  moveX=x/max*0.12; moveZ=y/max*0.12;
 };
-joy.ontouchend=()=>{
-  moving=false;
-  moveX=moveZ=0;
-  stick.style.left="35px";
-  stick.style.top="35px";
-};
+joy.ontouchend=()=>{ moveX=moveZ=0; stick.style.left="35px"; stick.style.top="35px"; };
 
 let looking=false,lastX=0,lastY=0;
 addEventListener("touchstart",e=>{
   if(e.target.closest("#joystick")) return;
-  looking=true;
-  lastX=e.touches[0].clientX;
-  lastY=e.touches[0].clientY;
+  looking=true; lastX=e.touches[0].clientX; lastY=e.touches[0].clientY;
 });
 addEventListener("touchmove",e=>{
   if(!looking) return;
   const t=e.touches[0];
-  yaw -= (t.clientX-lastX)*0.003;
-  pitch -= (t.clientY-lastY)*0.003;
+  yaw -= (t.clientX-lastX)*0.003; pitch -= (t.clientY-lastY)*0.003;
   pitch=Math.max(-1.3,Math.min(1.3,pitch));
   lastX=t.clientX; lastY=t.clientY;
 });
 addEventListener("touchend",()=>looking=false);
 
-/* ================= LOOP ================= */
+/* ================= ANIMATION ================= */
 function animate(){
   requestAnimationFrame(animate);
-
   const movingNow = Math.abs(moveX)+Math.abs(moveZ) > 0.01;
-  if(movingNow) walk += 0.12;
+  if(movingNow) walk+=0.12;
+  player.rotation.y=yaw;
+  camPivot.rotation.x=pitch;
 
-  player.rotation.y = yaw;
-  camPivot.rotation.x = pitch;
+  const forwardX = Math.sin(yaw)*moveZ + Math.cos(yaw)*moveX;
+  const forwardZ = Math.cos(yaw)*moveZ - Math.sin(yaw)*moveX;
+  player.position.x+=forwardX; player.position.z+=forwardZ;
 
-  // Movement vector in world space
-  const moveDir = Math.atan2(moveX, moveZ);
-  const speed = Math.sqrt(moveX*moveX + moveZ*moveZ);
-  player.position.x += Math.sin(yaw)*moveZ + Math.cos(yaw)*moveX;
-  player.position.z += Math.cos(yaw)*moveZ - Math.sin(yaw)*moveX;
-
-  // Legs swing
+  const moveAngle = Math.atan2(forwardX, forwardZ);
   const swing = movingNow ? Math.sin(walk) : 0;
   const swingAmp = 0.6;
 
-  leftLeg.hipPivot.rotation.x = swing * swingAmp;
-  rightLeg.hipPivot.rotation.x = -swing * swingAmp;
-  leftLeg.footPivot.rotation.y = moveDir - yaw;
-  rightLeg.footPivot.rotation.y = moveDir - yaw;
+  // Legs
+  leftLeg.hip.rotation.x = swing*swingAmp;
+  rightLeg.hip.rotation.x = -swing*swingAmp;
+  leftLeg.foot.rotation.y = moveAngle-yaw;
+  rightLeg.foot.rotation.y = moveAngle-yaw;
 
-  // Arms swing along movement
-  const armSwing = swing * swingAmp * 0.7;
-  const sideSwing = swing * swingAmp * 0.3;
+  // Arms swing opposite legs
+  const armSwing = swing*swingAmp*0.7;
+  const sideSwing = swing*swingAmp*0.3;
+  leftArm.shoulder.rotation.x = -armSwing;
+  leftArm.shoulder.rotation.z = sideSwing;
+  rightArm.shoulder.rotation.x = armSwing;
+  rightArm.shoulder.rotation.z = -sideSwing;
 
-  leftArm.shoulderPivot.rotation.x = -armSwing;
-  leftArm.shoulderPivot.rotation.z = sideSwing;
-  leftArm.upperPivot.rotation.x = -armSwing*0.5;
-  leftArm.lowerPivot.rotation.x = -armSwing*0.3;
-
-  rightArm.shoulderPivot.rotation.x = armSwing;
-  rightArm.shoulderPivot.rotation.z = -sideSwing;
-  rightArm.upperPivot.rotation.x = armSwing*0.5;
-  rightArm.lowerPivot.rotation.x = armSwing*0.3;
-
-  // Idle sway
   torso.rotation.y = Math.sin(Date.now()*0.001)*0.005;
 
   renderer.render(scene,camera);
@@ -357,8 +277,7 @@ function animate(){
 animate();
 
 addEventListener("resize",()=>{
-  camera.aspect = innerWidth/innerHeight;
-  camera.updateProjectionMatrix();
+  camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight);
 });
 </script>
