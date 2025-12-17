@@ -37,7 +37,6 @@ body {
 </head>
 
 <body>
-
 <div id="joystick"><div id="stick"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
@@ -47,15 +46,15 @@ body {
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
 
-const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 50000);
+const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 20000);
 const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
-/* ================= LIGHT ================= */
-scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+/* ================= LIGHTING (STABLE) ================= */
+scene.add(new THREE.AmbientLight(0xffffff, 0.8));
 const sun = new THREE.DirectionalLight(0xffffff, 1);
-sun.position.set(500,800,400);
+sun.position.set(500,1000,500);
 scene.add(sun);
 
 /* ================= CLOUDS ================= */
@@ -73,7 +72,8 @@ function addCloud(x,y,z,scale){
   g.position.set(x,y,z);
   scene.add(g);
 }
-for(let i=0;i<200;i++){
+
+for(let i=0;i<250;i++){
   addCloud(
     (Math.random()-0.5)*12000,
     300 + Math.random()*400,
@@ -82,21 +82,44 @@ for(let i=0;i<200;i++){
   );
 }
 
-/* ================= TERRAIN ================= */
+/* ================= TERRAIN + RIVERS ================= */
 const terrainSize = 3000;
 const seg = 300;
 const geo = new THREE.PlaneGeometry(terrainSize, terrainSize, seg, seg);
+const rivers = [];
 
+/* River paths */
+for(let i=0;i<12;i++){
+  const path=[];
+  let x=(Math.random()-0.5)*terrainSize;
+  let z=-terrainSize/2;
+  for(let j=0;j<60;j++){
+    path.push({x,z});
+    x+=(Math.random()-0.5)*120;
+    z+=terrainSize/60;
+  }
+  rivers.push(path);
+}
+
+/* Height + carving */
 for(let i=0;i<geo.attributes.position.count;i++){
-  const x = geo.attributes.position.getX(i);
-  const z = geo.attributes.position.getZ(i);
-  geo.attributes.position.setY(
-    i,
-    Math.sin(x*0.02)*4 + Math.cos(z*0.02)*4
-  );
+  const x=geo.attributes.position.getX(i);
+  const z=geo.attributes.position.getZ(i);
+
+  let y = Math.sin(x*0.02)*4 + Math.cos(z*0.02)*4;
+
+  rivers.forEach(p=>{
+    p.forEach(r=>{
+      const d=Math.hypot(x-r.x,z-r.z);
+      if(d<35) y-=(35-d)*0.18;
+    });
+  });
+
+  geo.attributes.position.setY(i,y);
 }
 geo.computeVertexNormals();
 
+/* Terrain mesh */
 const terrain = new THREE.Mesh(
   geo,
   new THREE.MeshLambertMaterial({ color:0x3a8f3a })
@@ -104,99 +127,92 @@ const terrain = new THREE.Mesh(
 terrain.rotation.x = -Math.PI/2;
 scene.add(terrain);
 
-/* ================= PLAYER ================= */
-const player = new THREE.Object3D();
-scene.add(player);
-
-const cloth = new THREE.MeshLambertMaterial({ color:0x3b6ea5 });
-const skin  = new THREE.MeshLambertMaterial({ color:0xffccaa });
-
-/* Torso */
-const torso = new THREE.Mesh(
-  new THREE.BoxGeometry(0.42,0.6,0.28),
-  cloth
-);
-torso.position.y = 1.0;
-player.add(torso);
-
-/* Legs */
-function leg(x){
-  const g = new THREE.Object3D();
-  const upper = new THREE.Mesh(
-    new THREE.BoxGeometry(0.28,0.8,0.28),
-    cloth
+/* River water */
+rivers.forEach(p=>p.forEach(r=>{
+  const water = new THREE.Mesh(
+    new THREE.CircleGeometry(16,16),
+    new THREE.MeshLambertMaterial({ color:0x00bfff })
   );
-  upper.position.y = 0.4;
-  g.add(upper);
-  g.position.x = x;
-  return g;
-}
-const leftLeg = leg(-0.18);
-const rightLeg = leg(0.18);
-player.add(leftLeg,rightLeg);
+  water.rotation.x = -Math.PI/2;
+  water.position.set(r.x,0.2,r.z);
+  scene.add(water);
+}));
 
-/* Arms with shoulders + elbows */
-function arm(x){
-  const shoulder = new THREE.Object3D();
-  shoulder.position.set(x,0.25,0);
-
-  const upper = new THREE.Mesh(
-    new THREE.BoxGeometry(0.15,0.35,0.15),
-    skin
-  );
-  upper.position.y = -0.2;
-
-  const elbow = new THREE.Object3D();
-  elbow.position.y = -0.35;
-
-  const lower = new THREE.Mesh(
-    new THREE.BoxGeometry(0.14,0.3,0.14),
-    skin
-  );
-  lower.position.y = -0.15;
-
-  elbow.add(lower);
-  upper.add(elbow);
-  shoulder.add(upper);
-
-  return { shoulder, elbow };
+/* ================= DECOR ================= */
+function nearRiver(x,z){
+  return rivers.some(p=>p.some(r=>Math.hypot(r.x-x,r.z-z)<40));
 }
 
-const leftArm = arm(-0.35);
-const rightArm = arm(0.35);
-torso.add(leftArm.shoulder, rightArm.shoulder);
+/* Trees */
+function tree(x,z){
+  if(nearRiver(x,z)) return;
+  const trunk=new THREE.Mesh(
+    new THREE.CylinderGeometry(0.3,0.4,2),
+    new THREE.MeshLambertMaterial({color:0x8b5a2b})
+  );
+  trunk.position.set(x,1,z);
 
-/* Camera */
-const camPivot = new THREE.Object3D();
-camPivot.position.y = 2.2;
-player.add(camPivot);
-camPivot.add(camera);
+  const leaves=new THREE.Mesh(
+    new THREE.SphereGeometry(1.6,8,8),
+    new THREE.MeshLambertMaterial({color:0x2e8b57})
+  );
+  leaves.position.set(x,3,z);
 
-/* ================= CONTROLS ================= */
-let moveX=0, moveZ=0, yaw=0, pitch=0, walk=0;
+  scene.add(trunk,leaves);
+}
 
-/* Joystick visual + movement */
-const joy = document.getElementById("joystick");
-const stick = document.getElementById("stick");
-const center = {x:60,y:60}, max=40;
+/* Flowers (stem + petals) */
+function flower(x,z){
+  if(nearRiver(x,z)) return;
 
-joy.ontouchmove = e=>{
-  const r = joy.getBoundingClientRect();
-  const t = e.touches[0];
-  let x = t.clientX - r.left - center.x;
-  let y = t.clientY - r.top - center.y;
-  const d = Math.min(Math.hypot(x,y),max);
-  const a = Math.atan2(y,x);
-  x = Math.cos(a)*d;
-  y = Math.sin(a)*d;
+  const stem=new THREE.Mesh(
+    new THREE.CylinderGeometry(0.05,0.05,0.5),
+    new THREE.MeshLambertMaterial({color:0x228b22})
+  );
+  stem.position.set(x,0.25,z);
 
-  stick.style.left = (center.x+x-25)+"px";
-  stick.style.top  = (center.y+y-25)+"px";
+  const petal=new THREE.Mesh(
+    new THREE.SphereGeometry(0.18,6,6),
+    new THREE.MeshLambertMaterial({color:0xff69b4})
+  );
+  petal.position.set(x,0.55,z);
 
-  moveX = x/max*0.12;
-  moveZ = y/max*0.12;
+  scene.add(stem,petal);
+}
+
+for(let i=0;i<400;i++)
+  tree((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
+
+for(let i=0;i<900;i++)
+  flower((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
+
+/* ================= FIRST-PERSON CONTROLS ================= */
+let yaw=0, pitch=0;
+let moveX=0, moveZ=0;
+
+camera.position.y = 2;
+
+/* Joystick */
+const joy=document.getElementById("joystick");
+const stick=document.getElementById("stick");
+const center={x:60,y:60}, max=40;
+
+joy.ontouchmove=e=>{
+  const r=joy.getBoundingClientRect();
+  const t=e.touches[0];
+  let x=t.clientX-r.left-center.x;
+  let y=t.clientY-r.top-center.y;
+  const d=Math.min(Math.hypot(x,y),max);
+  const a=Math.atan2(y,x);
+  x=Math.cos(a)*d; y=Math.sin(a)*d;
+
+  stick.style.left=(center.x+x-25)+"px";
+  stick.style.top =(center.y+y-25)+"px";
+
+  moveX=x/max*0.15;
+  moveZ=y/max*0.15;
 };
-joy.ontouchend = ()=>{
+joy.ontouchend=()=>{
   moveX=moveZ=0;
   stick.style.left="35px";
   stick.style.top="35px";
@@ -213,9 +229,9 @@ addEventListener("touchstart",e=>{
 addEventListener("touchmove",e=>{
   if(!looking) return;
   const t=e.touches[0];
-  yaw -= (t.clientX-lastX)*0.003;
+  yaw   -= (t.clientX-lastX)*0.003;
   pitch -= (t.clientY-lastY)*0.003;
-  pitch=Math.max(-1.3,Math.min(1.3,pitch));
+  pitch=Math.max(-1.4,Math.min(1.4,pitch));
   lastX=t.clientX; lastY=t.clientY;
 });
 addEventListener("touchend",()=>looking=false);
@@ -224,30 +240,19 @@ addEventListener("touchend",()=>looking=false);
 function animate(){
   requestAnimationFrame(animate);
 
-  const moving = Math.abs(moveX)+Math.abs(moveZ)>0.01;
-  if(moving) walk+=0.12;
+  camera.rotation.order="YXZ";
+  camera.rotation.y=yaw;
+  camera.rotation.x=pitch;
 
-  player.rotation.y = yaw;
-  camPivot.rotation.x = pitch;
-
-  player.position.x += Math.sin(yaw)*moveZ + Math.cos(yaw)*moveX;
-  player.position.z += Math.cos(yaw)*moveZ - Math.sin(yaw)*moveX;
-
-  const swing = moving ? Math.sin(walk)*0.8 : 0;
-  leftLeg.rotation.x = swing;
-  rightLeg.rotation.x = -swing;
-
-  leftArm.shoulder.rotation.x = 0.4 + swing*0.25;
-  rightArm.shoulder.rotation.x = 0.4 - swing*0.25;
-  leftArm.elbow.rotation.x = 0.3;
-  rightArm.elbow.rotation.x = 0.3;
+  camera.position.x += Math.sin(yaw)*moveZ + Math.cos(yaw)*moveX;
+  camera.position.z += Math.cos(yaw)*moveZ - Math.sin(yaw)*moveX;
 
   renderer.render(scene,camera);
 }
 animate();
 
 addEventListener("resize",()=>{
-  camera.aspect = innerWidth/innerHeight;
+  camera.aspect=innerWidth/innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight);
 });
