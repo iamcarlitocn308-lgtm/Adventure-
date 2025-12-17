@@ -128,11 +128,12 @@ const leftArm = makeArm(-0.35);
 const rightArm = makeArm(0.35);
 torso.add(leftArm.shoulder, rightArm.shoulder);
 
-/* Default arm pose (slightly raised) */
-leftArm.shoulder.rotation.x = 0.65;
-rightArm.shoulder.rotation.x = 0.65;
-leftArm.elbow.rotation.x = 0.45;
-rightArm.elbow.rotation.x = 0.45;
+/* Default arm pose – raised forward (FIXED) */
+leftArm.shoulder.rotation.x = -0.6;
+rightArm.shoulder.rotation.x = -0.6;
+
+leftArm.elbow.rotation.x = -0.5;
+rightArm.elbow.rotation.x = -0.5;
 
 /* ================= CLOUDS ================= */
 function addCloud(x,y,z,scale){
@@ -338,8 +339,9 @@ function animate(){
   leftLeg.rotation.x = swing;
   rightLeg.rotation.x = -swing;
 
-  leftArm.shoulder.rotation.x = 0.4 - swing*0.25;
-  rightArm.shoulder.rotation.x = 0.4 + swing*0.25;
+  /* Arm swing animation (respects raised pose) */
+leftArm.shoulder.rotation.x = -0.6 - swing*0.25;
+rightArm.shoulder.rotation.x = -0.6 + swing*0.25;
 
   renderer.render(scene,camera);
 }
