@@ -48,14 +48,26 @@ scene.background = new THREE.Color(0x87ceeb);
 
 const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 20000);
 
-/* ================= PLAYER BODY (HEAD CAMERA) ================= */
+/* ================= RENDERER ================= */
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+
+/* ================= LIGHTING ================= */
+scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+const sun = new THREE.DirectionalLight(0xffffff, 1);
+sun.position.set(500,1000,500);
+scene.add(sun);
+
+/* ================= PLAYER ================= */
 const player = new THREE.Object3D();
 scene.add(player);
 
-// Attach camera to player head
+/* Camera on head */
 camera.position.set(0, 1.8, 0);
 player.add(camera);
 
+/* Materials */
 const cloth = new THREE.MeshLambertMaterial({ color: 0x3b6ea5 });
 const skin  = new THREE.MeshLambertMaterial({ color: 0xffccaa });
 
@@ -86,7 +98,7 @@ player.add(leftLeg, rightLeg);
 /* Arms with shoulders + elbows */
 function makeArm(x){
   const shoulder = new THREE.Object3D();
-  shoulder.position.set(x, 0.25, -0.15);
+  shoulder.position.set(x, 0.3, -0.1);
 
   const upper = new THREE.Mesh(
     new THREE.BoxGeometry(0.15, 0.35, 0.15),
@@ -114,21 +126,11 @@ const leftArm = makeArm(-0.35);
 const rightArm = makeArm(0.35);
 torso.add(leftArm.shoulder, rightArm.shoulder);
 
-// Default arm pose (forward, not down)
+/* Default arm pose */
 leftArm.shoulder.rotation.x = 0.4;
 rightArm.shoulder.rotation.x = 0.4;
 leftArm.elbow.rotation.x = 0.3;
 rightArm.elbow.rotation.x = 0.3;
-
-const renderer = new THREE.WebGLRenderer({ antialias:true });
-renderer.setSize(innerWidth, innerHeight);
-document.body.appendChild(renderer.domElement);
-
-/* ================= LIGHTING (STABLE) ================= */
-scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-const sun = new THREE.DirectionalLight(0xffffff, 1);
-sun.position.set(500,1000,500);
-scene.add(sun);
 
 /* ================= CLOUDS ================= */
 function addCloud(x,y,z,scale){
@@ -174,7 +176,7 @@ for(let i=0;i<12;i++){
   rivers.push(path);
 }
 
-/* Height + carving */
+/* Height map */
 for(let i=0;i<geo.attributes.position.count;i++){
   const x=geo.attributes.position.getX(i);
   const z=geo.attributes.position.getZ(i);
@@ -192,7 +194,7 @@ for(let i=0;i<geo.attributes.position.count;i++){
 }
 geo.computeVertexNormals();
 
-/* Terrain mesh */
+/* Terrain */
 const terrain = new THREE.Mesh(
   geo,
   new THREE.MeshLambertMaterial({ color:0x3a8f3a })
@@ -200,16 +202,16 @@ const terrain = new THREE.Mesh(
 terrain.rotation.x = -Math.PI/2;
 scene.add(terrain);
 
-/* ================= GRASS PLANE ================= */
+/* Grass plane */
 const grass = new THREE.Mesh(
   new THREE.PlaneGeometry(20000, 20000),
   new THREE.MeshLambertMaterial({ color: 0x2e8b57 })
 );
-grass.rotation.x = -Math.PI / 2;
-grass.position.y = -2; // slightly below terrain
+grass.rotation.x = -Math.PI/2;
+grass.position.y = -2;
 scene.add(grass);
 
-/* River water */
+/* Rivers */
 rivers.forEach(p=>p.forEach(r=>{
   const water = new THREE.Mesh(
     new THREE.CircleGeometry(16,16),
@@ -225,7 +227,6 @@ function nearRiver(x,z){
   return rivers.some(p=>p.some(r=>Math.hypot(r.x-x,r.z-z)<40));
 }
 
-/* Trees */
 function tree(x,z){
   if(nearRiver(x,z)) return;
   const trunk=new THREE.Mesh(
@@ -243,7 +244,6 @@ function tree(x,z){
   scene.add(trunk,leaves);
 }
 
-/* Flowers (stem + petals) */
 function flower(x,z){
   if(nearRiver(x,z)) return;
 
@@ -268,11 +268,10 @@ for(let i=0;i<400;i++)
 for(let i=0;i<900;i++)
   flower((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
 
-/* ================= FIRST-PERSON CONTROLS ================= */
+/* ================= CONTROLS ================= */
 let yaw=0, pitch=0;
 let moveX=0, moveZ=0;
-let walk = 0;
-camera.position.y = 2;
+let walk=0;
 
 /* Joystick */
 const joy=document.getElementById("joystick");
@@ -327,22 +326,21 @@ function animate(){
   camera.rotation.x=pitch;
 
   player.position.x += Math.sin(yaw)*moveZ + Math.cos(yaw)*moveX;
-player.position.z += Math.cos(yaw)*moveZ - Math.sin(yaw)*moveX;
+  player.position.z += Math.cos(yaw)*moveZ - Math.sin(yaw)*moveX;
+
+  const moving = Math.abs(moveX) + Math.abs(moveZ) > 0.01;
+  if(moving) walk += 0.12;
+
+  const swing = moving ? Math.sin(walk)*0.6 : 0;
+
+  leftLeg.rotation.x = swing;
+  rightLeg.rotation.x = -swing;
+
+  leftArm.shoulder.rotation.x = 0.4 - swing*0.25;
+  rightArm.shoulder.rotation.x = 0.4 + swing*0.25;
 
   renderer.render(scene,camera);
 }
-  const moving = Math.abs(moveX) + Math.abs(moveZ) > 0.01;
-if (moving) walk += 0.12;
-
-const swing = moving ? Math.sin(walk) * 0.6 : 0;
-
-// Legs
-leftLeg.rotation.x = swing;
-rightLeg.rotation.x = -swing;
-
-// Arms (opposite of legs)
-leftArm.shoulder.rotation.x = 0.4 - swing * 0.25;
-rightArm.shoulder.rotation.x = 0.4 + swing * 0.25;
 animate();
 
 addEventListener("resize",()=>{
