@@ -193,7 +193,7 @@ const torso = new THREE.Mesh(
 torso.position.set(0,1.1,0);
 player.add(torso);
 
-/* Legs with hip pivot, lower leg, foot for diagonal rotation */
+/* Legs */
 function makeLeg(x){
   const hipPivot = new THREE.Object3D();
   hipPivot.position.set(x,0.7,0);
@@ -330,15 +330,19 @@ function animate(){
   leftLeg.footPivot.rotation.y = moveDir - yaw;
   rightLeg.footPivot.rotation.y = moveDir - yaw;
 
-  // Arms swing
-  leftArm.shoulderPivot.rotation.x = swing * 0.3 + Math.sin(Date.now()*0.002)*0.02;
-  leftArm.upperPivot.rotation.x = swing * 0.2;
-  leftArm.lowerPivot.rotation.x = swing * 0.15;
+  // Arms swing along movement
+  const armSwing = swing * 0.3;
+  leftArm.shoulderPivot.rotation.x = armSwing;
+  leftArm.shoulderPivot.rotation.z = Math.sin(moveDir)*0.1;
+  leftArm.upperPivot.rotation.x = armSwing * 0.7;
+  leftArm.lowerPivot.rotation.x = armSwing * 0.5;
 
-  rightArm.shoulderPivot.rotation.x = -swing * 0.3 + Math.sin(Date.now()*0.002)*-0.02;
-  rightArm.upperPivot.rotation.x = -swing * 0.2;
-  rightArm.lowerPivot.rotation.x = -swing * 0.15;
+  rightArm.shoulderPivot.rotation.x = -armSwing;
+  rightArm.shoulderPivot.rotation.z = -Math.sin(moveDir)*0.1;
+  rightArm.upperPivot.rotation.x = -armSwing * 0.7;
+  rightArm.lowerPivot.rotation.x = -armSwing * 0.5;
 
+  // Idle sway
   torso.rotation.y = Math.sin(Date.now()*0.001)*0.005;
 
   renderer.render(scene,camera);
