@@ -127,6 +127,15 @@ const terrain = new THREE.Mesh(
 terrain.rotation.x = -Math.PI/2;
 scene.add(terrain);
 
+/* ================= GRASS PLANE ================= */
+const grass = new THREE.Mesh(
+  new THREE.PlaneGeometry(20000, 20000),
+  new THREE.MeshLambertMaterial({ color: 0x2e8b57 })
+);
+grass.rotation.x = -Math.PI / 2;
+grass.position.y = -2; // slightly below terrain
+scene.add(grass);
+
 /* River water */
 rivers.forEach(p=>p.forEach(r=>{
   const water = new THREE.Mesh(
