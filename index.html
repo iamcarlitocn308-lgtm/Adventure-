@@ -95,27 +95,29 @@ const leftLeg = makeLeg(-0.18);
 const rightLeg = makeLeg(0.18);
 player.add(leftLeg, rightLeg);
 
-/* OPTIONAL – Arms with shoulders + elbows (better attachment) */
+/* Arms with shoulders + elbows (CORRECT ORIENTATION) */
 function makeArm(x){
   const shoulder = new THREE.Object3D();
+  shoulder.position.set(x, 0.3, 0.1);
 
-  // Slightly forward + centered shoulder
-  shoulder.position.set(x, 0.3, 0.05);
-
+  // Upper arm (rotated to point forward by default)
   const upper = new THREE.Mesh(
     new THREE.BoxGeometry(0.15, 0.35, 0.15),
     skin
   );
-  upper.position.y = -0.2;
+  upper.position.y = -0.18;
+  upper.rotation.x = Math.PI / 2; // <-- THIS IS THE KEY FIX
 
+  // Elbow pivot
   const elbow = new THREE.Object3D();
-  elbow.position.y = -0.32;
+  elbow.position.z = -0.35;
 
+  // Lower arm
   const lower = new THREE.Mesh(
     new THREE.BoxGeometry(0.14, 0.3, 0.14),
     skin
   );
-  lower.position.y = -0.15;
+  lower.position.z = -0.15;
 
   elbow.add(lower);
   upper.add(elbow);
@@ -126,14 +128,12 @@ function makeArm(x){
 
 const leftArm = makeArm(-0.35);
 const rightArm = makeArm(0.35);
-torso.add(leftArm.shoulder, rightArm.shoulder);
+torso.add(leftArm.shoulder, /* Default arm pose – natural forward */
+leftArm.shoulder.rotation.x = 0.25;
+rightArm.shoulder.rotation.x = 0.25;
 
-/* Default arm pose – raised forward (FIXED) */
-leftArm.shoulder.rotation.x = -0.6;
-rightArm.shoulder.rotation.x = -0.6;
-
-leftArm.elbow.rotation.x = -0.5;
-rightArm.elbow.rotation.x = -0.5;
+leftArm.elbow.rotation.x = -0.4;
+rightArm.elbow.rotation.x = -0.4;
 
 /* ================= CLOUDS ================= */
 function addCloud(x,y,z,scale){
@@ -339,9 +339,10 @@ function animate(){
   leftLeg.rotation.x = swing;
   rightLeg.rotation.x = -swing;
 
-  /* Arm swing animation (respects raised pose) */
-leftArm.shoulder.rotation.x = -0.6 - swing*0.25;
-rightArm.shoulder.rotation.x = -0.6 + swing*0.25;
+/* Arm swing animation (correct direction) */
+leftArm.shoulder.rotation.x = 0.25 - swing * 0.35;
+rightArm.shoulder.rotation.x = 0.25 + swing * 0.35;
+
 
   renderer.render(scene,camera);
 }
