@@ -185,55 +185,44 @@ const cloth = new THREE.MeshStandardMaterial({ color:0x3b6ea5 });
 const skin  = new THREE.MeshStandardMaterial({ color:0xffccaa });
 const shoe  = new THREE.MeshStandardMaterial({ color:0x000 });
 
-/* Torso — HIGHER and CONNECTED */
+/* Torso */
 const torso = new THREE.Mesh(
-  new THREE.BoxGeometry(0.42, 0.6, 0.28),
+  new THREE.BoxGeometry(0.42,0.6,0.28),
   cloth
 );
-torso.position.set(0, 0.95, 0.28);
+torso.position.set(0,1.1,0);
 player.add(torso);
 
 /* Legs */
 function leg(x){
-  const g=new THREE.Object3D();
-  const upper=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.8,0.28),cloth);
-  upper.position.y=0.4;
-  const foot=new THREE.Mesh(new THREE.BoxGeometry(0.32,0.2,0.55),shoe);
-  foot.position.set(0,-0.1,0.18);
-  g.add(upper,foot);
-  g.position.set(x,0,0.15);
+  const g = new THREE.Object3D();
+  const upper = new THREE.Mesh(new THREE.BoxGeometry(0.28,0.8,0.28), cloth);
+  upper.position.y = -0.4;
+  const foot = new THREE.Mesh(new THREE.BoxGeometry(0.32,0.2,0.55), shoe);
+  foot.position.set(0,-0.6,0.1);
+  g.add(upper, foot);
+  g.position.set(x,0.7,0);
   return g;
 }
 const leftLeg = leg(-0.18);
 const rightLeg = leg(0.18);
 player.add(leftLeg, rightLeg);
 
-/* Hands — connected to torso */
+/* Arms */
 function makeHand(x){
-  const handPivot = new THREE.Object3D();
-  // Pivot near shoulder
-  handPivot.position.set(x, 0.25, 0); 
-
-  const h = new THREE.Mesh(
+  const pivot = new THREE.Object3D();
+  pivot.position.set(x,0.25,0);
+  const hand = new THREE.Mesh(
     new THREE.BoxGeometry(0.15,0.25,0.5),
     skin
   );
-  // Hand geometry relative to pivot
-  h.position.set(0, 0, -0.25);
-  handPivot.add(h);
-
-  return handPivot;
+  hand.position.set(0,0,-0.25);
+  pivot.add(hand);
+  return pivot;
 }
-
 const leftHand = makeHand(-0.35);
 const rightHand = makeHand(0.35);
-
-// Attach hands to torso, not player
-torso.add(leftHand, rightHand);
-
-  /* Hand animation */
-leftHand.rotation.x = 0.35 + swing*0.25;
-rightHand.rotation.x = 0.35 - swing*0.25;
+torso.add(leftHand,rightHand);
 
 /* Camera */
 const camPivot = new THREE.Object3D();
@@ -270,7 +259,6 @@ joy.ontouchend=()=>{
   stick.style.top="35px";
 };
 
-/* Look */
 let looking=false,lastX=0,lastY=0;
 addEventListener("touchstart",e=>{
   if(e.target.closest("#joystick")) return;
@@ -292,29 +280,28 @@ addEventListener("touchend",()=>looking=false);
 function animate(){
   requestAnimationFrame(animate);
 
-  const movingNow=Math.abs(moveX)+Math.abs(moveZ)>0.01;
-  if(movingNow) walk+=0.12;
+  const movingNow = Math.abs(moveX)+Math.abs(moveZ) > 0.01;
+  if(movingNow) walk += 0.12;
 
-  player.rotation.y=yaw;
-  camPivot.rotation.x=pitch;
+  player.rotation.y = yaw;
+  camPivot.rotation.x = pitch;
 
-  player.position.x+=Math.sin(yaw)*moveZ + Math.cos(yaw)*moveX;
-  player.position.z+=Math.cos(yaw)*moveZ - Math.sin(yaw)*moveX;
+  player.position.x += Math.sin(yaw)*moveZ + Math.cos(yaw)*moveX;
+  player.position.z += Math.cos(yaw)*moveZ - Math.sin(yaw)*moveX;
 
-  const swing=movingNow?Math.sin(walk)*0.8:0;
-  leftLeg.rotation.x=swing;
-  rightLeg.rotation.x=-swing;
+  const swing = movingNow ? Math.sin(walk)*0.8 : 0;
+  leftLeg.rotation.x = swing;
+  rightLeg.rotation.x = -swing;
 
-  /* Hand animation */
-  leftHand.rotation.x = 0.35 + swing*0.25;
-  rightHand.rotation.x = 0.35 - swing*0.25;
+  leftHand.rotation.x = swing*0.25;
+  rightHand.rotation.x = -swing*0.25;
 
   renderer.render(scene,camera);
 }
 animate();
 
 addEventListener("resize",()=>{
-  camera.aspect=innerWidth/innerHeight;
+  camera.aspect = innerWidth/innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight);
 });
