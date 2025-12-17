@@ -57,7 +57,7 @@ renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
 /* ================= LIGHTS ================= */
-const ambientLight = new THREE.AmbientLight(0xffffff,0.3);
+const ambientLight = new THREE.AmbientLight(0xffffff,0.6);
 scene.add(ambientLight);
 
 const sun = new THREE.DirectionalLight(0xffffff,1);
@@ -66,8 +66,8 @@ sun.target.position.set(0,0,0);
 scene.add(sun);
 scene.add(sun.target);
 
-const moon = new THREE.DirectionalLight(0x8888ff,1.2);
-moon.position.set(100,400,100);
+const moon = new THREE.DirectionalLight(0x8888ff,1.5);
+moon.position.set(0,2000,0);
 moon.target.position.set(0,0,0);
 scene.add(moon);
 scene.add(moon.target);
@@ -238,6 +238,11 @@ const leftArm = makeArm(-0.35);
 const rightArm = makeArm(0.35);
 torso.add(leftArm.shoulder,rightArm.shoulder);
 
+// Player-attached light for night
+const playerLight = new THREE.PointLight(0xffffff,0.5,20);
+playerLight.position.set(0,1,0);
+player.add(playerLight);
+
 // Camera
 const camPivot = new THREE.Object3D();
 camPivot.position.y=1.8;
@@ -314,14 +319,16 @@ function animate(){
     nightLight.visible = false;
     scene.background.set(0x87ceeb);
     stars.visible = false;
+    ambientLight.intensity = 0.6;
   } else {
     sun.intensity = 0;
-    moon.intensity = 1.2;
-    moon.position.set(100,400,100);
+    moon.intensity = 1.5;
+    moon.position.set(0,2000,0);
     moon.lookAt(0,0,0);
     nightLight.visible = true;
     scene.background.set(0x000022);
     stars.visible = true;
+    ambientLight.intensity = 0.6;
   }
 
   // Player movement
