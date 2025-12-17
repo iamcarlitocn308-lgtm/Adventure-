@@ -208,11 +208,13 @@ const leftLeg = leg(-0.18);
 const rightLeg = leg(0.18);
 player.add(leftLeg, rightLeg);
 
-/* Arms with elbows */
-function makeArm(x){
-  const upperPivot = new THREE.Object3D();
-  upperPivot.position.set(x,0.25,0); // shoulder height relative to torso
+/* Arms with shoulders and elbows */
+function makeArmWithShoulder(x){
+  const shoulderPivot = new THREE.Object3D();
+  shoulderPivot.position.set(x,0.35,0); // shoulder
 
+  const upperPivot = new THREE.Object3D();
+  upperPivot.position.set(0,0,0); 
   const upperArm = new THREE.Mesh(new THREE.BoxGeometry(0.15,0.25,0.4), skin);
   upperArm.position.set(0,0,-0.2);
   upperPivot.add(upperArm);
@@ -224,12 +226,13 @@ function makeArm(x){
   lowerPivot.add(lowerArm);
 
   upperPivot.add(lowerPivot);
-  return {upperPivot, lowerPivot};
+  shoulderPivot.add(upperPivot);
+  return {shoulderPivot, upperPivot, lowerPivot};
 }
 
-const leftArm = makeArm(-0.35);
-const rightArm = makeArm(0.35);
-torso.add(leftArm.upperPivot,rightArm.upperPivot);
+const leftArm = makeArmWithShoulder(-0.35);
+const rightArm = makeArmWithShoulder(0.35);
+torso.add(leftArm.shoulderPivot, rightArm.shoulderPivot);
 
 /* Camera */
 const camPivot = new THREE.Object3D();
@@ -301,13 +304,17 @@ function animate(){
   leftLeg.rotation.x = swing;
   rightLeg.rotation.x = -swing;
 
-  // Smooth arm swing with elbow
+  // Arm swing with shoulder and elbow
   const swingAmplitude = 0.25;
   const elbowAmplitude = 0.15;
-  leftArm.upperPivot.rotation.x = swing * swingAmplitude + Math.sin(Date.now()*0.002)*0.02;
-  leftArm.lowerPivot.rotation.x = swing * elbowAmplitude + Math.sin(Date.now()*0.002)*0.02;
-  rightArm.upperPivot.rotation.x = -swing * swingAmplitude + Math.sin(Date.now()*0.002)*-0.02;
-  rightArm.lowerPivot.rotation.x = -swing * elbowAmplitude + Math.sin(Date.now()*0.002)*-0.02;
+
+  leftArm.shoulderPivot.rotation.x = swing * 0.3 + Math.sin(Date.now()*0.002)*0.02;
+  leftArm.upperPivot.rotation.x = swing * 0.2;
+  leftArm.lowerPivot.rotation.x = swing * 0.15;
+
+  rightArm.shoulderPivot.rotation.x = -swing * 0.3 + Math.sin(Date.now()*0.002)*-0.02;
+  rightArm.upperPivot.rotation.x = -swing * 0.2;
+  rightArm.lowerPivot.rotation.x = -swing * 0.15;
 
   // Idle subtle movement
   torso.rotation.y = Math.sin(Date.now()*0.001)*0.005;
