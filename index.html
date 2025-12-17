@@ -167,12 +167,19 @@ function tree(x,z){
 }
 function flower(x,z){
   if(nearRiver(x,z)) return;
-  const f=new THREE.Mesh(
-    new THREE.SphereGeometry(0.2),
+  // stem
+  const stem = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.05,0.05,0.3),
+    new THREE.MeshStandardMaterial({color:0x228B22})
+  );
+  stem.position.set(x,0.15,z);
+  // flower
+  const bloom = new THREE.Mesh(
+    new THREE.SphereGeometry(0.15,8,8),
     new THREE.MeshStandardMaterial({color:0xff69b4})
   );
-  f.position.set(x,0.2,z);
-  scene.add(f);
+  bloom.position.set(x,0.4,z);
+  scene.add(stem,bloom);
 }
 for(let i=0;i<400;i++) tree((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
 for(let i=0;i<900;i++) flower((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
@@ -225,7 +232,7 @@ const leftLeg = makeLeg(-0.18);
 const rightLeg = makeLeg(0.18);
 player.add(leftLeg.hipPivot, rightLeg.hipPivot);
 
-/* Arms with shoulders and elbows */
+/* Arms */
 function makeArm(x){
   const shoulderPivot = new THREE.Object3D();
   shoulderPivot.position.set(x,0.35,0);
@@ -313,7 +320,7 @@ function animate(){
   player.rotation.y = yaw;
   camPivot.rotation.x = pitch;
 
-  // Move player
+  // Movement vector in world space
   const moveDir = Math.atan2(moveX, moveZ);
   const speed = Math.sqrt(moveX*moveX + moveZ*moveZ);
   player.position.x += Math.sin(yaw)*moveZ + Math.cos(yaw)*moveX;
@@ -321,26 +328,26 @@ function animate(){
 
   // Legs swing
   const swing = movingNow ? Math.sin(walk) : 0;
-  const swingAmp = 0.8;
+  const swingAmp = 0.6;
 
   leftLeg.hipPivot.rotation.x = swing * swingAmp;
   rightLeg.hipPivot.rotation.x = -swing * swingAmp;
-
-  // Rotate feet toward movement angle
   leftLeg.footPivot.rotation.y = moveDir - yaw;
   rightLeg.footPivot.rotation.y = moveDir - yaw;
 
   // Arms swing along movement
-  const armSwing = swing * 0.3;
-  leftArm.shoulderPivot.rotation.x = armSwing;
-  leftArm.shoulderPivot.rotation.z = Math.sin(moveDir)*0.1;
-  leftArm.upperPivot.rotation.x = armSwing * 0.7;
-  leftArm.lowerPivot.rotation.x = armSwing * 0.5;
+  const armSwing = swing * swingAmp * 0.7;
+  const sideSwing = swing * swingAmp * 0.3;
 
-  rightArm.shoulderPivot.rotation.x = -armSwing;
-  rightArm.shoulderPivot.rotation.z = -Math.sin(moveDir)*0.1;
-  rightArm.upperPivot.rotation.x = -armSwing * 0.7;
-  rightArm.lowerPivot.rotation.x = -armSwing * 0.5;
+  leftArm.shoulderPivot.rotation.x = -armSwing;
+  leftArm.shoulderPivot.rotation.z = sideSwing;
+  leftArm.upperPivot.rotation.x = -armSwing*0.5;
+  leftArm.lowerPivot.rotation.x = -armSwing*0.3;
+
+  rightArm.shoulderPivot.rotation.x = armSwing;
+  rightArm.shoulderPivot.rotation.z = -sideSwing;
+  rightArm.upperPivot.rotation.x = armSwing*0.5;
+  rightArm.lowerPivot.rotation.x = armSwing*0.3;
 
   // Idle sway
   torso.rotation.y = Math.sin(Date.now()*0.001)*0.005;
