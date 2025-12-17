@@ -46,17 +46,18 @@ body {
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
 
-const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 20000);
+/* ================= CAMERA ================= */
+const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 20000);
 
 /* ================= RENDERER ================= */
-const renderer = new THREE.WebGLRenderer({ antialias:true });
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
 /* ================= LIGHTING ================= */
 scene.add(new THREE.AmbientLight(0xffffff, 0.9));
 const sun = new THREE.DirectionalLight(0xffffff, 1);
-sun.position.set(500,1000,500);
+sun.position.set(500, 1000, 500);
 scene.add(sun);
 
 /* ================= PLAYER ================= */
@@ -76,7 +77,7 @@ const torso = new THREE.Mesh(
   new THREE.BoxGeometry(0.45, 0.6, 0.3),
   cloth
 );
-torso.position.y = 0.95; // lower torso = more centered
+torso.position.y = 0.9;
 player.add(torso);
 
 /* Legs */
@@ -91,49 +92,33 @@ function makeLeg(x){
   g.position.set(x, 0, 0.1);
   return g;
 }
-const leftLeg = makeLeg(-0.18);
-const rightLeg = makeLeg(0.18);
+
+const leftLeg  = makeLeg(-0.18);
+const rightLeg = makeLeg( 0.18);
 player.add(leftLeg, rightLeg);
 
-/* Arms with shoulders + elbows (CORRECT ORIENTATION) */
+/* Arms (safe orientation) */
 function makeArm(x){
   const shoulder = new THREE.Object3D();
-  shoulder.position.set(x, 0.3, 0.1);
+  shoulder.position.set(x, 0.25, 0.05);
 
-  // Upper arm (rotated to point forward by default)
   const upper = new THREE.Mesh(
     new THREE.BoxGeometry(0.15, 0.35, 0.15),
     skin
   );
   upper.position.y = -0.18;
-  upper.rotation.x = Math.PI / 2; // <-- THIS IS THE KEY FIX
-
-  // Elbow pivot
-  const elbow = new THREE.Object3D();
-  elbow.position.z = -0.35;
-
-  // Lower arm
-  const lower = new THREE.Mesh(
-    new THREE.BoxGeometry(0.14, 0.3, 0.14),
-    skin
-  );
-  lower.position.z = -0.15;
-
-  elbow.add(lower);
-  upper.add(elbow);
   shoulder.add(upper);
 
-  return { shoulder, elbow };
+  return shoulder;
 }
 
-const leftArm = makeArm(-0.35);
-const rightArm = makeArm(0.35);
-torso.add(leftArm.shoulder, /* Default arm pose – natural forward */
-leftArm.shoulder.rotation.x = 0.25;
-rightArm.shoulder.rotation.x = 0.25;
+const leftArm  = makeArm(-0.35);
+const rightArm = makeArm( 0.35);
+torso.add(leftArm, rightArm);
 
-leftArm.elbow.rotation.x = -0.4;
-rightArm.elbow.rotation.x = -0.4;
+/* Default arm pose (slightly forward & up) */
+leftArm.rotation.x  = 0.35;
+rightArm.rotation.x = 0.35;
 
 /* ================= CLOUDS ================= */
 function addCloud(x,y,z,scale){
@@ -151,7 +136,7 @@ function addCloud(x,y,z,scale){
   scene.add(g);
 }
 
-for(let i=0;i<250;i++){
+for(let i=0;i<200;i++){
   addCloud(
     (Math.random()-0.5)*12000,
     300 + Math.random()*400,
@@ -160,115 +145,71 @@ for(let i=0;i<250;i++){
   );
 }
 
-/* ================= TERRAIN + RIVERS ================= */
+/* ================= TERRAIN ================= */
 const terrainSize = 3000;
-const seg = 300;
-const geo = new THREE.PlaneGeometry(terrainSize, terrainSize, seg, seg);
-const rivers = [];
+const geo = new THREE.PlaneGeometry(terrainSize, terrainSize, 200, 200);
 
-/* River paths */
-for(let i=0;i<12;i++){
-  const path=[];
-  let x=(Math.random()-0.5)*terrainSize;
-  let z=-terrainSize/2;
-  for(let j=0;j<60;j++){
-    path.push({x,z});
-    x+=(Math.random()-0.5)*120;
-    z+=terrainSize/60;
-  }
-  rivers.push(path);
-}
-
-/* Height map */
 for(let i=0;i<geo.attributes.position.count;i++){
-  const x=geo.attributes.position.getX(i);
-  const z=geo.attributes.position.getZ(i);
-
-  let y = Math.sin(x*0.02)*4 + Math.cos(z*0.02)*4;
-
-  rivers.forEach(p=>{
-    p.forEach(r=>{
-      const d=Math.hypot(x-r.x,z-r.z);
-      if(d<35) y-=(35-d)*0.18;
-    });
-  });
-
-  geo.attributes.position.setY(i,y);
+  const x = geo.attributes.position.getX(i);
+  const z = geo.attributes.position.getZ(i);
+  const y = Math.sin(x*0.02)*4 + Math.cos(z*0.02)*4;
+  geo.attributes.position.setY(i, y);
 }
 geo.computeVertexNormals();
 
-/* Terrain */
 const terrain = new THREE.Mesh(
   geo,
-  new THREE.MeshLambertMaterial({ color:0x3a8f3a })
+  new THREE.MeshLambertMaterial({ color: 0x3a8f3a })
 );
 terrain.rotation.x = -Math.PI/2;
 scene.add(terrain);
 
 /* Grass plane */
 const grass = new THREE.Mesh(
-  new THREE.PlaneGeometry(20000, 20000),
+  new THREE.PlaneGeometry(20000,20000),
   new THREE.MeshLambertMaterial({ color: 0x2e8b57 })
 );
 grass.rotation.x = -Math.PI/2;
 grass.position.y = -2;
 scene.add(grass);
 
-/* Rivers */
-rivers.forEach(p=>p.forEach(r=>{
-  const water = new THREE.Mesh(
-    new THREE.CircleGeometry(16,16),
-    new THREE.MeshLambertMaterial({ color:0x00bfff })
-  );
-  water.rotation.x = -Math.PI/2;
-  water.position.set(r.x,0.2,r.z);
-  scene.add(water);
-}));
-
 /* ================= DECOR ================= */
-function nearRiver(x,z){
-  return rivers.some(p=>p.some(r=>Math.hypot(r.x-x,r.z-z)<40));
-}
-
 function tree(x,z){
-  if(nearRiver(x,z)) return;
-  const trunk=new THREE.Mesh(
+  const trunk = new THREE.Mesh(
     new THREE.CylinderGeometry(0.3,0.4,2),
-    new THREE.MeshLambertMaterial({color:0x8b5a2b})
+    new THREE.MeshLambertMaterial({ color:0x8b5a2b })
   );
   trunk.position.set(x,1,z);
 
-  const leaves=new THREE.Mesh(
+  const leaves = new THREE.Mesh(
     new THREE.SphereGeometry(1.6,8,8),
-    new THREE.MeshLambertMaterial({color:0x2e8b57})
+    new THREE.MeshLambertMaterial({ color:0x2e8b57 })
   );
   leaves.position.set(x,3,z);
 
-  scene.add(trunk,leaves);
+  scene.add(trunk, leaves);
 }
 
 function flower(x,z){
-  if(nearRiver(x,z)) return;
-
-  const stem=new THREE.Mesh(
+  const stem = new THREE.Mesh(
     new THREE.CylinderGeometry(0.05,0.05,0.5),
-    new THREE.MeshLambertMaterial({color:0x228b22})
+    new THREE.MeshLambertMaterial({ color:0x228b22 })
   );
   stem.position.set(x,0.25,z);
 
-  const petal=new THREE.Mesh(
+  const petal = new THREE.Mesh(
     new THREE.SphereGeometry(0.18,6,6),
-    new THREE.MeshLambertMaterial({color:0xff69b4})
+    new THREE.MeshLambertMaterial({ color:0xff69b4 })
   );
   petal.position.set(x,0.55,z);
 
-  scene.add(stem,petal);
+  scene.add(stem, petal);
 }
 
-for(let i=0;i<400;i++)
+for(let i=0;i<300;i++)
   tree((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
 
-for(let i=0;i<900;i++)
+for(let i=0;i<600;i++)
   flower((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
 
 /* ================= CONTROLS ================= */
@@ -289,10 +230,8 @@ joy.ontouchmove=e=>{
   const d=Math.min(Math.hypot(x,y),max);
   const a=Math.atan2(y,x);
   x=Math.cos(a)*d; y=Math.sin(a)*d;
-
   stick.style.left=(center.x+x-25)+"px";
   stick.style.top =(center.y+y-25)+"px";
-
   moveX=x/max*0.15;
   moveZ=y/max*0.15;
 };
@@ -335,18 +274,14 @@ function animate(){
   if(moving) walk += 0.12;
 
   const swing = moving ? Math.sin(walk)*0.6 : 0;
-
   leftLeg.rotation.x = swing;
   rightLeg.rotation.x = -swing;
 
-/* Arm swing animation (correct direction) */
-leftArm.shoulder.rotation.x = 0.25 - swing * 0.35;
-rightArm.shoulder.rotation.x = 0.25 + swing * 0.35;
-
+  leftArm.rotation.x  = 0.35 - swing*0.25;
+  rightArm.rotation.x = 0.35 + swing*0.25;
 
   renderer.render(scene,camera);
 }
-alert("JS is running");
 animate();
 
 addEventListener("resize",()=>{
