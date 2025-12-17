@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,6 +13,7 @@ body { margin:0; overflow:hidden; background:#000; touch-action:none; font-famil
 </style>
 </head>
 <body>
+
 <div id="joystick"><div id="stick"></div></div>
 <div id="inventory">
   <div class="slot"></div>
@@ -24,6 +24,7 @@ body { margin:0; overflow:hidden; background:#000; touch-action:none; font-famil
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 <script>
+
 /* ================= SCENE ================= */
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
@@ -34,190 +35,246 @@ const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
-/* ================= LIGHTS ================= */
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+/* ================= LIGHTING ================= */
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
 scene.add(ambientLight);
 
-const sun = new THREE.DirectionalLight(0xffffff, 1.0);
-sun.position.set(500, 1000, 500);
+const sun = new THREE.DirectionalLight(0xffffff, 1.1);
+sun.position.set(1000, 2000, 1000);
 scene.add(sun);
 
-const moon = new THREE.DirectionalLight(0xaaaaee, 1.5);
-moon.position.set(-500, 1000, -500);
+const moon = new THREE.DirectionalLight(0xaaaaff, 2.0);
+moon.position.set(-2000, 3000, -2000);
 scene.add(moon);
 
 /* ================= STARS ================= */
-const starsGeo = new THREE.BufferGeometry();
-const starMat = new THREE.PointsMaterial({ color:0xffffff, size:1 });
-const starPositions = [];
-for(let i=0;i<3000;i++){
-  starPositions.push((Math.random()-0.5)*20000);
-  starPositions.push(Math.random()*500+200);
-  starPositions.push((Math.random()-0.5)*20000);
+const starGeo = new THREE.BufferGeometry();
+const starPos = [];
+for(let i=0;i<4000;i++){
+  starPos.push((Math.random()-0.5)*30000);
+  starPos.push(Math.random()*2000+500);
+  starPos.push((Math.random()-0.5)*30000);
 }
-starsGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPositions,3));
-const stars = new THREE.Points(starsGeo, starMat);
+starGeo.setAttribute("position", new THREE.Float32BufferAttribute(starPos,3));
+const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color:0xffffff, size:1 }));
 scene.add(stars);
 
-/* ================= TERRAIN ================= */
+/* ================= GROUND BASE (CRITICAL) ================= */
+const grassBase = new THREE.Mesh(
+  new THREE.PlaneGeometry(30000,30000),
+  new THREE.MeshLambertMaterial({ color:0x2e8b57 })
+);
+grassBase.rotation.x = -Math.PI/2;
+grassBase.position.y = -4;
+scene.add(grassBase);
+
+/* ================= TERRAIN + RIVERS ================= */
 const terrainSize = 3000;
 const seg = 300;
 const terrainGeo = new THREE.PlaneGeometry(terrainSize, terrainSize, seg, seg);
 const rivers = [];
+
 for(let i=0;i<14;i++){
-  const path=[]; let x=(Math.random()-0.5)*terrainSize; let z=-terrainSize/2;
-  for(let j=0;j<50;j++){ path.push({x,z}); x+=(Math.random()-0.5)*120; z+=terrainSize/50; }
+  let x=(Math.random()-0.5)*terrainSize;
+  let z=-terrainSize/2;
+  const path=[];
+  for(let j=0;j<50;j++){
+    path.push({x,z});
+    x+=(Math.random()-0.5)*120;
+    z+=terrainSize/50;
+  }
   rivers.push(path);
 }
+
 for(let i=0;i<terrainGeo.attributes.position.count;i++){
-  const x=terrainGeo.attributes.position.getX(i), z=terrainGeo.attributes.position.getZ(i);
+  const x=terrainGeo.attributes.position.getX(i);
+  const z=terrainGeo.attributes.position.getZ(i);
   let y=Math.sin(x*0.02)*2 + Math.cos(z*0.02)*2;
-  rivers.forEach(p=>p.forEach(r=>{ const d=Math.hypot(x-r.x,z-r.z); if(d<35) y-=(35-d)*0.15; }));
+  rivers.forEach(p=>p.forEach(r=>{
+    const d=Math.hypot(x-r.x,z-r.z);
+    if(d<35) y-=(35-d)*0.15;
+  }));
   terrainGeo.attributes.position.setY(i,y);
 }
 terrainGeo.computeVertexNormals();
-const terrainMat = new THREE.MeshLambertMaterial({ color:0x3a8f3a });
-const terrain = new THREE.Mesh(terrainGeo, terrainMat);
+
+const terrain = new THREE.Mesh(
+  terrainGeo,
+  new THREE.MeshLambertMaterial({ color:0x4caf50 })
+);
 terrain.rotation.x = -Math.PI/2;
 scene.add(terrain);
 
-/* Water */
 rivers.forEach(p=>p.forEach(r=>{
   const water = new THREE.Mesh(
     new THREE.CircleGeometry(16,16),
     new THREE.MeshLambertMaterial({ color:0x00bfff, transparent:true, opacity:0.85 })
   );
   water.rotation.x = -Math.PI/2;
-  water.position.set(r.x,0.1,r.z);
+  water.position.set(r.x,0.15,r.z);
   scene.add(water);
 }));
-function nearRiver(x,z){ return rivers.some(p=>p.some(r=>Math.hypot(r.x-x,r.z-z)<40)); }
+
+function nearRiver(x,z){
+  return rivers.some(p=>p.some(r=>Math.hypot(r.x-x,r.z-z)<40));
+}
 
 /* ================= TREES & FLOWERS ================= */
 function tree(x,z){
   if(nearRiver(x,z)) return;
-  const t = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.4,2), new THREE.MeshLambertMaterial({ color:0x8b5a2b }));
-  t.position.set(x,1,z);
-  const l = new THREE.Mesh(new THREE.SphereGeometry(1.6,8,8), new THREE.MeshLambertMaterial({ color:0x2e8b57 }));
-  l.position.set(x,3,z);
-  scene.add(t,l);
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.3,0.4,2),
+    new THREE.MeshLambertMaterial({ color:0x8b5a2b })
+  );
+  trunk.position.set(x,1,z);
+  const leaves = new THREE.Mesh(
+    new THREE.SphereGeometry(1.6,8,8),
+    new THREE.MeshLambertMaterial({ color:0x2e8b57 })
+  );
+  leaves.position.set(x,3,z);
+  scene.add(trunk,leaves);
 }
+
 function flower(x,z){
   if(nearRiver(x,z)) return;
-  const stemH = 0.3+Math.random()*0.2;
-  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,stemH), new THREE.MeshLambertMaterial({color:0x228B22}));
+  const stemH = 0.35;
+  const stem = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.05,0.05,stemH),
+    new THREE.MeshLambertMaterial({ color:0x228B22 })
+  );
   stem.position.set(x,stemH/2,z);
-  const bloom = new THREE.Mesh(new THREE.SphereGeometry(0.15+Math.random()*0.1,8,8), new THREE.MeshLambertMaterial({color:0xff69b4}));
-  bloom.position.set(x,stemH+0.075,z);
-  scene.add(stem,bloom);
+  const petal = new THREE.Mesh(
+    new THREE.SphereGeometry(0.18,8,8),
+    new THREE.MeshLambertMaterial({ color:0xff69b4 })
+  );
+  petal.position.set(x,stemH+0.1,z);
+  scene.add(stem,petal);
 }
+
 for(let i=0;i<400;i++) tree((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
 for(let i=0;i<900;i++) flower((Math.random()-0.5)*terrainSize,(Math.random()-0.5)*terrainSize);
 
 /* ================= PLAYER ================= */
 const player = new THREE.Object3D();
 scene.add(player);
-const clothMat = new THREE.MeshLambertMaterial({ color:0x3b6ea5 });
-const skinMat = new THREE.MeshLambertMaterial({ color:0xffccaa });
-const shoeMat = new THREE.MeshLambertMaterial({ color:0x000 });
 
-const torso = new THREE.Mesh(new THREE.BoxGeometry(0.42,0.6,0.28), clothMat);
-torso.position.set(0,1.1,0);
+const cloth = new THREE.MeshLambertMaterial({ color:0x3b6ea5 });
+const skin  = new THREE.MeshLambertMaterial({ color:0xffccaa });
+const shoe  = new THREE.MeshLambertMaterial({ color:0x000 });
+
+const torso = new THREE.Mesh(new THREE.BoxGeometry(0.42,0.6,0.28), cloth);
+torso.position.y = 1.1;
 player.add(torso);
 
-// Legs
-function makeLeg(xPos){
-  const hip = new THREE.Object3D(); hip.position.set(xPos,0.7,0);
-  const upper = new THREE.Mesh(new THREE.BoxGeometry(0.28,0.8,0.28), clothMat); upper.position.set(0,-0.4,0);
-  const lower = new THREE.Mesh(new THREE.BoxGeometry(0.25,0.8,0.25), clothMat); lower.position.set(0,-1.2,0);
-  const foot = new THREE.Mesh(new THREE.BoxGeometry(0.32,0.2,0.55), shoeMat); foot.position.set(0,-1.6,0.15);
-  upper.add(lower); lower.add(foot); hip.add(upper);
-  return {hip,upper,lower,foot};
+/* Legs */
+function makeLeg(x){
+  const hip = new THREE.Object3D();
+  hip.position.set(x,0.7,0);
+  const upper = new THREE.Mesh(new THREE.BoxGeometry(0.28,0.8,0.28),cloth);
+  upper.position.y = -0.4;
+  const foot = new THREE.Mesh(new THREE.BoxGeometry(0.32,0.2,0.55),shoe);
+  foot.position.set(0,-1.1,0.15);
+  upper.add(foot);
+  hip.add(upper);
+  return {hip,upper,foot};
 }
 const leftLeg = makeLeg(-0.18);
 const rightLeg = makeLeg(0.18);
 player.add(leftLeg.hip,rightLeg.hip);
 
-// Arms
-function makeArm(xPos){
-  const shoulder = new THREE.Object3D(); shoulder.position.set(xPos,0.35,0);
-  const upper = new THREE.Mesh(new THREE.BoxGeometry(0.15,0.25,0.4), skinMat); upper.position.set(0,0,-0.2);
-  const elbow = new THREE.Object3D(); elbow.position.set(0,0,-0.2);
-  const lower = new THREE.Mesh(new THREE.BoxGeometry(0.15,0.25,0.4), skinMat); lower.position.set(0,0,-0.2);
+/* Arms */
+function makeArm(x){
+  const shoulder = new THREE.Object3D();
+  shoulder.position.set(x,0.35,0);
+  const upper = new THREE.Mesh(new THREE.BoxGeometry(0.15,0.25,0.4),skin);
+  upper.position.z = -0.2;
+  const elbow = new THREE.Object3D();
+  elbow.position.z = -0.2;
+  const lower = new THREE.Mesh(new THREE.BoxGeometry(0.15,0.25,0.4),skin);
+  lower.position.z = -0.2;
   upper.add(elbow); elbow.add(lower); shoulder.add(upper);
-  return {shoulder,upper,elbow,lower};
+  return {shoulder,elbow};
 }
 const leftArm = makeArm(-0.35);
 const rightArm = makeArm(0.35);
 torso.add(leftArm.shoulder,rightArm.shoulder);
 
-// Camera
-const camPivot = new THREE.Object3D(); camPivot.position.y=1.8; player.add(camPivot); camPivot.add(camera);
+/* Camera */
+const camPivot = new THREE.Object3D();
+camPivot.position.y = 2.4;
+player.add(camPivot);
+camPivot.add(camera);
 
 /* ================= CONTROLS ================= */
 let moveX=0, moveZ=0, yaw=0, pitch=0, walk=0;
 const joy=document.getElementById("joystick");
 const stick=document.getElementById("stick");
 const center={x:60,y:60}, max=40;
-let moving=false;
-joy.ontouchstart=()=>moving=true;
-joy.ontouchmove=e=>{
-  const r=joy.getBoundingClientRect(); const t=e.touches[0];
-  let x=t.clientX-r.left-center.x; let y=t.clientY-r.top-center.y;
-  const d=Math.min(Math.hypot(x,y),max); const a=Math.atan2(y,x);
-  x=Math.cos(a)*d; y=Math.sin(a)*d;
-  stick.style.left=(center.x+x-25)+"px"; stick.style.top=(center.y+y-25)+"px";
-  moveX=x/max*0.12; moveZ=y/max*0.12;
-};
-joy.ontouchend=()=>{ moving=false; moveX=moveZ=0; stick.style.left="35px"; stick.style.top="35px"; };
 
-let looking=false,lastX=0,lastY=0;
-addEventListener("touchstart",e=>{ if(e.target.closest("#joystick")) return; looking=true; lastX=e.touches[0].clientX; lastY=e.touches[0].clientY; });
-addEventListener("touchmove",e=>{ if(!looking) return; const t=e.touches[0]; yaw-=(t.clientX-lastX)*0.003; pitch-=(t.clientY-lastY)*0.003; pitch=Math.max(-1.3,Math.min(1.3,pitch)); lastX=t.clientX; lastY=t.clientY; });
-addEventListener("touchend",()=>looking=false);
+joy.ontouchmove=e=>{
+  const r=joy.getBoundingClientRect();
+  const t=e.touches[0];
+  let x=t.clientX-r.left-center.x;
+  let y=t.clientY-r.top-center.y;
+  const d=Math.min(Math.hypot(x,y),max);
+  const a=Math.atan2(y,x);
+  moveX=Math.cos(a)*d/max*0.12;
+  moveZ=Math.sin(a)*d/max*0.12;
+  stick.style.left=(center.x+Math.cos(a)*d-25)+"px";
+  stick.style.top=(center.y+Math.sin(a)*d-25)+"px";
+};
+joy.ontouchend=()=>{moveX=moveZ=0; stick.style.left="35px"; stick.style.top="35px";};
+
+addEventListener("touchmove",e=>{
+  if(e.target.closest("#joystick")) return;
+  yaw -= e.movementX*0.002;
+  pitch -= e.movementY*0.002;
+  pitch=Math.max(-1.3,Math.min(1.3,pitch));
+});
 
 /* ================= LOOP ================= */
-const CYCLE_DURATION = 10*60*1000; // 10 min
-const DAY_DURATION = 5*60*1000;
-
+const DAY=5*60*1000, CYCLE=10*60*1000;
 function animate(){
   requestAnimationFrame(animate);
-  const now=Date.now()%CYCLE_DURATION;
+  const t=Date.now()%CYCLE;
 
-  // Day/night
-  if(now<DAY_DURATION){
-    sun.intensity=1; moon.intensity=0; ambientLight.intensity=0.8;
-    stars.visible=false; scene.background.set(0x87ceeb);
+  if(t<DAY){
+    sun.intensity=1.1; moon.intensity=0;
+    ambientLight.intensity=0.9;
+    stars.visible=false;
+    scene.background.set(0x87ceeb);
   }else{
-    sun.intensity=0; moon.intensity=2; ambientLight.intensity=0.6;
-    stars.visible=true; scene.background.set(0x000022);
+    sun.intensity=0; moon.intensity=2;
+    ambientLight.intensity=1.0;
+    stars.visible=true;
+    scene.background.set(0x000022);
   }
 
-  // Player movement
-  player.rotation.y=yaw; camPivot.rotation.x=pitch;
+  player.rotation.y=yaw;
+  camPivot.rotation.x=pitch;
   const dx=Math.sin(yaw)*moveZ+Math.cos(yaw)*moveX;
   const dz=Math.cos(yaw)*moveZ-Math.sin(yaw)*moveX;
-  player.position.x+=dx; player.position.z+=dz;
-  const movingNow=Math.abs(moveX)+Math.abs(moveZ)>0.01;
-  if(movingNow) walk+=0.12;
+  player.position.x+=dx;
+  player.position.z+=dz;
 
-  const moveAngle=Math.atan2(dx,dz);
-  const swing=movingNow?Math.sin(walk)*0.8:0;
+  const moving=Math.abs(moveX)+Math.abs(moveZ)>0.01;
+  if(moving) walk+=0.12;
+  const swing=moving?Math.sin(walk)*0.8:0;
 
-  leftLeg.hip.rotation.x=swing; rightLeg.hip.rotation.x=-swing;
-  leftLeg.foot.rotation.y=moveAngle-yaw; rightLeg.foot.rotation.y=moveAngle-yaw;
-
-  const armSwing=swing*0.7; const sideSwing=swing*0.3;
-  leftArm.shoulder.rotation.x=-armSwing; leftArm.shoulder.rotation.z=sideSwing;
-  leftArm.elbow.rotation.x=Math.max(0,armSwing*0.6);
-  rightArm.shoulder.rotation.x=armSwing; rightArm.shoulder.rotation.z=-sideSwing;
-  rightArm.elbow.rotation.x=Math.max(0,armSwing*0.6);
+  leftLeg.hip.rotation.x=swing;
+  rightLeg.hip.rotation.x=-swing;
+  leftArm.shoulder.rotation.x=-swing*0.6;
+  rightArm.shoulder.rotation.x=swing*0.6;
 
   renderer.render(scene,camera);
 }
 animate();
 
-window.addEventListener("resize",()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+window.addEventListener("resize",()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
 </script>
 </body>
 </html>
