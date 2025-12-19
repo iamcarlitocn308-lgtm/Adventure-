@@ -93,10 +93,10 @@
         
         /* Rulebook Modal */
         #rulebookModal {
-            position: absolute;
+            position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.95);
             display: none;
             justify-content: center;
             align-items: center;
@@ -112,6 +112,7 @@
             border: 3px solid #00ffff;
             padding: 30px;
             overflow-y: auto;
+            position: relative;
         }
         
         .rulebook-title {
@@ -319,6 +320,7 @@
             display: none;
             z-index: 1000;
             text-align: center;
+            max-width: 80%;
         }
     </style>
 </head>
@@ -543,7 +545,7 @@
 
 <script>
 // ======================
-// GAME STATE
+// GLOBAL VARIABLES
 // ======================
 let player = {
     name: '',
@@ -570,17 +572,61 @@ let player = {
     experience: 0
 };
 
-// ======================
-// THREE.JS SETUP
-// ======================
 let scene, camera, renderer;
 let playerModel, terrain, spaceship;
 let keys = {};
 let clock = new THREE.Clock();
 let resourceNodes = [];
 let enemyShips = [];
-let playerBuildings = [];
 
+// ======================
+// RULEBOOK FUNCTIONS
+// ======================
+function showRulebook() {
+    console.log("Showing rulebook...");
+    document.getElementById('rulebookModal').style.display = 'flex';
+}
+
+function hideRulebook() {
+    console.log("Hiding rulebook...");
+    document.getElementById('rulebookModal').style.display = 'none';
+}
+
+// ======================
+// LOGIN FUNCTIONS
+// ======================
+function startGame() {
+    console.log("Starting game...");
+    
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    
+    if (!username) {
+        alert("Please enter a commander name!");
+        return;
+    }
+    
+    player.name = username;
+    
+    // Hide login screen
+    document.getElementById('loginScreen').style.display = 'none';
+    
+    // Show game container
+    document.getElementById('gameContainer').style.display = 'block';
+    
+    // Initialize the game
+    initGame();
+    
+    // Show welcome message
+    showNotification("Welcome to Eternal Empire, Commander " + player.name + "!");
+    
+    // Auto-save every 30 seconds
+    setInterval(saveGame, 30000);
+}
+
+// ======================
+// GAME INITIALIZATION
+// ======================
 function initGame() {
     console.log("🚀 Initializing Eternal Empire...");
     
@@ -626,11 +672,11 @@ function initGame() {
     // Setup controls
     setupControls();
     
+    // Update UI
+    updateUI();
+    
     // Start game loop
     animate();
-    
-    // Show welcome message
-    showNotification("Welcome to Eternal Empire, Commander " + player.name + "!");
 }
 
 function createPlayer() {
@@ -821,6 +867,9 @@ function createSpaceship() {
     scene.add(spaceship);
 }
 
+// ======================
+// CONTROLS
+// ======================
 function setupControls() {
     // Mouse look
     let mouseX = 0, mouseY = 0;
@@ -896,6 +945,9 @@ function setupControls() {
     });
 }
 
+// ======================
+// GAME FUNCTIONS
+// ======================
 function updatePlayerMovement() {
     if (!playerModel) return;
     
@@ -926,64 +978,4 @@ function updatePlayerMovement() {
         // Update camera position (third person)
         const cameraDistance = 10;
         const cameraHeight = 5;
-        camera.position.x = playerModel.position.x - Math.sin(angle) * cameraDistance;
-        camera.position.z = playerModel.position.z - Math.cos(angle) * cameraDistance;
-        camera.position.y = playerModel.position.y + cameraHeight;
-    }
-    
-    // Gravity
-    if (playerModel.position.y > 2) {
-        playerModel.position.y -= 0.2;
-    } else {
-        playerModel.position.y = 2;
-    }
-}
-
-function mineResource() {
-    if (!player.miningMode) {
-        showNotification("Turn on Mining Mode (M) first!");
-        return;
-    }
-    
-    const playerPos = playerModel.position;
-    let mined = false;
-    
-    // Check resource nodes
-    resourceNodes.forEach((node, index) => {
-        const distance = playerPos.distanceTo(node.mesh.position);
-        if (distance < 3) {
-            const amount = Math.min(10, node.amount);
-            node.amount -= amount;
-            
-            if (node.type === 'iron') {
-                player.resources.iron += amount;
-                showNotification(`Mined ${amount} Iron!`);
-            } else if (node.type === 'volcanium') {
-                player.resources.volcanium += amount;
-                showNotification(`Mined ${amount} Volcanium!`);
-            }
-            
-            // Visual feedback
-            node.mesh.scale.multiplyScalar(0.9);
-            
-            if (node.amount <= 0) {
-                scene.remove(node.mesh);
-                resourceNodes.splice(index, 1);
-            }
-            
-            mined = true;
-            updateUI();
-            
-            // Gain experience
-            player.experience += amount;
-            checkLevelUp();
-        }
-    });
-    
-    if (!mined) {
-        showNotification("No resources nearby. Walk to glowing rocks.");
-    }
-}
-
-function toggleMiningMode() {
-    player.miningMode = !
+        camera.position.x = playerModel.position
