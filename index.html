@@ -1,20 +1,27 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Eternal Empire - Complete Space Game</title>
+    <title>Eternal Empire - Mobile Ready</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; }
         body { 
             font-family: 'Arial', sans-serif; 
             background: #000;
             color: white;
             overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
         
         /* Login Screen */
         #loginScreen {
-            position: absolute;
+            position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
             background: radial-gradient(circle at center, #001122 0%, #000011 100%);
@@ -22,139 +29,70 @@
             justify-content: center;
             align-items: center;
             z-index: 1000;
+            padding: 20px;
         }
         
         .login-box {
-            background: rgba(10, 20, 40, 0.95);
-            padding: 40px;
+            background: rgba(10, 20, 40, 0.98);
+            padding: 30px;
             border-radius: 20px;
             border: 3px solid #00ccff;
-            box-shadow: 0 0 100px rgba(0, 204, 255, 0.5);
+            box-shadow: 0 0 50px rgba(0, 204, 255, 0.5);
             text-align: center;
-            width: 500px;
+            width: 100%;
+            max-width: 500px;
+            backdrop-filter: blur(10px);
         }
         
         .game-title {
             color: #00ffff;
-            font-size: 48px;
+            font-size: clamp(32px, 8vw, 48px);
             margin-bottom: 10px;
-            text-shadow: 0 0 30px #00ffff;
-            letter-spacing: 3px;
+            text-shadow: 0 0 20px #00ffff;
+            letter-spacing: 2px;
         }
         
         .game-subtitle {
             color: #88aaff;
-            font-size: 20px;
-            margin-bottom: 30px;
+            font-size: clamp(14px, 4vw, 18px);
+            margin-bottom: 25px;
         }
         
         .login-input {
             width: 100%;
             padding: 15px;
             margin: 10px 0;
-            background: rgba(0, 30, 60, 0.7);
+            background: rgba(0, 30, 60, 0.8);
             border: 2px solid #0088ff;
-            border-radius: 10px;
+            border-radius: 12px;
             color: white;
             font-size: 16px;
+            font-size: clamp(14px, 4vw, 16px);
         }
         
         .login-btn {
             width: 100%;
             padding: 18px;
-            margin: 20px 0;
+            margin: 15px 0;
             background: linear-gradient(45deg, #0088ff, #00ccff);
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             color: white;
-            font-size: 20px;
+            font-size: clamp(16px, 5vw, 20px);
             font-weight: bold;
             cursor: pointer;
-            transition: 0.3s;
+            transition: transform 0.2s;
         }
         
-        .login-btn:hover {
+        .login-btn:active {
+            transform: scale(0.95);
             background: linear-gradient(45deg, #00ccff, #00ffff);
-            transform: scale(1.05);
-            box-shadow: 0 0 30px #00ffff;
         }
         
         .rulebook-btn {
-            background: rgba(255, 170, 0, 0.2);
+            background: rgba(255, 170, 0, 0.3);
             border: 2px solid #ffaa00;
             color: #ffaa00;
-            padding: 12px;
-            margin-top: 10px;
-        }
-        
-        .rulebook-btn:hover {
-            background: rgba(255, 170, 0, 0.4);
-        }
-        
-        /* Rulebook Modal */
-        #rulebookModal {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-        }
-        
-        .rulebook-content {
-            background: rgba(0, 20, 40, 0.98);
-            width: 90%;
-            max-width: 800px;
-            height: 80vh;
-            border-radius: 20px;
-            border: 3px solid #00ffff;
-            padding: 30px;
-            overflow-y: auto;
-            position: relative;
-        }
-        
-        .rulebook-title {
-            color: #00ffff;
-            font-size: 32px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        
-        .rule-section {
-            margin: 25px 0;
-            padding: 20px;
-            background: rgba(0, 40, 80, 0.3);
-            border-radius: 15px;
-            border-left: 5px solid #00aaff;
-        }
-        
-        .rule-section h3 {
-            color: #00ff88;
-            margin-bottom: 10px;
-        }
-        
-        .rule-section ul {
-            margin-left: 20px;
-        }
-        
-        .rule-section li {
-            margin: 8px 0;
-            color: #ccccff;
-        }
-        
-        .close-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: #ff5555;
-            border: none;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 18px;
         }
         
         /* Game Container */
@@ -162,138 +100,161 @@
             display: none;
             width: 100vw;
             height: 100vh;
-            position: relative;
-        }
-        
-        /* Top Bar */
-        #topBar {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
+        }
+        
+        /* Top Bar - Mobile Optimized */
+        #topBar {
+            position: absolute;
+            top: env(safe-area-inset-top, 0px);
+            left: 0;
             width: 100%;
-            padding: 15px 40px;
-            background: rgba(0, 10, 30, 0.9);
+            padding: 10px 15px;
+            background: rgba(0, 10, 30, 0.95);
             border-bottom: 2px solid #00aaff;
             display: flex;
+            flex-wrap: wrap;
             justify-content: space-between;
+            align-items: center;
             z-index: 100;
+            gap: 10px;
         }
         
         .resource-display {
             display: flex;
-            gap: 30px;
+            flex-wrap: wrap;
+            gap: 10px;
+            flex: 1;
         }
         
         .resource-item {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 5px;
+            background: rgba(0, 30, 60, 0.7);
+            padding: 6px 10px;
+            border-radius: 15px;
+            border: 1px solid #00aaff;
+            min-width: fit-content;
         }
         
         .resource-icon {
-            width: 24px;
-            height: 24px;
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
         }
         
         .resource-value {
-            font-size: 22px;
+            font-size: clamp(12px, 3vw, 16px);
             font-weight: bold;
             color: #00ffff;
-            min-width: 80px;
+            min-width: 40px;
+            text-align: right;
         }
         
-        /* Game UI Elements */
-        #crosshair {
+        /* Mobile Control Overlay */
+        #mobileControls {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #00ffff;
-            font-size: 28px;
-            text-shadow: 0 0 15px #00ffff;
-            z-index: 10;
-            pointer-events: none;
-        }
-        
-        #interactionPrompt {
-            position: absolute;
-            top: 55%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            padding: 12px 24px;
-            border-radius: 10px;
-            border: 2px solid #00ffff;
-            color: #00ffff;
-            font-size: 16px;
-            display: none;
-            z-index: 10;
-        }
-        
-        /* Controls Panel */
-        #controlsPanel {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0, 20, 40, 0.9);
-            padding: 20px;
-            border-radius: 15px;
-            border: 2px solid #00cc88;
+            bottom: env(safe-area-inset-bottom, 0px);
+            left: 0;
+            width: 100%;
+            height: 150px;
             z-index: 50;
-            width: 300px;
-        }
-        
-        .control-item {
+            pointer-events: none;
             display: flex;
             justify-content: space-between;
-            margin: 10px 0;
-            padding: 8px;
-            background: rgba(0, 40, 80, 0.3);
-            border-radius: 8px;
+            padding: 20px;
         }
         
-        .control-key {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-family: monospace;
+        .joystick-area {
+            width: 120px;
+            height: 120px;
+            pointer-events: auto;
+            position: relative;
         }
         
-        /* Action Buttons */
-        #actionButtons {
+        .joystick-base {
+            width: 100px;
+            height: 100px;
+            background: rgba(0, 20, 40, 0.7);
+            border: 2px solid #00aaff;
+            border-radius: 50%;
             position: absolute;
-            bottom: 20px;
-            right: 20px;
+            bottom: 0;
+            left: 0;
+        }
+        
+        .joystick-thumb {
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 170, 255, 0.9);
+            border: 2px solid #00ffff;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 25px;
+            left: 25px;
+            transition: transform 0.1s;
+        }
+        
+        .action-buttons {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 10px;
+            pointer-events: auto;
+        }
+        
+        .mobile-btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(0, 60, 120, 0.9);
+            border: 2px solid #00aaff;
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.1s;
+            user-select: none;
+        }
+        
+        .mobile-btn:active {
+            background: rgba(0, 100, 200, 0.9);
+            transform: scale(0.9);
+        }
+        
+        /* Mobile Action Bar */
+        #mobileActionBar {
+            position: absolute;
+            bottom: 160px;
+            left: 0;
+            width: 100%;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
             z-index: 50;
         }
         
-        .action-btn {
-            padding: 18px 30px;
-            background: rgba(0, 60, 120, 0.8);
-            border: 2px solid #00aaff;
-            border-radius: 15px;
+        .action-bar-btn {
+            padding: 12px 20px;
+            background: rgba(0, 40, 80, 0.9);
+            border: 2px solid #00cc88;
+            border-radius: 25px;
             color: white;
-            font-size: 18px;
+            font-size: clamp(12px, 3vw, 14px);
             cursor: pointer;
-            transition: 0.3s;
+            min-width: 80px;
             text-align: center;
-            min-width: 200px;
+            transition: all 0.1s;
         }
         
-        .action-btn:hover {
+        .action-bar-btn:active {
             background: rgba(0, 100, 200, 0.9);
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0, 170, 255, 0.5);
-        }
-        
-        .action-btn.active {
-            background: rgba(0, 170, 255, 0.9);
-            border-color: #00ffff;
-            box-shadow: 0 0 40px rgba(0, 255, 255, 0.7);
+            transform: scale(0.95);
         }
         
         /* Canvas */
@@ -305,152 +266,298 @@
             height: 100%;
         }
         
-        /* Notification */
-        #notification {
+        /* Mobile Notifications */
+        #mobileNotification {
             position: absolute;
-            top: 100px;
+            top: 80px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.9);
-            padding: 20px 40px;
+            padding: 15px 25px;
             border-radius: 15px;
             border: 3px solid #00ff88;
             color: #00ff88;
-            font-size: 18px;
+            font-size: clamp(14px, 4vw, 16px);
             display: none;
             z-index: 1000;
             text-align: center;
-            max-width: 80%;
+            max-width: 90%;
+            word-wrap: break-word;
+        }
+        
+        /* Mobile Menu Button */
+        #mobileMenuBtn {
+            position: absolute;
+            top: env(safe-area-inset-top, 10px);
+            right: 15px;
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 40, 80, 0.9);
+            border: 2px solid #00aaff;
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 150;
+            cursor: pointer;
+        }
+        
+        /* Mobile Menu */
+        #mobileMenu {
+            position: absolute;
+            top: env(safe-area-inset-top, 0px);
+            right: -300px;
+            width: 280px;
+            height: 100%;
+            background: rgba(0, 20, 40, 0.98);
+            border-left: 3px solid #00ccff;
+            z-index: 200;
+            transition: right 0.3s;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .menu-item {
+            padding: 15px;
+            margin: 10px 0;
+            background: rgba(0, 40, 80, 0.5);
+            border: 1px solid #0088ff;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .menu-item:active {
+            background: rgba(0, 100, 200, 0.7);
+            transform: translateX(-5px);
+        }
+        
+        /* Touch Indicator */
+        .touch-indicator {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 255, 255, 0.3);
+            border: 2px solid #00ffff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10000;
+            transform: translate(-50%, -50%);
+            display: none;
+        }
+        
+        /* Mobile Prompt */
+        #mobilePrompt {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            border: 3px solid #00ffff;
+            color: #00ffff;
+            font-size: clamp(14px, 4vw, 16px);
+            text-align: center;
+            max-width: 90%;
+            display: none;
+            z-index: 1000;
+        }
+        
+        /* Rulebook Mobile */
+        #rulebookModal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.98);
+            display: none;
+            z-index: 2000;
+            overflow-y: auto;
+            padding: 20px;
+            padding-top: env(safe-area-inset-top, 20px);
+        }
+        
+        .rulebook-content {
+            background: rgba(0, 20, 40, 0.98);
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            border-radius: 20px;
+            border: 3px solid #00ffff;
+            padding: 20px;
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: env(safe-area-inset-top, 20px);
+            right: 20px;
+            background: #ff5555;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            z-index: 2001;
+        }
+        
+        /* Performance Warning */
+        #performanceWarning {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 100, 0, 0.9);
+            color: white;
+            text-align: center;
+            display: none;
+            z-index: 3000;
+        }
+        
+        /* Orientation Warning */
+        #orientationWarning {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 4000;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .resource-item {
+                padding: 4px 8px;
+            }
+            
+            .mobile-btn {
+                width: 55px;
+                height: 55px;
+                font-size: 20px;
+            }
+            
+            .joystick-area {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .joystick-base {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .joystick-thumb {
+                width: 40px;
+                height: 40px;
+                bottom: 20px;
+                left: 20px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .resource-display {
+                gap: 5px;
+            }
+            
+            .resource-item {
+                font-size: 12px;
+            }
+            
+            #mobileActionBar {
+                bottom: 140px;
+            }
+            
+            .action-bar-btn {
+                padding: 10px 15px;
+                min-width: 70px;
+                font-size: 12px;
+            }
+        }
+        
+        /* Safe Area Insets for Notches */
+        @supports(padding: max(0px)) {
+            #topBar {
+                padding-top: max(10px, env(safe-area-inset-top));
+                padding-bottom: max(10px, env(safe-area-inset-bottom));
+            }
+            
+            #mobileControls {
+                padding-bottom: max(20px, env(safe-area-inset-bottom));
+            }
         }
     </style>
 </head>
 <body>
 
+<!-- Touch Indicator -->
+<div class="touch-indicator" id="touchIndicator"></div>
+
+<!-- Orientation Warning -->
+<div id="orientationWarning">
+    <div style="color: #00ffff; font-size: 24px; max-width: 300px;">
+        🔄 Please rotate your device to landscape mode for the best gaming experience!
+    </div>
+</div>
+
+<!-- Performance Warning -->
+<div id="performanceWarning">
+    ⚠️ Low performance detected. Reducing graphics quality...
+</div>
+
 <!-- Login Screen -->
 <div id="loginScreen">
     <div class="login-box">
         <div class="game-title">ETERNAL EMPIRE</div>
-        <div class="game-subtitle">Build • Mine • Fight • Conquer</div>
+        <div class="game-subtitle">Mobile Edition</div>
         
         <input type="text" id="username" class="login-input" placeholder="Commander Name" maxlength="20">
         <input type="password" id="password" class="login-input" placeholder="Access Code (any)">
         
-        <button class="login-btn" onclick="startGame()">LAUNCH GAME</button>
-        <button class="login-btn rulebook-btn" onclick="showRulebook()">📖 VIEW RULEBOOK</button>
+        <button class="login-btn" onclick="startGame()">🚀 LAUNCH GAME</button>
+        <button class="login-btn rulebook-btn" onclick="showRulebook()">📖 RULEBOOK</button>
         
-        <div style="margin-top: 20px; color: #88aaff; font-size: 14px;">
-            Progress auto-saves • Multiplayer Ready
+        <div style="margin-top: 20px; color: #88aaff; font-size: 12px;">
+            Touch controls • Auto-save • Mobile optimized
         </div>
     </div>
 </div>
 
 <!-- Rulebook Modal -->
 <div id="rulebookModal">
+    <button class="close-btn" onclick="hideRulebook()">✕ CLOSE</button>
     <div class="rulebook-content">
-        <button class="close-btn" onclick="hideRulebook()">✕ CLOSE</button>
-        
-        <div class="rulebook-title">ETERNAL EMPIRE RULEBOOK</div>
-        
-        <div class="rule-section">
-            <h3>🎮 GAME OBJECTIVE</h3>
-            <ul>
-                <li>Build a galactic empire across multiple planets</li>
-                <li>Mine resources, construct buildings and ships</li>
-                <li>Defeat enemy empires and expand your territory</li>
-                <li>Progress through 5 unique planets with different resources</li>
-                <li>Unlock powerful technologies and ships</li>
-            </ul>
+        <div style="color: #00ffff; font-size: 28px; margin-bottom: 20px; text-align: center;">
+            📱 ETERNAL EMPIRE - MOBILE CONTROLS
         </div>
         
-        <div class="rule-section">
-            <h3>⚔️ COMBAT SYSTEM</h3>
-            <ul>
-                <li><strong>Enemy Empires:</strong> Each planet has AI-controlled enemy factions</li>
-                <li><strong>Ship Classes:</strong> Scout (fast), Cargo (transport), Battle (combat), Mothership (capital)</li>
-                <li><strong>Combat Mechanics:</strong> Real-time space battles with targeting systems</li>
-                <li><strong>Damage Types:</strong> Energy weapons, ballistic weapons, missiles</li>
-                <li><strong>Shield System:</strong> Recharging shields protect your ships</li>
-            </ul>
+        <div style="background: rgba(0,40,80,0.3); padding: 15px; border-radius: 10px; margin: 15px 0;">
+            <h3 style="color: #00ff88;">🎮 TOUCH CONTROLS</h3>
+            <p><strong>Left Side:</strong> Virtual joystick for movement</p>
+            <p><strong>Right Side:</strong> Action buttons (Mine, Jump, Menu)</p>
+            <p><strong>Bottom Center:</strong> Quick actions (Build, Ship, Map)</p>
+            <p><strong>Tap rocks:</strong> To mine when mining mode is ON</p>
+            <p><strong>Tap ship:</strong> To enter/travel</p>
         </div>
         
-        <div class="rule-section">
-            <h3>🏗️ BUILDING SYSTEM</h3>
-            <ul>
-                <li><strong>Auto-Miner:</strong> Automatically mines nearby resources</li>
-                <li><strong>Defense Turret:</strong> Protects your base from enemies</li>
-                <li><strong>Power Generator:</strong> Provides energy for buildings</li>
-                <li><strong>Shipyard:</strong> Constructs all types of spaceships</li>
-                <li><strong>Research Lab:</strong> Unlocks new technologies</li>
-                <li><strong>Trade Hub:</strong> Buy/sell resources with other empires</li>
-            </ul>
-        </div>
-        
-        <div class="rule-section">
-            <h3>🚀 SHIP TYPES</h3>
-            <ul>
-                <li><strong>Scout Ship:</strong> Fast, good for exploration (50 Iron)</li>
-                <li><strong>Cargo Ship:</strong> Carries 500 resources (100 Iron)</li>
-                <li><strong>Battleship:</strong> Heavy weapons, strong shields (200 Iron, 50 Volcanium)</li>
-                <li><strong>Mothership:</strong> Carries 5 smaller ships, mobile base (500 Iron, 200 Volcanium)</li>
-                <li><strong>Mining Ship:</strong> Specialized for asteroid mining (80 Iron)</li>
-            </ul>
-        </div>
-        
-        <div class="rule-section">
-            <h3>🌍 PLANETS & RESOURCES</h3>
-            <ul>
-                <li><strong>Terra Nova:</strong> Iron, Carbon (Starting planet)</li>
-                <li><strong>Pyros V:</strong> Volcanium, Crystal (Lava planet)</li>
-                <li><strong>Cryos-7:</strong> Cryo-Crystal, Energy (Ice planet)</li>
-                <li><strong>Zephyr Prime:</strong> Aero-Gel, Gas (Gas giant)</li>
-                <li><strong>Graviton Core:</strong> Gravity-Alloy (High-gravity planet)</li>
-            </ul>
-        </div>
-        
-        <div class="rule-section">
-            <h3>🎯 CONTROLS</h3>
-            <ul>
-                <li><strong>WASD:</strong> Move character</li>
-                <li><strong>Mouse:</strong> Look around</li>
-                <li><strong>Left Click:</strong> Shoot/Select</li>
-                <li><strong>E:</strong> Interact/Mine</li>
-                <li><strong>B:</strong> Build menu</li>
-                <li><strong>I:</strong> Inventory</li>
-                <li><strong>M:</strong> Toggle mining mode</li>
-                <li><strong>G:</strong> Galaxy map</li>
-                <li><strong>ESC:</strong> Pause menu</li>
-                <li><strong>Ctrl+S:</strong> Quick save</li>
-            </ul>
-        </div>
-        
-        <div class="rule-section">
-            <h3>📈 PROGRESSION</h3>
-            <ul>
-                <li>Start with basic tools on Terra Nova</li>
-                <li>Mine resources to build first ship</li>
-                <li>Travel to new planets for rare materials</li>
-                <li>Research technologies to unlock better equipment</li>
-                <li>Build fleet to conquer enemy territories</li>
-                <li>Establish trade routes for passive income</li>
-                <li>Form alliances or declare war on other empires</li>
-            </ul>
-        </div>
-        
-        <div class="rule-section">
-            <h3>💡 TIPS & STRATEGY</h3>
-            <ul>
-                <li>Start by mining Iron to build basic structures</li>
-                <li>Build defense turrets early to protect from raids</li>
-                <li>Scout ships are cheap and great for exploration</li>
-                <li>Balance resource gathering with expansion</li>
-                <li>Use cargo ships to transport resources between planets</li>
-                <li>Mothership can act as mobile base for distant operations</li>
-                <li>Save often - the universe is dangerous!</li>
-            </ul>
+        <div style="background: rgba(0,40,80,0.3); padding: 15px; border-radius: 10px; margin: 15px 0;">
+            <h3 style="color: #00ff88;">⚡ QUICK TIPS</h3>
+            <p>1. Enable mining mode before tapping rocks</p>
+            <p>2. Collect 50 Iron to fuel your ship</p>
+            <p>3. Use two fingers to pinch zoom camera</p>
+            <p>4. Tap and drag to look around</p>
+            <p>5. Menu button has all game options</p>
         </div>
         
         <div style="text-align: center; margin-top: 30px;">
-            <button class="login-btn" onclick="hideRulebook()" style="width: auto; padding: 15px 40px;">
+            <button class="login-btn" onclick="hideRulebook()" style="width: auto; padding: 15px 30px;">
                 START PLAYING
             </button>
         </div>
@@ -468,391 +575,572 @@
             </div>
             <div class="resource-item">
                 <div class="resource-icon" style="background: #ff5555;"></div>
-                <div>VOLCANIUM: <span class="resource-value" id="volcaniumCount">0</span></div>
+                <div>VOLC: <span class="resource-value" id="volcaniumCount">0</span></div>
             </div>
             <div class="resource-item">
                 <div class="resource-icon" style="background: #00ff88;"></div>
-                <div>ENERGY: <span class="resource-value" id="energyCount">100</span></div>
-            </div>
-            <div class="resource-item">
-                <div class="resource-icon" style="background: #00aaff;"></div>
-                <div>CREDITS: <span class="resource-value" id="creditCount">500</span></div>
+                <div>NRG: <span class="resource-value" id="energyCount">100</span></div>
             </div>
         </div>
-        <div style="color: #00ffff; font-size: 24px;">
-            PLANET: <span id="currentPlanet">TERRA NOVA</span>
+        <div style="color: #00ffff; font-size: 14px;">
+            LVL: <span id="playerLevel">1</span>
         </div>
     </div>
     
-    <!-- Game UI -->
-    <div id="crosshair">+</div>
-    <div id="interactionPrompt">Press E to mine</div>
+    <!-- Mobile Menu Button -->
+    <div id="mobileMenuBtn" onclick="toggleMobileMenu()">☰</div>
     
-    <!-- Controls Panel -->
-    <div id="controlsPanel">
-        <h3 style="color: #00cc88; margin-bottom: 15px;">CONTROLS</h3>
-        <div class="control-item">
-            <span>Move</span>
-            <span class="control-key">WASD</span>
+    <!-- Mobile Menu -->
+    <div id="mobileMenu">
+        <div class="menu-item" onclick="toggleMiningMode()">
+            ⛏️ Mining Mode: <span id="menuMiningStatus">OFF</span>
         </div>
-        <div class="control-item">
-            <span>Look</span>
-            <span class="control-key">MOUSE</span>
+        <div class="menu-item" onclick="enterShip()">
+            🚀 Enter Ship
         </div>
-        <div class="control-item">
-            <span>Mine/Interact</span>
-            <span class="control-key">E</span>
+        <div class="menu-item" onclick="showBuildMenu()">
+            🏗️ Build Menu
         </div>
-        <div class="control-item">
-            <span>Build Menu</span>
-            <span class="control-key">B</span>
+        <div class="menu-item" onclick="showGalaxyMap()">
+            🌌 Galaxy Map
         </div>
-        <div class="control-item">
-            <span>Inventory</span>
-            <span class="control-key">I</span>
+        <div class="menu-item" onclick="saveGame()">
+            💾 Save Game
         </div>
-        <div class="control-item">
-            <span>Mining Mode</span>
-            <span class="control-key">M</span>
+        <div class="menu-item" onclick="showRulebook()">
+            📖 Rulebook
+        </div>
+        <div class="menu-item" onclick="toggleMobileMenu()" style="background: rgba(255,50,50,0.3);">
+            ✕ Close Menu
         </div>
     </div>
     
-    <!-- Action Buttons -->
-    <div id="actionButtons">
-        <button class="action-btn" onclick="toggleMiningMode()" id="miningBtn">
-            ⛏️ MINING MODE: OFF
-        </button>
-        <button class="action-btn" onclick="enterShip()" id="shipBtn">
-            🚀 ENTER SHIP
-        </button>
-        <button class="action-btn" onclick="openBuildMenu()">
-            🏗️ BUILD MENU
-        </button>
-        <button class="action-btn" onclick="openGalaxyMap()">
-            🌌 GALAXY MAP
-        </button>
-        <button class="action-btn" onclick="showRulebook()">
-            📖 RULEBOOK
-        </button>
+    <!-- Mobile Action Bar -->
+    <div id="mobileActionBar">
+        <div class="action-bar-btn" onclick="toggleMiningMode()" id="mobileMiningBtn">
+            ⛏️ MINE
+        </div>
+        <div class="action-bar-btn" onclick="enterShip()">
+            🚀 SHIP
+        </div>
+        <div class="action-bar-btn" onclick="showBuildMenu()">
+            🏗️ BUILD
+        </div>
+        <div class="action-bar-btn" onclick="showGalaxyMap()">
+            🌌 MAP
+        </div>
+    </div>
+    
+    <!-- Mobile Controls -->
+    <div id="mobileControls">
+        <div class="joystick-area" id="joystickArea">
+            <div class="joystick-base"></div>
+            <div class="joystick-thumb" id="joystickThumb"></div>
+        </div>
+        
+        <div class="action-buttons">
+            <div class="mobile-btn" id="jumpBtn" ontouchstart="mobileJump()">⬆️</div>
+            <div class="mobile-btn" id="mineBtn" ontouchstart="mobileMine()">⛏️</div>
+            <div class="mobile-btn" id="interactBtn" ontouchstart="mobileInteract()">✋</div>
+        </div>
     </div>
     
     <!-- Canvas -->
     <div id="gameCanvas"></div>
     
-    <!-- Notification -->
-    <div id="notification"></div>
+    <!-- Mobile Notification -->
+    <div id="mobileNotification"></div>
+    
+    <!-- Mobile Prompt -->
+    <div id="mobilePrompt"></div>
 </div>
 
 <script>
 // ======================
-// GLOBAL VARIABLES
+// MOBILE GAME STATE
 // ======================
 let player = {
     name: '',
-    health: 100,
-    position: { x: 0, y: 2, z: 0 },
     resources: {
         iron: 0,
         volcanium: 0,
         energy: 100,
         credits: 500
     },
-    unlockedPlanets: ['TERRA NOVA'],
-    currentPlanet: 'TERRA NOVA',
-    ships: {
-        scout: 0,
-        cargo: 0,
-        battle: 0,
-        mothership: 0
-    },
-    buildings: [],
-    miningMode: false,
-    enemiesDefeated: 0,
     level: 1,
-    experience: 0
+    experience: 0,
+    miningMode: false,
+    currentPlanet: 'TERRA NOVA'
 };
 
-let scene, camera, renderer;
+// ======================
+// MOBILE CONTROLS STATE
+// ======================
+let joystickActive = false;
+let joystickOrigin = { x: 0, y: 0 };
+let joystickPosition = { x: 0, y: 0 };
+let touchControls = {
+    moveX: 0,
+    moveZ: 0,
+    touchStartTime: 0
+};
+
+// ======================
+// THREE.JS VARIABLES
+// ======================
+let scene, camera, renderer, controls;
 let playerModel, terrain, spaceship;
-let keys = {};
-let clock = new THREE.Clock();
 let resourceNodes = [];
-let enemyShips = [];
+let clock = new THREE.Clock();
+let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
 // ======================
-// RULEBOOK FUNCTIONS
+// MOBILE UI FUNCTIONS
 // ======================
-function showRulebook() {
-    console.log("Showing rulebook...");
-    document.getElementById('rulebookModal').style.display = 'flex';
+function showMobileNotification(text, duration = 3000) {
+    const notification = document.getElementById('mobileNotification');
+    notification.textContent = text;
+    notification.style.display = 'block';
+    notification.style.animation = 'none';
+    setTimeout(() => {
+        notification.style.animation = 'fadeOut 0.5s forwards';
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 500);
+    }, duration);
 }
 
-function hideRulebook() {
-    console.log("Hiding rulebook...");
-    document.getElementById('rulebookModal').style.display = 'none';
+function showMobilePrompt(text) {
+    const prompt = document.getElementById('mobilePrompt');
+    prompt.textContent = text;
+    prompt.style.display = 'block';
+    setTimeout(() => {
+        prompt.style.display = 'none';
+    }, 2000);
+}
+
+function toggleMobileMenu() {
+    const menu = document.getElementById('mobileMenu');
+    if (menu.style.right === '0px') {
+        menu.style.right = '-300px';
+    } else {
+        menu.style.right = '0px';
+    }
+}
+
+function updateMobileUI() {
+    document.getElementById('ironCount').textContent = player.resources.iron;
+    document.getElementById('volcaniumCount').textContent = player.resources.volcanium;
+    document.getElementById('energyCount').textContent = Math.floor(player.resources.energy);
+    document.getElementById('playerLevel').textContent = player.level;
+    document.getElementById('menuMiningStatus').textContent = player.miningMode ? 'ON' : 'OFF';
+    
+    const miningBtn = document.getElementById('mobileMiningBtn');
+    if (player.miningMode) {
+        miningBtn.style.background = 'rgba(0, 255, 100, 0.3)';
+        miningBtn.style.borderColor = '#00ff88';
+    } else {
+        miningBtn.style.background = 'rgba(0, 40, 80, 0.9)';
+        miningBtn.style.borderColor = '#00cc88';
+    }
 }
 
 // ======================
-// LOGIN FUNCTIONS
+// TOUCH CONTROLS
 // ======================
-function startGame() {
-    console.log("Starting game...");
+function initMobileControls() {
+    const joystickArea = document.getElementById('joystickArea');
+    const joystickThumb = document.getElementById('joystickThumb');
+    const indicator = document.getElementById('touchIndicator');
     
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value;
+    // Joystick touch start
+    joystickArea.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = joystickArea.getBoundingClientRect();
+        
+        joystickOrigin.x = rect.left + 50;
+        joystickOrigin.y = rect.top + 50;
+        joystickActive = true;
+        
+        // Show touch indicator
+        indicator.style.left = touch.clientX + 'px';
+        indicator.style.top = touch.clientY + 'px';
+        indicator.style.display = 'block';
+        
+        updateJoystick(touch.clientX, touch.clientY);
+    }, { passive: false });
     
-    if (!username) {
-        alert("Please enter a commander name!");
+    // Joystick touch move
+    document.addEventListener('touchmove', (e) => {
+        if (!joystickActive) return;
+        e.preventDefault();
+        
+        const touch = e.touches[0];
+        updateJoystick(touch.clientX, touch.clientY);
+        
+        // Update indicator
+        indicator.style.left = touch.clientX + 'px';
+        indicator.style.top = touch.clientY + 'px';
+    }, { passive: false });
+    
+    // Touch end
+    document.addEventListener('touchend', (e) => {
+        if (joystickActive) {
+            joystickActive = false;
+            joystickThumb.style.transform = 'translate(0, 0)';
+            touchControls.moveX = 0;
+            touchControls.moveZ = 0;
+            indicator.style.display = 'none';
+        }
+    });
+    
+    // Tap to mine/interact
+    renderer.domElement.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+            const touch = e.touches[0];
+            handleTap(touch.clientX, touch.clientY);
+        }
+    });
+    
+    // Pinch zoom for camera
+    let initialPinchDistance = 0;
+    renderer.domElement.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+            initialPinchDistance = getTouchDistance(e.touches[0], e.touches[1]);
+        }
+    });
+    
+    renderer.domElement.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
+            const zoomDelta = (currentDistance - initialPinchDistance) * 0.01;
+            
+            if (camera && controls) {
+                // Adjust camera distance
+                const newDistance = controls.getDistance() - zoomDelta;
+                controls.minDistance = 3;
+                controls.maxDistance = 50;
+                
+                // Update camera position
+                camera.position.sub(controls.target).normalize().multiplyScalar(newDistance).add(controls.target);
+                initialPinchDistance = currentDistance;
+            }
+        }
+    }, { passive: false });
+}
+
+function updateJoystick(x, y) {
+    const joystickThumb = document.getElementById('joystickThumb');
+    const maxDistance = 35;
+    
+    let deltaX = x - joystickOrigin.x;
+    let deltaY = y - joystickOrigin.y;
+    
+    // Limit joystick movement
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    if (distance > maxDistance) {
+        deltaX = (deltaX / distance) * maxDistance;
+        deltaY = (deltaY / distance) * maxDistance;
+    }
+    
+    // Update thumb position
+    joystickThumb.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+    
+    // Normalize movement
+    touchControls.moveX = deltaX / maxDistance;
+    touchControls.moveZ = -deltaY / maxDistance; // Invert Y for forward/backward
+}
+
+function getTouchDistance(touch1, touch2) {
+    const dx = touch1.clientX - touch2.clientX;
+    const dy = touch1.clientY - touch2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+function handleTap(screenX, screenY) {
+    // Convert screen coordinates to normalized device coordinates
+    const x = (screenX / window.innerWidth) * 2 - 1;
+    const y = -(screenY / window.innerHeight) * 2 + 1;
+    
+    // Create raycaster
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
+    
+    // Check for resource nodes
+    let tappedResource = false;
+    resourceNodes.forEach((node, index) => {
+        if (node.collected) return;
+        
+        const intersects = raycaster.intersectObject(node.mesh);
+        if (intersects.length > 0) {
+            tappedResource = true;
+            if (player.miningMode) {
+                mineResource(node, index);
+            } else {
+                showMobilePrompt("Turn on Mining Mode first!");
+            }
+        }
+    });
+    
+    // Check for ship
+    if (spaceship) {
+        const intersects = raycaster.intersectObject(spaceship);
+        if (intersects.length > 0) {
+            enterShip();
+        }
+    }
+    
+    if (!tappedResource) {
+        showMobilePrompt("Tap rocks to mine, ship to enter");
+    }
+}
+
+// ======================
+// MOBILE ACTION FUNCTIONS
+// ======================
+function mobileJump() {
+    if (playerModel && playerModel.position.y < 3) {
+        playerModel.position.y += 5;
+        showMobilePrompt("Jump!");
+    }
+}
+
+function mobileMine() {
+    toggleMiningMode();
+}
+
+function mobileInteract() {
+    showMobilePrompt("Tap objects to interact");
+}
+
+function toggleMiningMode() {
+    player.miningMode = !player.miningMode;
+    updateMobileUI();
+    
+    if (player.miningMode) {
+        showMobileNotification("⛏️ Mining Mode ON - Tap rocks to mine!");
+    } else {
+        showMobileNotification("⛏️ Mining Mode OFF");
+    }
+}
+
+function enterShip() {
+    if (player.resources.iron >= 50) {
+        player.resources.iron -= 50;
+        updateMobileUI();
+        showMobileNotification("🚀 Entering ship... Fuel: 50 Iron", 3000);
+    } else {
+        showMobileNotification("Need 50 Iron for ship fuel!");
+    }
+}
+
+function showBuildMenu() {
+    showMobileNotification(`
+    🏗️ BUILD MENU:
+    
+    Ships:
+    • Scout - 50 Iron
+    • Cargo - 100 Iron
+    • Battle - 200 Iron
+    
+    Buildings:
+    • Miner - 30 Iron
+    • Turret - 50 Iron
+    • Generator - 40 Iron
+    
+    Collect more resources!
+    `, 5000);
+}
+
+function showGalaxyMap() {
+    showMobileNotification(`
+    🌌 GALAXY MAP:
+    
+    Current: Terra Nova
+    Next: Pyros V (100 Iron)
+    Need Level 3 for Cryos-7
+    
+    Level: ${player.level}
+    Iron: ${player.resources.iron}
+    `, 5000);
+}
+
+// ======================
+// GAME FUNCTIONS
+// ======================
+function mineResource(node, index) {
+    const amount = Math.min(5, node.amount);
+    node.amount -= amount;
+    
+    if (node.type === 'iron') {
+        player.resources.iron += amount;
+    } else if (node.type === 'volcanium') {
+        player.resources.volcanium += amount;
+    }
+    
+    // Visual feedback
+    node.mesh.scale.multiplyScalar(0.9);
+    node.mesh.material.emissiveIntensity = 2;
+    setTimeout(() => {
+        node.mesh.material.emissiveIntensity = 0.5;
+    }, 200);
+    
+    if (node.amount <= 0) {
+        node.collected = true;
+        scene.remove(node.mesh);
+        resourceNodes.splice(index, 1);
+    }
+    
+    // Gain experience
+    player.experience += amount;
+    if (player.experience >= player.level * 50) {
+        player.level++;
+        player.experience = 0;
+        showMobileNotification(`🎉 LEVEL UP! Now Level ${player.level}!`);
+    }
+    
+    // Consume energy
+    player.resources.energy = Math.max(0, player.resources.energy - 1);
+    
+    updateMobileUI();
+    showMobilePrompt(`+${amount} ${node.type.toUpperCase()}`);
+}
+
+// ======================
+// THREE.JS GAME
+// ======================
+function initGame() {
+    // Check orientation
+    if (window.innerHeight > window.innerWidth) {
+        document.getElementById('orientationWarning').style.display = 'flex';
         return;
     }
     
-    player.name = username;
-    
-    // Hide login screen
-    document.getElementById('loginScreen').style.display = 'none';
-    
-    // Show game container
-    document.getElementById('gameContainer').style.display = 'block';
-    
-    // Initialize the game
-    initGame();
-    
-    // Show welcome message
-    showNotification("Welcome to Eternal Empire, Commander " + player.name + "!");
-    
-    // Auto-save every 30 seconds
-    setInterval(saveGame, 30000);
-}
-
-// ======================
-// GAME INITIALIZATION
-// ======================
-function initGame() {
-    console.log("🚀 Initializing Eternal Empire...");
-    
-    // Scene
+    // Create scene
     scene = new THREE.Scene();
-    scene.fog = new THREE.Fog(0x000033, 10, 200);
+    scene.fog = new THREE.Fog(0x000033, 10, 100);
     
-    // Camera (Third person)
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 10, 20);
+    // Create camera (mobile optimized)
+    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 15, 25);
     
-    // Renderer
-    renderer = new THREE.WebGLRenderer({ antialias: true });
+    // Create renderer (mobile optimized)
+    renderer = new THREE.WebGLRenderer({ 
+        antialias: true,
+        alpha: true,
+        powerPreference: isMobile ? "low-power" : "default"
+    });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit for mobile
+    renderer.shadowMap.enabled = !isMobile; // Disable shadows on mobile for performance
     document.getElementById('gameCanvas').appendChild(renderer.domElement);
     
     // Lighting
-    const ambientLight = new THREE.AmbientLight(0x404040);
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.8);
     scene.add(ambientLight);
     
-    const sunLight = new THREE.DirectionalLight(0xffffff, 1);
+    const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
     sunLight.position.set(50, 100, 50);
-    sunLight.castShadow = true;
+    if (!isMobile) sunLight.castShadow = true;
     scene.add(sunLight);
     
-    // Create player character
+    // Create player
     createPlayer();
     
     // Create terrain
     createTerrain();
     
-    // Create resource nodes
+    // Create resources
     createResources();
     
-    // Create enemy ships
-    createEnemyShips();
-    
-    // Create player spaceship
+    // Create ship
     createSpaceship();
     
-    // Setup controls
+    // Setup orbit controls
     setupControls();
     
-    // Update UI
-    updateUI();
+    // Setup mobile controls
+    initMobileControls();
     
     // Start game loop
     animate();
+    
+    // Show welcome
+    showMobileNotification(`Welcome, ${player.name}! Use joystick to move, tap rocks to mine.`, 5000);
 }
 
 function createPlayer() {
-    // Create human character
-    const bodyGeometry = new THREE.CapsuleGeometry(0.5, 1.5, 8, 16);
-    const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0x1a5fb4 });
-    
-    const headGeometry = new THREE.SphereGeometry(0.3, 16, 16);
-    const headMaterial = new THREE.MeshPhongMaterial({ color: 0xf0c0a0 });
-    
-    playerModel = new THREE.Group();
-    
-    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-    body.position.y = 0.75;
-    
-    const head = new THREE.Mesh(headGeometry, headMaterial);
-    head.position.y = 1.8;
-    
-    playerModel.add(body);
-    playerModel.add(head);
-    playerModel.position.set(0, 2, 0);
-    playerModel.castShadow = true;
-    
+    // Simplified player for mobile
+    const geometry = new THREE.CapsuleGeometry(0.5, 1.5, 8, 16);
+    const material = new THREE.MeshPhongMaterial({ color: 0x1a5fb4 });
+    playerModel = new THREE.Mesh(geometry, material);
+    playerModel.position.set(0, 1.5, 0);
     scene.add(playerModel);
 }
 
 function createTerrain() {
-    const terrainGeometry = new THREE.PlaneGeometry(200, 200, 50, 50);
+    const geometry = new THREE.PlaneGeometry(100, 100, 20, 20);
     
-    // Add terrain variation
-    const vertices = terrainGeometry.attributes.position;
+    // Simple terrain
+    const vertices = geometry.attributes.position;
     for (let i = 0; i < vertices.count; i++) {
         const x = vertices.getX(i);
         const z = vertices.getZ(i);
-        const height = Math.sin(x * 0.05) * Math.cos(z * 0.05) * 3;
+        const height = Math.sin(x * 0.1) * Math.cos(z * 0.1) * 2;
         vertices.setY(i, height);
     }
-    terrainGeometry.computeVertexNormals();
+    geometry.computeVertexNormals();
     
-    const terrainMaterial = new THREE.MeshPhongMaterial({ 
+    const material = new THREE.MeshPhongMaterial({ 
         color: 0x2ecc71,
-        shininess: 30
+        shininess: 20
     });
     
-    terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
+    terrain = new THREE.Mesh(geometry, material);
     terrain.rotation.x = -Math.PI / 2;
-    terrain.receiveShadow = true;
     scene.add(terrain);
 }
 
 function createResources() {
-    // Create iron nodes
-    for (let i = 0; i < 15; i++) {
+    resourceNodes = [];
+    
+    // Create fewer resources on mobile
+    const count = isMobile ? 10 : 20;
+    
+    for (let i = 0; i < count; i++) {
         const size = 1 + Math.random();
         const geometry = new THREE.OctahedronGeometry(size, 0);
         const material = new THREE.MeshPhongMaterial({ 
-            color: 0x888888,
-            emissive: 0x444444,
-            emissiveIntensity: 0.3
-        });
-        
-        const node = new THREE.Mesh(geometry, material);
-        
-        const angle = Math.random() * Math.PI * 2;
-        const distance = 20 + Math.random() * 60;
-        node.position.set(
-            Math.cos(angle) * distance,
-            size + 0.5,
-            Math.sin(angle) * distance
-        );
-        
-        node.castShadow = true;
-        scene.add(node);
-        
-        resourceNodes.push({
-            mesh: node,
-            type: 'iron',
-            amount: 50 + Math.floor(Math.random() * 100)
-        });
-    }
-    
-    // Create volcanium nodes
-    for (let i = 0; i < 10; i++) {
-        const size = 1.5 + Math.random();
-        const geometry = new THREE.DodecahedronGeometry(size, 0);
-        const material = new THREE.MeshPhongMaterial({ 
-            color: 0xff3300,
-            emissive: 0x550000,
+            color: Math.random() > 0.3 ? 0x888888 : 0xff3300,
+            emissive: Math.random() > 0.3 ? 0x444444 : 0x550000,
             emissiveIntensity: 0.5
         });
         
         const node = new THREE.Mesh(geometry, material);
         
         const angle = Math.random() * Math.PI * 2;
-        const distance = 30 + Math.random() * 50;
+        const distance = 15 + Math.random() * 40;
         node.position.set(
             Math.cos(angle) * distance,
             size + 0.5,
             Math.sin(angle) * distance
         );
         
-        node.castShadow = true;
         scene.add(node);
         
         resourceNodes.push({
             mesh: node,
-            type: 'volcanium',
-            amount: 30 + Math.floor(Math.random() * 70)
-        });
-    }
-}
-
-function createEnemyShips() {
-    // Create enemy cargo ships
-    for (let i = 0; i < 3; i++) {
-        const geometry = new THREE.BoxGeometry(3, 1, 5);
-        const material = new THREE.MeshPhongMaterial({ 
-            color: 0xff0000,
-            emissive: 0x550000,
-            emissiveIntensity: 0.2
-        });
-        
-        const ship = new THREE.Mesh(geometry, material);
-        
-        const angle = Math.random() * Math.PI * 2;
-        const distance = 80 + Math.random() * 40;
-        ship.position.set(
-            Math.cos(angle) * distance,
-            10 + Math.random() * 5,
-            Math.sin(angle) * distance
-        );
-        
-        ship.castShadow = true;
-        scene.add(ship);
-        
-        enemyShips.push({
-            mesh: ship,
-            health: 100,
-            type: 'cargo'
-        });
-    }
-    
-    // Create enemy battleships
-    for (let i = 0; i < 2; i++) {
-        const geometry = new THREE.ConeGeometry(2, 4, 8);
-        const material = new THREE.MeshPhongMaterial({ 
-            color: 0xff5555,
-            emissive: 0x770000,
-            emissiveIntensity: 0.3
-        });
-        
-        const ship = new THREE.Mesh(geometry, material);
-        ship.rotation.x = Math.PI / 2;
-        
-        const angle = Math.random() * Math.PI * 2;
-        const distance = 100 + Math.random() * 30;
-        ship.position.set(
-            Math.cos(angle) * distance,
-            15 + Math.random() * 5,
-            Math.sin(angle) * distance
-        );
-        
-        ship.castShadow = true;
-        scene.add(ship);
-        
-        enemyShips.push({
-            mesh: ship,
-            health: 200,
-            type: 'battle'
+            type: Math.random() > 0.3 ? 'iron' : 'volcanium',
+            amount: 50 + Math.floor(Math.random() * 100),
+            collected: false
         });
     }
 }
 
 function createSpaceship() {
-    // Player's starting ship
-    const geometry = new THREE.ConeGeometry(2, 4, 8);
+    const geometry = new THREE.ConeGeometry(2, 4, 6);
     const material = new THREE.MeshPhongMaterial({ 
         color: 0x1a5fb4,
         emissive: 0x004488,
@@ -862,120 +1150,204 @@ function createSpaceship() {
     spaceship = new THREE.Mesh(geometry, material);
     spaceship.rotation.x = Math.PI / 2;
     spaceship.position.set(0, 3, -20);
-    spaceship.castShadow = true;
-    
     scene.add(spaceship);
 }
 
-// ======================
-// CONTROLS
-// ======================
 function setupControls() {
-    // Mouse look
-    let mouseX = 0, mouseY = 0;
-    let isPointerLocked = false;
-    
-    document.addEventListener('mousemove', (event) => {
-        if (isPointerLocked) {
-            mouseX += event.movementX * 0.002;
-            mouseY += event.movementY * 0.002;
-            mouseY = Math.max(-Math.PI/2, Math.min(Math.PI/2, mouseY));
-            
-            // Update camera
-            camera.rotation.y = mouseX;
-            camera.rotation.x = mouseY;
-        }
-    });
-    
-    // Pointer lock
-    renderer.domElement.addEventListener('click', () => {
-        if (!isPointerLocked) {
-            renderer.domElement.requestPointerLock();
-        }
-    });
-    
-    document.addEventListener('pointerlockchange', () => {
-        isPointerLocked = document.pointerLockElement === renderer.domElement;
-    });
-    
-    // Keyboard controls
-    document.addEventListener('keydown', (event) => {
-        keys[event.key.toLowerCase()] = true;
+    // Simple orbit controls for mobile
+    if (typeof THREE.OrbitControls !== 'undefined') {
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 5;
+        controls.maxDistance = 50;
+        controls.maxPolarAngle = Math.PI / 2;
         
-        // E to mine/interact
-        if (event.key === 'e' || event.key === 'E') {
-            mineResource();
+        // Disable some controls for mobile
+        if (isMobile) {
+            controls.enableZoom = false;
+            controls.enablePan = false;
         }
-        
-        // M to toggle mining mode
-        if (event.key === 'm' || event.key === 'M') {
-            toggleMiningMode();
-        }
-        
-        // B for build menu
-        if (event.key === 'b' || event.key === 'B') {
-            openBuildMenu();
-        }
-        
-        // I for inventory
-        if (event.key === 'i' || event.key === 'I') {
-            showNotification("Inventory feature coming soon!");
-        }
-        
-        // G for galaxy map
-        if (event.key === 'g' || event.key === 'G') {
-            showNotification("Galaxy Map: Unlock more planets first!");
-        }
-        
-        // Space to jump
-        if (event.key === ' ' && playerModel.position.y < 3) {
-            playerModel.position.y += 5;
-        }
-    });
-    
-    document.addEventListener('keyup', (event) => {
-        keys[event.key.toLowerCase()] = false;
-    });
-    
-    // Handle window resize
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+    }
 }
 
 // ======================
-// GAME FUNCTIONS
+// GAME LOOP
 // ======================
-function updatePlayerMovement() {
-    if (!playerModel) return;
+function animate() {
+    requestAnimationFrame(animate);
     
-    const moveSpeed = 0.1;
+    const delta = clock.getDelta();
     
-    // Calculate movement direction based on camera orientation
-    const direction = new THREE.Vector3();
+    // Update player movement from joystick
+    if (playerModel && joystickActive) {
+        const moveSpeed = 5 * delta;
+        playerModel.position.x += touchControls.moveX * moveSpeed;
+        playerModel.position.z += touchControls.moveZ * moveSpeed;
+        
+        // Keep player on terrain
+        playerModel.position.y = 1.5;
+        
+        // Update camera target
+        if (controls) {
+            controls.target.copy(playerModel.position);
+        }
+    }
     
-    if (keys['w']) direction.z -= 1;
-    if (keys['s']) direction.z += 1;
-    if (keys['a']) direction.x -= 1;
-    if (keys['d']) direction.x += 1;
+    // Rotate resources
+    resourceNodes.forEach(node => {
+        if (!node.collected) {
+            node.mesh.rotation.y += 0.01;
+        }
+    });
     
-    if (direction.length() > 0) {
-        direction.normalize();
-        
-        // Apply camera rotation to movement
-        const angle = camera.rotation.y;
-        const cos = Math.cos(angle);
-        const sin = Math.sin(angle);
-        
-        const moveX = direction.x * cos - direction.z * sin;
-        const moveZ = direction.x * sin + direction.z * cos;
-        
-        playerModel.position.x += moveX * moveSpeed;
-        playerModel.position.z += moveZ * moveSpeed;
-        
-        // Update camera position (third person)
-        const cameraDistance = 10;
-        const cameraHeight = 5;
-        camera.position.x = playerModel.position
+    // Rotate ship
+    if (spaceship) {
+        spaceship.rotation.y += 0.005;
+    }
+    
+    // Recharge energy
+    if (player.resources.energy < 100) {
+        player.resources.energy += 0.05;
+        if (Math.floor(player.resources.energy) % 10 === 0) {
+            updateMobileUI();
+        }
+    }
+    
+    // Update controls
+    if (controls) controls.update();
+    
+    renderer.render(scene, camera);
+}
+
+// ======================
+// SAVE/LOAD
+// ======================
+function saveGame() {
+    const saveData = {
+        player: player,
+        timestamp: Date.now()
+    };
+    localStorage.setItem('eternal_empire_mobile_save', JSON.stringify(saveData));
+    showMobileNotification("💾 Game saved!", 2000);
+}
+
+function loadGame() {
+    const saved = localStorage.getItem('eternal_empire_mobile_save');
+    if (saved) {
+        try {
+            const saveData = JSON.parse(saved);
+            player = saveData.player;
+            updateMobileUI();
+            return true;
+        } catch (e) {
+            console.error("Failed to load save:", e);
+        }
+    }
+    return false;
+}
+
+// ======================
+// STARTUP
+// ======================
+function startGame() {
+    const username = document.getElementById('username').value.trim();
+    if (!username) {
+        alert("Please enter your name!");
+        return;
+    }
+    
+    player.name = username;
+    
+    // Load saved game if exists
+    loadGame();
+    
+    // Hide login
+    document.getElementById('loginScreen').style.display = 'none';
+    
+    // Show game
+    document.getElementById('gameContainer').style.display = 'block';
+    
+    // Initialize game
+    initGame();
+    
+    // Auto-save
+    setInterval(saveGame, 60000); // Save every minute
+    
+    // Performance monitor
+    if (isMobile) {
+        setInterval(() => {
+            if (performance.memory && performance.memory.usedJSHeapSize > 50000000) {
+                document.getElementById('performanceWarning').style.display = 'block';
+            }
+        }, 5000);
+    }
+}
+
+function showRulebook() {
+    document.getElementById('rulebookModal').style.display = 'block';
+}
+
+function hideRulebook() {
+    document.getElementById('rulebookModal').style.display = 'none';
+}
+
+// ======================
+// MOBILE EVENTS
+// ======================
+window.addEventListener('load', () => {
+    console.log("Eternal Empire Mobile loaded!");
+    
+    // Handle orientation changes
+    window.addEventListener('orientationchange', () => {
+        setTimeout(() => {
+            if (window.innerHeight > window.innerWidth) {
+                document.getElementById('orientationWarning').style.display = 'flex';
+            } else {
+                document.getElementById('orientationWarning').style.display = 'none';
+            }
+            
+            // Update camera aspect ratio
+            if (camera) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+        }, 300);
+    });
+    
+    // Prevent context menu on long press
+    document.addEventListener('contextmenu', (e) => e.preventDefault());
+    
+    // Prevent pull-to-refresh
+    document.addEventListener('touchmove', (e) => {
+        if (e.scale !== 1) e.preventDefault();
+    }, { passive: false });
+    
+    // Handle back button on Android
+    if (isMobile) {
+        window.addEventListener('popstate', (e) => {
+            if (document.getElementById('gameContainer').style.display === 'block') {
+                e.preventDefault();
+                showMobileNotification("Use the menu to exit");
+            }
+        });
+    }
+    
+    // Pre-fill username for testing
+    document.getElementById('username').value = "MobileCommander";
+});
+
+// Add CSS animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes fadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
+</script>
+
+</body>
+</html>
