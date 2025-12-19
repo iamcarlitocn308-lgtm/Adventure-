@@ -10,11 +10,11 @@ body {
   margin: 0;
   overflow: hidden;
   background: #000;
+  font-family: Arial;
   touch-action: none;
-  font-family: Arial, sans-serif;
 }
 
-/* ================= JOYSTICK ================= */
+/* Joystick */
 #joystick {
   position: fixed;
   bottom: 30px;
@@ -34,27 +34,24 @@ body {
   border-radius: 50%;
 }
 
-/* ================= INVENTORY ================= */
+/* Inventory */
 #inventory {
   position: fixed;
   bottom: 30px;
   right: 30px;
-  display: grid;
-  grid-template-columns: repeat(4, 52px);
-  gap: 8px;
+  display: flex;
+  gap: 10px;
 }
 .slot {
-  width: 52px;
-  height: 52px;
-  background: rgba(0,0,0,0.55);
-  border: 2px solid #aaa;
-  border-radius: 6px;
+  width: 60px;
+  height: 60px;
+  background: rgba(0,0,0,0.7);
+  border: 3px solid #bbb;
 }
 </style>
 </head>
 
 <body>
-
 <div id="joystick"><div id="stick"></div></div>
 
 <div id="inventory">
@@ -72,110 +69,109 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
 
 const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 10000);
+camera.position.y = 1.7;
 
 /* ================= RENDERER ================= */
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
-/* ================= LIGHTING ================= */
-scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+/* ================= LIGHT ================= */
+scene.add(new THREE.AmbientLight(0xffffff, 0.8));
 const sun = new THREE.DirectionalLight(0xffffff, 1);
-sun.position.set(500, 1000, 500);
+sun.position.set(500,1000,500);
 scene.add(sun);
 
 /* ================= PLAYER ================= */
 const player = new THREE.Object3D();
+player.add(camera);
 scene.add(player);
 
-camera.position.set(0, 1.7, 0);
-player.add(camera);
-
 /* ================= TERRAIN ================= */
-const terrainSize = 3000;
-const terrain = new THREE.Mesh(
-  new THREE.PlaneGeometry(terrainSize, terrainSize, 100, 100),
-  new THREE.MeshLambertMaterial({ color: 0x3a8f3a })
-);
-terrain.rotation.x = -Math.PI / 2;
-scene.add(terrain);
+const size = 3000;
+const segments = 200;
+const geo = new THREE.PlaneGeometry(size, size, segments, segments);
 
-/* Grass underlay */
-const grass = new THREE.Mesh(
-  new THREE.PlaneGeometry(10000, 10000),
-  new THREE.MeshLambertMaterial({ color: 0x2e8b57 })
-);
-grass.rotation.x = -Math.PI / 2;
-grass.position.y = -0.5;
-scene.add(grass);
-
-/* ================= CLOUDS ================= */
-function addCloud(x, y, z) {
-  const group = new THREE.Group();
-  for (let i = 0; i < 8; i++) {
-    const puff = new THREE.Mesh(
-      new THREE.SphereGeometry(15 + Math.random()*10, 12, 12),
-      new THREE.MeshLambertMaterial({ color: 0xffffff })
-    );
-    puff.position.set(
-      Math.random()*40,
-      Math.random()*10,
-      Math.random()*10
-    );
-    group.add(puff);
+const rivers = [];
+for (let i = 0; i < 5; i++) {
+  let path = [];
+  let x = (Math.random() - 0.5) * size;
+  let z = -size / 2;
+  for (let j = 0; j < 60; j++) {
+    path.push({x,z});
+    x += (Math.random() - 0.5) * 80;
+    z += size / 60;
   }
-  group.position.set(x, y, z);
-  scene.add(group);
+  rivers.push(path);
 }
 
-for (let i = 0; i < 120; i++) {
-  addCloud(
+for (let i = 0; i < geo.attributes.position.count; i++) {
+  const x = geo.attributes.position.getX(i);
+  const z = geo.attributes.position.getZ(i);
+  let y = Math.sin(x * 0.02) * 4 + Math.cos(z * 0.02) * 4;
+
+  rivers.forEach(path=>{
+    path.forEach(p=>{
+      const d = Math.hypot(x-p.x, z-p.z);
+      if (d < 40) y -= (40 - d) * 0.15;
+    });
+  });
+
+  geo.attributes.position.setY(i, y);
+}
+geo.computeVertexNormals();
+
+const terrain = new THREE.Mesh(
+  geo,
+  new THREE.MeshLambertMaterial({ color: 0x3a8f3a })
+);
+terrain.rotation.x = -Math.PI/2;
+scene.add(terrain);
+
+/* ================= RIVERS ================= */
+rivers.forEach(path=>{
+  path.forEach(p=>{
+    const water = new THREE.Mesh(
+      new THREE.CircleGeometry(18,16),
+      new THREE.MeshLambertMaterial({ color:0x1e90ff })
+    );
+    water.rotation.x = -Math.PI/2;
+    water.position.set(p.x, 0.15, p.z);
+    scene.add(water);
+  });
+});
+
+/* ================= CLOUDS ================= */
+function cloud(x,y,z){
+  const g = new THREE.Group();
+  for(let i=0;i<6;i++){
+    const puff = new THREE.Mesh(
+      new THREE.SphereGeometry(12,8,8),
+      new THREE.MeshLambertMaterial({color:0xffffff})
+    );
+    puff.position.set(i*10,Math.random()*5,Math.random()*5);
+    g.add(puff);
+  }
+  g.position.set(x,y,z);
+  scene.add(g);
+}
+
+for(let i=0;i<120;i++){
+  cloud(
     (Math.random()-0.5)*8000,
-    300 + Math.random()*300,
+    300+Math.random()*300,
     (Math.random()-0.5)*8000
   );
 }
 
-/* ================= SAFE RIVERS ================= */
-const riverGroup = new THREE.Group();
-scene.add(riverGroup);
-
-function addRiver(startX, startZ) {
-  let x = startX;
-  let z = startZ;
-  for (let i = 0; i < 120; i++) {
-    const water = new THREE.Mesh(
-      new THREE.CircleGeometry(18, 16),
-      new THREE.MeshLambertMaterial({
-        color: 0x1e90ff,
-        transparent: true,
-        opacity: 0.85
-      })
-    );
-    water.rotation.x = -Math.PI / 2;
-    water.position.set(x, 0.15, z);
-    riverGroup.add(water);
-
-    x += (Math.random()-0.5) * 30;
-    z += 25;
-  }
-}
-
-for (let i = 0; i < 6; i++) {
-  addRiver((Math.random()-0.5)*2000, -1500);
-}
-
 /* ================= CONTROLS ================= */
-let yaw = 0;
-let pitch = 0;
-let moveX = 0;
-let moveZ = 0;
+let yaw=0, pitch=0;
+let moveX=0, moveZ=0;
 
 /* Joystick */
 const joy = document.getElementById("joystick");
 const stick = document.getElementById("stick");
-const center = { x: 60, y: 60 };
-const max = 40;
+const center={x:60,y:60}, max=40;
 
 joy.ontouchmove = e => {
   const r = joy.getBoundingClientRect();
@@ -187,62 +183,55 @@ joy.ontouchmove = e => {
   x = Math.cos(a)*d;
   y = Math.sin(a)*d;
 
-  stick.style.left = (center.x + x - 25) + "px";
-  stick.style.top  = (center.y + y - 25) + "px";
+  stick.style.left = (center.x+x-25)+"px";
+  stick.style.top  = (center.y+y-25)+"px";
 
-  moveX = x/max * 0.15;
-  moveZ = y/max * 0.15;
+  moveX = x/max*0.15;
+  moveZ = y/max*0.15;
 };
-
-joy.ontouchend = () => {
+joy.ontouchend = ()=>{
   moveX = moveZ = 0;
   stick.style.left = "35px";
-  stick.style.top = "35px";
+  stick.style.top  = "35px";
 };
 
 /* Look */
-let looking = false;
-let lastX = 0;
-let lastY = 0;
-
-addEventListener("touchstart", e => {
-  if (e.target.closest("#joystick")) return;
-  looking = true;
-  lastX = e.touches[0].clientX;
-  lastY = e.touches[0].clientY;
+let looking=false,lastX=0,lastY=0;
+addEventListener("touchstart",e=>{
+  if(e.target.closest("#joystick")) return;
+  looking=true;
+  lastX=e.touches[0].clientX;
+  lastY=e.touches[0].clientY;
 });
-
-addEventListener("touchmove", e => {
-  if (!looking) return;
-  const t = e.touches[0];
-  yaw   -= (t.clientX - lastX) * 0.003;
-  pitch -= (t.clientY - lastY) * 0.003;
-  pitch = Math.max(-1.4, Math.min(1.4, pitch));
-  lastX = t.clientX;
-  lastY = t.clientY;
+addEventListener("touchmove",e=>{
+  if(!looking) return;
+  const t=e.touches[0];
+  yaw   -= (t.clientX-lastX)*0.003;
+  pitch -= (t.clientY-lastY)*0.003;
+  pitch=Math.max(-1.4,Math.min(1.4,pitch));
+  lastX=t.clientX; lastY=t.clientY;
 });
-
-addEventListener("touchend", () => looking = false);
+addEventListener("touchend",()=>looking=false);
 
 /* ================= LOOP ================= */
-function animate() {
+function animate(){
   requestAnimationFrame(animate);
 
-  camera.rotation.order = "YXZ";
-  camera.rotation.y = yaw;
-  camera.rotation.x = pitch;
+  camera.rotation.order="YXZ";
+  camera.rotation.y=yaw;
+  camera.rotation.x=pitch;
 
   player.position.x += Math.sin(yaw)*moveZ + Math.cos(yaw)*moveX;
   player.position.z += Math.cos(yaw)*moveZ - Math.sin(yaw)*moveX;
 
-  renderer.render(scene, camera);
+  renderer.render(scene,camera);
 }
 animate();
 
-addEventListener("resize", () => {
-  camera.aspect = innerWidth / innerHeight;
+addEventListener("resize",()=>{
+  camera.aspect=innerWidth/innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
+  renderer.setSize(innerWidth,innerHeight);
 });
 </script>
 </body>
