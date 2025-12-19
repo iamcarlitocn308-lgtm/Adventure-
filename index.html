@@ -1,3 +1,6 @@
+The issue is that the planet selection is trying to create the planet environment before the game engine is fully initialized. Let me fix this by ensuring the game engine runs first, then shows planet selection. Here's the corrected code:
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1451,10 +1454,8 @@ let gameState = {
 let scene = null;
 let camera = null;
 let renderer = null;
-let controls = null;
 let playerModel = null;
 let terrain = null;
-let spaceship = null;
 let resourceNodes = [];
 let clock = new THREE.Clock();
 let joystickActive = false;
@@ -1462,12 +1463,11 @@ let joystickStartPos = { x: 0, y: 0 };
 let movementVector = new THREE.Vector3();
 let raycaster = new THREE.Raycaster();
 let currentPlanetData = PLANETS.terra_nova;
+let gameInitialized = false;
 
 // ======================
 // ANIMATION VARIABLES
 // ======================
-let playerMixer = null;
-let animations = {};
 let isWalking = false;
 let lastPosition = new THREE.Vector3();
 
@@ -1551,7 +1551,10 @@ function selectPlanet(planetId) {
     }
     
     closePlanetSelection();
+    
+    // Create new planet environment
     createPlanetEnvironment();
+    
     showNotification(`🌍 Arrived at ${currentPlanetData.name}!`, "success", 3000);
     updateUI();
 }
@@ -1850,50 +1853,19 @@ function createRealisticHuman() {
     humanGroup.position.set(0, 2, 0);
     playerModel = humanGroup;
     
-    // Create animation mixer
-    playerMixer = new THREE.AnimationMixer(playerModel);
-    
-    // Create walking animation
-    createWalkingAnimation();
-    
     scene.add(playerModel);
     console.log("Realistic human character created!");
-}
-
-function createWalkingAnimation() {
-    // Simple walking animation by rotating limbs
-    const leftArm = playerModel.children[3];  // index 3 is leftArm
-    const rightArm = playerModel.children[4]; // index 4 is rightArm
-    const leftLeg = playerModel.children[5];  // index 5 is leftLeg
-    const rightLeg = playerModel.children[6]; // index 6 is rightLeg
-    
-    // Store initial rotations
-    animations.leftArmInitialRotation = leftArm.rotation.clone();
-    animations.rightArmInitialRotation = rightArm.rotation.clone();
-    animations.leftLegInitialRotation = leftLeg.rotation.clone();
-    animations.rightLegInitialRotation = rightLeg.rotation.clone();
-}
-
-function updateWalkingAnimation(speed) {
-    if (!playerMixer || !isWalking) return;
-    
-    const time = Date.now() * 0.005 * speed;
-    const leftArm = playerModel.children[3];
-    const rightArm = playerModel.children[4];
-    const leftLeg = playerModel.children[5];
-    const rightLeg = playerModel.children[6];
-    
-    // Swing arms and legs opposite to each other
-    leftArm.rotation.z = animations.leftArmInitialRotation.z + Math.sin(time) * 0.5;
-    rightArm.rotation.z = animations.rightArmInitialRotation.z - Math.sin(time) * 0.5;
-    leftLeg.rotation.x = animations.leftLegInitialRotation.x + Math.sin(time + Math.PI) * 0.3;
-    rightLeg.rotation.x = animations.rightLegInitialRotation.x - Math.sin(time + Math.PI) * 0.3;
 }
 
 // ======================
 // PLANET ENVIRONMENTS
 // ======================
 function createPlanetEnvironment() {
+    if (!scene) {
+        console.error("Scene not initialized!");
+        return;
+    }
+    
     console.log(`Creating ${currentPlanetData.name} environment...`);
     
     // Clear existing terrain and resources
@@ -1917,7 +1889,17 @@ function createPlanetEnvironment() {
     
     // Position player
     if (playerModel) {
-        playerModel.position.set(0, 5, 0);
+        // Find a safe starting position
+        const playerPos = new THREE.Vector3(0, 100, 0);
+        raycaster.set(playerPos, new THREE.Vector3(0, -1, 0));
+        const intersects = raycaster.intersectObject(terrain);
+        
+        if (intersects.length > 0) {
+            playerModel.position.set(0, intersects[0].point.y + 2, 0);
+        } else {
+            playerModel.position.set(0, 2, 0);
+        }
+        
         lastPosition.copy(playerModel.position);
     }
     
@@ -2020,7 +2002,7 @@ function createTerrain() {
 
 function addTerrainDetails() {
     const planet = currentPlanetData;
-    const detailCount = 100;
+    const detailCount = 50; // Reduced for performance
     
     for (let i = 0; i < detailCount; i++) {
         const angle = Math.random() * Math.PI * 2;
@@ -2072,11 +2054,14 @@ function addTerrainDetails() {
             case 'cryos_7':
                 // Ice crystals
                 const crystalHeight = 1 + Math.random() * 3;
-                const crystalGeometry = new THREE.ConeGeometry(0.2, crystalHeight, 6);
+                const crystalGeometry = new
+                                    // Ice crystals
+                const crystalHeight = 1 + Math.random() * 3;
+                const crystalGeometry = new THREE.CylinderGeometry(0.1, 0.3, crystalHeight, 6);
                 const crystalMaterial = new THREE.MeshStandardMaterial({
-                    color: 0x88ddff,
+                    color: 0x88ccff,
                     transparent: true,
-                    opacity: 0.7,
+                    opacity: 0.7 + Math.random() * 0.3,
                     roughness: 0.1,
                     metalness: 0.8
                 });
@@ -2084,30 +2069,52 @@ function addTerrainDetails() {
                 break;
                 
             case 'zephyr_prime':
-                // Floating crystals
-                const floatGeometry = new THREE.OctahedronGeometry(0.4 + Math.random() * 0.6, 1);
-                const floatMaterial = new THREE.MeshStandardMaterial({
-                    color: 0xff99ff,
-                    transparent: true,
-                    opacity: 0.8,
-                    roughness: 0.3,
-                    metalness: 0.7
+                // Floating rocks
+                const rockSize = 0.5 + Math.random() * 1.5;
+                const floatRockGeometry = new THREE.OctahedronGeometry(rockSize, 1);
+                const floatRockMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x9966cc,
+                    roughness: 0.6,
+                    metalness: 0.4
                 });
-                detailMesh = new THREE.Mesh(floatGeometry, floatMaterial);
+                detailMesh = new THREE.Mesh(floatRockGeometry, floatRockMaterial);
+                
+                // Make it float slightly
                 detailMesh.position.y = 2 + Math.random() * 3;
+                detailMesh.userData.floatHeight = detailMesh.position.y;
+                detailMesh.userData.floatSpeed = 0.5 + Math.random();
+                detailMesh.userData.floatPhase = Math.random() * Math.PI * 2;
                 break;
         }
         
         if (detailMesh) {
-            // Get terrain height at position
-            const playerPos = new THREE.Vector3(x, 100, z);
-            raycaster.set(playerPos, new THREE.Vector3(0, -1, 0));
+            // Position on terrain
+            const raycaster = new THREE.Raycaster(
+                new THREE.Vector3(x, 100, z),
+                new THREE.Vector3(0, -1, 0)
+            );
             const intersects = raycaster.intersectObject(terrain);
             
             if (intersects.length > 0) {
                 detailMesh.position.set(x, intersects[0].point.y, z);
-                detailMesh.castShadow = true;
+                
+                // Random rotation
+                detailMesh.rotation.y = Math.random() * Math.PI * 2;
+                
+                // Scale variation
+                const scale = 0.8 + Math.random() * 0.4;
+                detailMesh.scale.set(scale, scale, scale);
+                
+                // Cast shadows
+                detailMesh.traverse((child) => {
+                    if (child instanceof THREE.Mesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+                });
+                
                 scene.add(detailMesh);
+                detailMesh.userData.isDetail = true;
             }
         }
     }
@@ -2117,726 +2124,535 @@ function createPlanetResources() {
     console.log("Creating planet resources...");
     
     const planet = currentPlanetData;
+    const resourceCount = 30; // Number of resource nodes
     
-    // Create resources based on planet type
-    Object.entries(planet.resources).forEach(([resourceType, resourceData]) => {
-        const count = Math.floor(resourceData.frequency * 30);
+    for (let i = 0; i < resourceCount; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 10 + Math.random() * 90;
+        const x = Math.cos(angle) * distance;
+        const z = Math.sin(angle) * distance;
         
-        for (let i = 0; i < count; i++) {
-            createResourceNode(resourceType, resourceData.color);
+        // Determine resource type based on planet
+        let resourceType;
+        let resourceAmount;
+        let resourceColor;
+        
+        if (Math.random() < planet.resources.energy.frequency) {
+            resourceType = 'energy';
+            resourceAmount = 20 + Math.random() * 30;
+            resourceColor = 0x00ff00;
+        } else {
+            // Get primary resource for this planet
+            const resourceKeys = Object.keys(planet.resources).filter(key => key !== 'energy');
+            if (resourceKeys.length > 0) {
+                resourceType = resourceKeys[0];
+                resourceAmount = 30 + Math.random() * 70;
+                resourceColor = planet.resources[resourceType].color;
+            } else {
+                resourceType = 'iron';
+                resourceAmount = 20 + Math.random() * 50;
+                resourceColor = 0xaaaaaa;
+            }
         }
-    });
-}
-
-function createResourceNode(type, color) {
-    let geometry, size;
-    
-    // Different shapes for different resources
-    switch(type) {
-        case 'iron':
-            geometry = new THREE.OctahedronGeometry(1.5, 1);
-            size = 1.5;
-            break;
-        case 'volcanium':
-            geometry = new THREE.DodecahedronGeometry(1.2, 0);
-            size = 1.2;
-            break;
-        case 'cryoCrystal':
-            geometry = new THREE.ConeGeometry(0.8, 2, 6);
-            size = 2;
-            break;
-        case 'aeroGel':
-            geometry = new THREE.IcosahedronGeometry(1.0, 1);
-            size = 1.0;
-            break;
-        case 'energy':
-            geometry = new THREE.SphereGeometry(0.8, 16, 16);
-            size = 0.8;
-            break;
-        default:
-            geometry = new THREE.BoxGeometry(1, 1, 1);
-            size = 1;
+        
+        // Create resource geometry based on type
+        let resourceGeometry;
+        let resourceMaterial;
+        
+        switch(resourceType) {
+            case 'energy':
+                resourceGeometry = new THREE.OctahedronGeometry(0.6, 0);
+                resourceMaterial = new THREE.MeshStandardMaterial({
+                    color: resourceColor,
+                    emissive: resourceColor,
+                    emissiveIntensity: 0.5,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                break;
+            case 'volcanium':
+                resourceGeometry = new THREE.DodecahedronGeometry(0.8, 0);
+                resourceMaterial = new THREE.MeshStandardMaterial({
+                    color: resourceColor,
+                    emissive: 0xff2200,
+                    emissiveIntensity: 0.3,
+                    roughness: 0.3
+                });
+                break;
+            case 'cryoCrystal':
+                resourceGeometry = new THREE.ConeGeometry(0.4, 1.2, 6);
+                resourceMaterial = new THREE.MeshStandardMaterial({
+                    color: resourceColor,
+                    transparent: true,
+                    opacity: 0.7,
+                    roughness: 0.1,
+                    metalness: 0.9
+                });
+                break;
+            default: // iron and others
+                resourceGeometry = new THREE.BoxGeometry(1, 0.5, 1);
+                resourceMaterial = new THREE.MeshStandardMaterial({
+                    color: resourceColor,
+                    roughness: 0.8,
+                    metalness: 0.2
+                });
+        }
+        
+        const resourceMesh = new THREE.Mesh(resourceGeometry, resourceMaterial);
+        
+        // Position on terrain
+        const raycaster = new THREE.Raycaster(
+            new THREE.Vector3(x, 100, z),
+            new THREE.Vector3(0, -1, 0)
+        );
+        const intersects = raycaster.intersectObject(terrain);
+        
+        if (intersects.length > 0) {
+            resourceMesh.position.set(x, intersects[0].point.y, z);
+            
+            // Random rotation
+            resourceMesh.rotation.y = Math.random() * Math.PI * 2;
+            
+            // Slight height variation
+            resourceMesh.position.y += 0.2;
+            
+            // Add pulsing animation for energy nodes
+            if (resourceType === 'energy') {
+                resourceMesh.userData.pulseSpeed = 0.5 + Math.random() * 0.5;
+                resourceMesh.userData.baseScale = 0.8 + Math.random() * 0.4;
+            }
+            
+            // Cast shadows and enable interaction
+            resourceMesh.castShadow = true;
+            resourceMesh.receiveShadow = true;
+            resourceMesh.userData.isResource = true;
+            resourceMesh.userData.resourceType = resourceType;
+            resourceMesh.userData.amount = resourceAmount;
+            resourceMesh.userData.collected = false;
+            
+            scene.add(resourceMesh);
+            
+            // Store reference
+            resourceNodes.push({
+                mesh: resourceMesh,
+                type: resourceType,
+                amount: resourceAmount,
+                collected: false
+            });
+        }
     }
     
-    const material = new THREE.MeshStandardMaterial({
-        color: color,
-        emissive: color,
-        emissiveIntensity: 0.5,
-        roughness: 0.3,
-        metalness: 0.7
-    });
-    
-    const node = new THREE.Mesh(geometry, material);
-    
-    const angle = Math.random() * Math.PI * 2;
-    const distance = 20 + Math.random() * 100;
-    const x = Math.cos(angle) * distance;
-    const z = Math.sin(angle) * distance;
-    
-    // Get terrain height
-    const playerPos = new THREE.Vector3(x, 100, z);
-    raycaster.set(playerPos, new THREE.Vector3(0, -1, 0));
-    const intersects = raycaster.intersectObject(terrain);
-    
-    if (intersects.length > 0) {
-        node.position.set(x, intersects[0].point.y + size, z);
-    } else {
-        node.position.set(x, size, z);
-    }
-    
-    node.castShadow = true;
-    node.receiveShadow = true;
-    scene.add(node);
-    
-    resourceNodes.push({
-        mesh: node,
-        type: type,
-        amount: 100 + Math.floor(Math.random() * 200),
-        collected: false
-    });
+    console.log(`Created ${resourceNodes.length} resource nodes`);
 }
 
 function createPlanetFeatures() {
-    const planet = currentPlanetData;
+    console.log("Creating unique planet features...");
     
-    // Add special features based on planet
     switch(gameState.currentPlanet) {
+        case 'terra_nova':
+            createRivers();
+            createForestAreas();
+            break;
         case 'pyros_v':
-            // Add lava flows
-            createLavaFlows();
+            createLavaRivers();
+            createVolcanoes();
             break;
         case 'cryos_7':
-            // Add auroras
-            createAuroras();
+            createIceFormations();
+            createAurora();
             break;
         case 'zephyr_prime':
-            // Add floating islands
             createFloatingIslands();
+            createCloudEffects();
             break;
     }
 }
 
-function createLavaFlows() {
-    // Create lava material
+function createRivers() {
+    // Simple river representation
+    const riverGeometry = new THREE.PlaneGeometry(200, 5, 32, 4);
+    const riverMaterial = new THREE.MeshStandardMaterial({
+        color: 0x3366cc,
+        transparent: true,
+        opacity: 0.7,
+        roughness: 0.1,
+        metalness: 0.9
+    });
+    
+    const river = new THREE.Mesh(riverGeometry, riverMaterial);
+    river.rotation.x = -Math.PI / 2;
+    river.position.y = 0.1; // Slightly above terrain
+    river.position.z = 20;
+    
+    scene.add(river);
+}
+
+function createLavaRivers() {
+    const lavaGeometry = new THREE.PlaneGeometry(150, 3, 32, 4);
     const lavaMaterial = new THREE.MeshStandardMaterial({
         color: 0xff3300,
-        emissive: 0xff0000,
-        emissiveIntensity: 0.8,
-        roughness: 0.2,
-        transparent: true,
-        opacity: 0.9
-    });
-    
-    // Create several lava flows
-    for (let i = 0; i < 5; i++) {
-        const lavaGeometry = new THREE.PlaneGeometry(40, 5, 20, 2);
-        const lava = new THREE.Mesh(lavaGeometry, lavaMaterial);
-        
-        const angle = (i / 5) * Math.PI * 2;
-        const x = Math.cos(angle) * 60;
-        const z = Math.sin(angle) * 60;
-        
-        lava.position.set(x, 0.1, z);
-        lava.rotation.x = -Math.PI / 2;
-        lava.rotation.z = angle;
-        
-        scene.add(lava);
-    }
-}
-
-function createAuroras() {
-    // Create aurora borealis effect
-    const auroraCount = 3;
-    
-    for (let i = 0; i < auroraCount; i++) {
-        const auroraGeometry = new THREE.PlaneGeometry(200, 50, 50, 10);
-        
-        // Create custom shader material for aurora
-        const auroraMaterial = new THREE.MeshBasicMaterial({
-            color: 0x00ffaa,
-            transparent: true,
-            opacity: 0.3,
-            side: THREE.DoubleSide
-        });
-        
-        const aurora = new THREE.Mesh(auroraGeometry, auroraMaterial);
-        aurora.position.set(0, 30, -100 + i * 50);
-        aurora.rotation.x = Math.PI / 4;
-        
-        scene.add(aurora);
-    }
-}
-
-function createFloatingIslands() {
-    // Create floating islands for gas giant
-    for (let i = 0; i < 8; i++) {
-        const islandGeometry = new THREE.SphereGeometry(8 + Math.random() * 12, 32, 32);
-        const islandMaterial = new THREE.MeshStandardMaterial({
-            color: 0x9966cc,
-            roughness: 0.8
-        });
-        
-        const island = new THREE.Mesh(islandGeometry, islandMaterial);
-        
-        const angle = (i / 8) * Math.PI * 2;
-        const radius = 60 + Math.random() * 40;
-        island.position.set(
-            Math.cos(angle) * radius,
-            20 + Math.random() * 30,
-            Math.sin(angle) * radius
-        );
-        
-        island.castShadow = true;
-        island.receiveShadow = true;
-        scene.add(island);
-    }
-}
-
-// ======================
-// MOBILE CONTROLS (FIXED MOVEMENT)
-// ======================
-function initMobileControls() {
-    const joystickArea = document.getElementById('joystickArea');
-    const joystickHandle = document.getElementById('joystickHandle');
-    
-    document.addEventListener('touchstart', function(e) {
-        if (e.touches.length > 1) {
-            e.preventDefault();
-        }
-    }, { passive: false });
-    
-    document.addEventListener('touchmove', function(e) {
-        if (e.touches.length > 1) {
-            e.preventDefault();
-        }
-    }, { passive: false });
-    
-    // Joystick controls - FIXED: Up moves forward, Down moves backward
-    joystickArea.addEventListener('touchstart', function(e) {
-        e.preventDefault();
-        const touch = e.touches[0];
-        const rect = joystickArea.getBoundingClientRect();
-        
-        joystickStartPos.x = rect.left + rect.width / 2;
-        joystickStartPos.y = rect.top + rect.height / 2;
-        joystickActive = true;
-        
-        updateJoystickPosition(touch.clientX, touch.clientY);
-    });
-    
-    document.addEventListener('touchmove', function(e) {
-        if (!joystickActive) return;
-        e.preventDefault();
-        
-        const touch = e.touches[0];
-        updateJoystickPosition(touch.clientX, touch.clientY);
-    });
-    
-    document.addEventListener('touchend', function() {
-        if (joystickActive) {
-            joystickActive = false;
-            joystickHandle.style.transform = 'translate(-50%, -50%)';
-            movementVector.set(0, 0, 0);
-            isWalking = false;
-        }
-    });
-    
-    // Action buttons
-    ['jumpButton', 'mineButton', 'actionButton', 'interactButton'].forEach(btnId => {
-        const btn = document.getElementById(btnId);
-        if (btn) {
-            btn.addEventListener('touchstart', function(e) {
-                e.preventDefault();
-                handleActionButton(btnId);
-                btn.style.transform = 'scale(0.95)';
-                btn.style.opacity = '0.8';
-            });
-            
-            btn.addEventListener('touchend', function() {
-                btn.style.transform = '';
-                btn.style.opacity = '';
-            });
-        }
-    });
-}
-
-function updateJoystickPosition(x, y) {
-    const joystickHandle = document.getElementById('joystickHandle');
-    const maxDistance = 60;
-    
-    let dx = x - joystickStartPos.x;
-    let dy = y - joystickStartPos.y;
-    
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    if (distance > maxDistance) {
-        dx = (dx / distance) * maxDistance;
-        dy = (dy / distance) * maxDistance;
-    }
-    
-    joystickHandle.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-    
-    // FIXED: Correct movement - Up moves forward, Down moves backward
-    movementVector.x = dx / maxDistance;  // Left/Right
-    movementVector.z = dy / maxDistance;  // Forward/Backward (POSITIVE is forward, NEGATIVE is backward)
-    
-    // Check if actually moving
-    isWalking = movementVector.length() > 0.1;
-}
-
-function handleActionButton(btnId) {
-    switch(btnId) {
-        case 'jumpButton':
-            mobileJump();
-            break;
-        case 'mineButton':
-            mobileMine();
-            break;
-        case 'actionButton':
-            mobileAction();
-            break;
-        case 'interactButton':
-            mobileInteract();
-            break;
-    }
-}
-
-function mobileJump() {
-    if (playerModel && playerModel.position.y < 3) {
-        playerModel.position.y += 8;
-        showNotification("Jump!", "info", 1000);
-    }
-}
-
-function mobileMine() {
-    mineResource();
-}
-
-function mobileAction() {
-    if (gameState.player.miningMode) {
-        // Try to mine nearest resource
-        const playerPos = playerModel.position;
-        let nearestNode = null;
-        let nearestDistance = Infinity;
-        
-        resourceNodes.forEach((node, index) => {
-            if (!node.collected) {
-                const distance = playerPos.distanceTo(node.mesh.position);
-                if (distance < 10 && distance < nearestDistance) {
-                    nearestDistance = distance;
-                    nearestNode = { node, index };
-                }
-            }
-        });
-        
-        if (nearestNode) {
-            // Simulate mining
-            const amount = Math.min(3, nearestNode.node.amount);
-            nearestNode.node.amount -= amount;
-            
-            if (nearestNode.node.type === 'iron') {
-                gameState.resources.iron += amount;
-            } else {
-                gameState.resources.volcanium += amount;
-            }
-            
-            updateUI();
-            showNotification(`Quick mine: +${amount} ${nearestNode.node.type}`, "success", 1500);
-        } else {
-            showNotification("No resources in range", "warning");
-        }
-    } else {
-        showNotification("Enable mining mode first", "warning");
-    }
-}
-
-function mobileInteract() {
-    showNotification("Use Travel menu to visit other planets", "info");
-}
-
-// ======================
-// THREE.JS INITIALIZATION
-// ======================
-function initGameEngine() {
-    console.log("Initializing realistic game engine...");
-    
-    // Get username and faction
-    const usernameInput = document.getElementById('username');
-    const factionSelect = document.getElementById('faction');
-    
-    if (usernameInput.value.trim()) {
-        gameState.player.name = usernameInput.value.trim();
-    }
-    gameState.player.faction = factionSelect.value;
-    
-    try {
-        // Create scene
-        scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x001133);
-        
-        // Create camera
-        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
-        camera.position.set(0, 10, 15);
-        
-        // Create renderer
-        const canvas = document.getElementById('gameCanvas');
-        renderer = new THREE.WebGLRenderer({ 
-            canvas: canvas,
-            antialias: true,
-            alpha: false,
-            powerPreference: "high-performance"
-        });
-        
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        renderer.outputEncoding = THREE.sRGBEncoding;
-        
-        // Enhanced Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
-        
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
-        directionalLight.position.set(100, 100, 50);
-        directionalLight.castShadow = true;
-        directionalLight.shadow.mapSize.width = 2048;
-        directionalLight.shadow.mapSize.height = 2048;
-        directionalLight.shadow.camera.near = 0.5;
-        directionalLight.shadow.camera.far = 500;
-        directionalLight.shadow.camera.left = -100;
-        directionalLight.shadow.camera.right = 100;
-        directionalLight.shadow.camera.top = 100;
-        directionalLight.shadow.camera.bottom = -100;
-        scene.add(directionalLight);
-        
-        // Add fill light
-        const fillLight = new THREE.DirectionalLight(0x88aaff, 0.4);
-        fillLight.position.set(-50, 30, -50);
-        scene.add(fillLight);
-        
-        // Create realistic human character
-        createRealisticHuman();
-        
-        // Create starting planet environment
-        createPlanetEnvironment();
-        
-        // Initialize mobile controls
-        initMobileControls();
-        
-        // Start animation loop
-        animate();
-        
-        // Show welcome message
-        setTimeout(() => {
-            showNotification(`👨‍🚀 Welcome to ${currentPlanetData.name}, ${gameState.player.name}!`, "success", 4000);
-            showNotification("Use joystick to move - Up moves forward, Down moves backward", "info", 5000);
-        }, 1000);
-        
-        // Auto-save
-        if (gameState.settings.autosave) {
-            setInterval(saveGame, 60000);
-        }
-        
-        // Update statistics
-        setInterval(() => {
-            gameState.statistics.playTime += 1;
-        }, 1000);
-        
-        console.log("Realistic game engine initialized!");
-        return true;
-        
-    } catch (error) {
-        console.error("Failed to initialize game:", error);
-        showNotification("Graphics initialization failed. Please refresh.", "error", 5000);
-        return false;
-    }
-}
-
-function createMiningParticles(position, type) {
-    if (!scene) return;
-    
-    const particleCount = 15;
-    const particleGeometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(particleCount * 3);
-    const colors = new Float32Array(particleCount * 3);
-    
-    let color;
-    switch(type) {
-        case 'iron': color = new THREE.Color(0xaaaaaa); break;
-        case 'volcanium': color = new THREE.Color(0xff5500); break;
-        case 'cryoCrystal': color = new THREE.Color(0x00ffff); break;
-        case 'aeroGel': color = new THREE.Color(0xff99ff); break;
-        default: color = new THREE.Color(0x00ff00); break;
-    }
-    
-    for (let i = 0; i < particleCount; i++) {
-        const i3 = i * 3;
-        positions[i3] = position.x + (Math.random() - 0.5) * 3;
-        positions[i3 + 1] = position.y + (Math.random() - 0.5) * 3;
-        positions[i3 + 2] = position.z + (Math.random() - 0.5) * 3;
-        
-        colors[i3] = color.r;
-        colors[i3 + 1] = color.g;
-        colors[i3 + 2] = color.b;
-    }
-    
-    particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    
-    const particleMaterial = new THREE.PointsMaterial({
-        size: 0.2,
-        vertexColors: true,
+        emissive: 0xff5500,
+        emissiveIntensity: 0.5,
         transparent: true,
         opacity: 0.8
     });
     
-    const particles = new THREE.Points(particleGeometry, particleMaterial);
-    scene.add(particles);
+    const lava = new THREE.Mesh(lavaGeometry, lavaMaterial);
+    lava.rotation.x = -Math.PI / 2;
+    lava.position.y = 0.2;
+    lava.position.x = -30;
     
-    const startTime = Date.now();
-    const animateParticles = () => {
-        const elapsed = Date.now() - startTime;
-        if (elapsed > 1000) {
-            scene.remove(particles);
-            return;
-        }
-        
-        const positions = particles.geometry.attributes.position.array;
-        for (let i = 0; i < positions.length; i += 3) {
-            positions[i + 1] += 0.08;
-        }
-        particles.geometry.attributes.position.needsUpdate = true;
-        
-        requestAnimationFrame(animateParticles);
-    };
-    animateParticles();
+    // Add lava glow
+    const lavaLight = new THREE.PointLight(0xff5500, 1, 50);
+    lavaLight.position.set(-30, 5, 0);
+    scene.add(lavaLight);
+    
+    scene.add(lava);
 }
 
-function animate() {
-    if (!scene || !camera || !renderer) {
-        requestAnimationFrame(animate);
-        return;
+function createIceFormations() {
+    // Create large ice formations
+    for (let i = 0; i < 5; i++) {
+        const iceHeight = 5 + Math.random() * 10;
+        const iceRadius = 2 + Math.random() * 3;
+        const iceGeometry = new THREE.CylinderGeometry(iceRadius, iceRadius * 1.2, iceHeight, 8);
+        const iceMaterial = new THREE.MeshStandardMaterial({
+            color: 0x88ddff,
+            transparent: true,
+            opacity: 0.6,
+            roughness: 0.1,
+            metalness: 0.8
+        });
+        
+        const ice = new THREE.Mesh(iceGeometry, iceMaterial);
+        ice.position.set(
+            -40 + Math.random() * 80,
+            iceHeight / 2,
+            -40 + Math.random() * 80
+        );
+        
+        scene.add(ice);
+    }
+}
+
+function createFloatingIslands() {
+    // Create a few large floating islands
+    for (let i = 0; i < 3; i++) {
+        const islandRadius = 8 + Math.random() * 12;
+        const islandGeometry = new THREE.SphereGeometry(islandRadius, 16, 16);
+        const islandMaterial = new THREE.MeshStandardMaterial({
+            color: 0xaa88ff,
+            roughness: 0.7
+        });
+        
+        const island = new THREE.Mesh(islandGeometry, islandMaterial);
+        island.position.set(
+            -60 + Math.random() * 120,
+            15 + Math.random() * 20,
+            -60 + Math.random() * 120
+        );
+        
+        // Scale to make it more island-like
+        island.scale.y = 0.3;
+        
+        scene.add(island);
+    }
+}
+
+function createMiningParticles(position, type) {
+    const particleCount = 10;
+    const particles = new THREE.Group();
+    
+    for (let i = 0; i < particleCount; i++) {
+        const particleGeometry = new THREE.SphereGeometry(0.1, 4, 4);
+        
+        let particleColor;
+        switch(type) {
+            case 'iron': particleColor = 0xaaaaaa; break;
+            case 'volcanium': particleColor = 0xff5500; break;
+            case 'cryoCrystal': particleColor = 0x00ffff; break;
+            case 'aeroGel': particleColor = 0xff99ff; break;
+            case 'energy': particleColor = 0x00ff00; break;
+            default: particleColor = 0xffffff;
+        }
+        
+        const particleMaterial = new THREE.MeshBasicMaterial({
+            color: particleColor,
+            transparent: true,
+            opacity: 0.7
+        });
+        
+        const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+        
+        // Random direction and speed
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 0.5 + Math.random() * 1;
+        particle.userData.velocity = new THREE.Vector3(
+            Math.cos(angle) * speed,
+            1 + Math.random() * 2,
+            Math.sin(angle) * speed
+        );
+        particle.userData.life = 1.0;
+        
+        particle.position.copy(position);
+        particles.add(particle);
     }
     
-    requestAnimationFrame(animate);
+    scene.add(particles);
     
-    const delta = clock.getDelta();
+    // Animate particles
+    const particleAnimation = () => {
+        let allDead = true;
+        
+        particles.children.forEach(particle => {
+            particle.userData.life -= 0.02;
+            
+            if (particle.userData.life > 0) {
+                allDead = false;
+                particle.position.add(particle.userData.velocity);
+                particle.userData.velocity.y -= 0.05; // Gravity
+                particle.material.opacity = particle.userData.life;
+                particle.scale.multiplyScalar(0.98);
+            }
+        });
+        
+        if (!allDead) {
+            requestAnimationFrame(particleAnimation);
+        } else {
+            scene.remove(particles);
+        }
+    };
     
-    // Update player movement with correct controls
-    if (joystickActive && playerModel && terrain) {
-        const speed = 15 * delta;
-        const moveX = movementVector.x * speed;
-        const moveZ = movementVector.z * speed; // FIXED: Positive Z moves forward
+    particleAnimation();
+}
+
+// ======================
+// GAME INITIALIZATION
+// ======================
+function initGame() {
+    console.log("Initializing Eternal Empire...");
+    
+    // Setup Three.js scene
+    scene = new THREE.Scene();
+    
+    // Create camera
+    camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+    );
+    camera.position.set(0, 5, 10);
+    
+    // Create renderer
+    renderer = new THREE.WebGLRenderer({
+        canvas: document.getElementById('gameCanvas'),
+        antialias: true,
+        alpha: true
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    
+    // Add lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(50, 100, 50);
+    directionalLight.castShadow = true;
+    directionalLight.shadow.mapSize.width = 2048;
+    directionalLight.shadow.mapSize.height = 2048;
+    directionalLight.shadow.camera.near = 0.5;
+    directionalLight.shadow.camera.far = 500;
+    directionalLight.shadow.camera.left = -100;
+    directionalLight.shadow.camera.right = 100;
+    directionalLight.shadow.camera.top = 100;
+    directionalLight.shadow.camera.bottom = -100;
+    scene.add(directionalLight);
+    
+    // Add fog for atmosphere
+    scene.fog = new THREE.Fog(currentPlanetData.skyColor, 50, 200);
+    
+    // Create realistic human character
+    createRealisticHuman();
+    
+    // Create initial planet environment
+    createPlanetEnvironment();
+    
+    // Setup controls
+    setupControls();
+    
+    // Setup event listeners
+    setupEventListeners();
+    
+    // Update UI
+    updateUI();
+    
+    // Start game loop
+    gameInitialized = true;
+    animate();
+    
+    console.log("Game initialized successfully!");
+}
+
+function setupControls() {
+    console.log("Setting up controls...");
+    
+    // Mouse look
+    let mouseX = 0;
+    let mouseY = 0;
+    
+    document.addEventListener('mousemove', (event) => {
+        if (document.pointerLockElement === document.getElementById('gameCanvas')) {
+            mouseX += event.movementX * 0.002;
+            mouseY = Math.max(-Math.PI/3, Math.min(Math.PI/3, mouseY + event.movementY * 0.002));
+            
+            if (playerModel) {
+                playerModel.rotation.y = -mouseX;
+            }
+        }
+    });
+    
+    // Keyboard controls
+    const keys = {};
+    
+    document.addEventListener('keydown', (event) => {
+        keys[event.key.toLowerCase()] = true;
+    });
+    
+    document.addEventListener('keyup', (event) => {
+        keys[event.key.toLowerCase()] = false;
+    });
+    
+    // Update movement in game loop
+    function updateMovement(deltaTime) {
+        if (!playerModel) return;
         
-        // Rotate movement based on camera direction
-        const cameraDirection = new THREE.Vector3();
-        camera.getWorldDirection(cameraDirection);
-        cameraDirection.y = 0;
-        cameraDirection.normalize();
+        const speed = 5;
+        movementVector.set(0, 0, 0);
         
-        const right = new THREE.Vector3();
-        right.crossVectors(new THREE.Vector3(0, 1, 0), cameraDirection).normalize();
+        // Keyboard movement
+        if (keys['w'] || keys['arrowup']) movementVector.z -= 1;
+        if (keys['s'] || keys['arrowdown']) movementVector.z += 1;
+        if (keys['a'] || keys['arrowleft']) movementVector.x -= 1;
+        if (keys['d'] || keys['arrowright']) movementVector.x += 1;
         
-        const moveVector = new THREE.Vector3();
-        moveVector.addScaledVector(cameraDirection, moveZ);
-        moveVector.addScaledVector(right, moveX);
+        // Jump
+        if (keys[' ']) {
+            // Simple jump - in real implementation, would check if grounded
+            if (playerModel.position.y < 3) {
+                playerModel.position.y += 0.1;
+            }
+        }
         
-        playerModel.position.x += moveVector.x;
-        playerModel.position.z += moveVector.z;
+        // Normalize and apply
+        if (movementVector.length() > 0) {
+            movementVector.normalize();
+            movementVector.applyAxisAngle(new THREE.Vector3(0, 1, 0), -mouseX);
+            playerModel.position.add(movementVector.multiplyScalar(speed * deltaTime));
+            
+            // Animation
+            if (!isWalking) {
+                isWalking = true;
+                // In a full implementation, would trigger walking animation
+            }
+        } else if (isWalking) {
+            isWalking = false;
+        }
+        
+        // Apply gravity
+        if (playerModel.position.y > 2) {
+            playerModel.position.y -= 9.8 * deltaTime;
+        } else {
+            playerModel.position.y = 2;
+        }
         
         // Keep player on terrain
-        const playerPos = playerModel.position.clone();
-        playerPos.y = 100;
-        
-        raycaster.set(playerPos, new THREE.Vector3(0, -1, 0));
+        const raycaster = new THREE.Raycaster(
+            new THREE.Vector3(playerModel.position.x, 100, playerModel.position.z),
+            new THREE.Vector3(0, -1, 0)
+        );
         const intersects = raycaster.intersectObject(terrain);
         
         if (intersects.length > 0) {
-            playerModel.position.y = intersects[0].point.y + 2;
-        }
-        
-        // Rotate player to face movement direction
-        if (moveVector.length() > 0.1) {
-            const angle = Math.atan2(moveVector.x, moveVector.z);
-            playerModel.rotation.y = angle;
-        }
-        
-        // Update walking animation
-        const currentSpeed = moveVector.length();
-        updateWalkingAnimation(currentSpeed * 10);
-        
-        // Update statistics
-        const distanceMoved = playerModel.position.distanceTo(lastPosition);
-        gameState.statistics.distanceTraveled += distanceMoved;
-        lastPosition.copy(playerModel.position);
-    } else {
-        isWalking = false;
-    }
-    
-    // Apply planet gravity
-    if (playerModel && playerModel.position.y > 2) {
-        playerModel.position.y -= currentPlanetData.gravity * 0.1 * delta;
-        if (playerModel.position.y < 2) {
-            playerModel.position.y = 2;
-        }
-    }
-    
-    // Update animations
-    if (playerMixer) {
-        playerMixer.update(delta);
-    }
-    
-    // Update camera to follow player
-    if (playerModel && camera) {
-        const targetPosition = playerModel.position.clone();
-        targetPosition.y += 3;
-        targetPosition.z += 8;
-        
-        camera.position.lerp(targetPosition, 0.05);
-        camera.lookAt(playerModel.position.x, playerModel.position.y + 2, playerModel.position.z);
-    }
-    
-    // Regenerate energy
-    gameState.resources.energy = Math.min(
-        100, 
-        gameState.resources.energy + BASE_ENERGY_REGEN * delta
-    );
-    
-    // Update UI periodically
-    if (Math.floor(Date.now() / 250) % 4 === 0) {
-        updateUI();
-    }
-    
-    // Render scene
-    renderer.render(scene, camera);
-}
-
-// ======================
-// STARTUP SEQUENCE
-// ======================
-function startGame() {
-    console.log("Starting realistic game...");
-    
-    document.getElementById('loginScreen').style.display = 'none';
-    
-    const loadingScreen = document.getElementById('loadingScreen');
-    loadingScreen.style.display = 'flex';
-    
-    let progress = 0;
-    const loadingInterval = setInterval(() => {
-        progress += 20;
-        if (progress >= 100) {
-            progress = 100;
-            clearInterval(loadingInterval);
-            
-            document.getElementById('loadingProgress').textContent = `${progress}%`;
-            
-            setTimeout(() => {
-                loadingScreen.style.opacity = '0';
-                setTimeout(() => {
-                    loadingScreen.style.display = 'none';
-                    
-                    // Show planet selection
-                    openPlanetSelection();
-                    
-                    // Initialize game
-                    try {
-                        initGameEngine();
-                        updateUI();
-                        
-                        // Add keyboard controls
-                        document.addEventListener('keydown', onKeyDown);
-                        document.addEventListener('keyup', onKeyUp);
-                        
-                    } catch (error) {
-                        console.error("Game initialization error:", error);
-                        showNotification("Game started with limited features.", "warning", 5000);
-                    }
-                }, 300);
-            }, 500);
-        }
-        
-        document.getElementById('loadingProgress').textContent = `${progress}%`;
-    }, 300);
-}
-
-// ======================
-// KEYBOARD CONTROLS (FIXED)
-// ======================
-function onKeyDown(event) {
-    switch(event.key.toLowerCase()) {
-        case 'w':
-        case 'arrowup':
-            movementVector.z = 1; // FIXED: Forward
-            isWalking = true;
-            break;
-        case 's':
-        case 'arrowdown':
-            movementVector.z = -1; // FIXED: Backward
-            isWalking = true;
-            break;
-        case 'a':
-        case 'arrowleft':
-            movementVector.x = -1;
-            isWalking = true;
-            break;
-        case 'd':
-        case 'arrowright':
-            movementVector.x = 1;
-            isWalking = true;
-            break;
-        case ' ':
-            if (playerModel && playerModel.position.y < 3) {
-                playerModel.position.y += 8;
-                showNotification("Jump!", "info", 1000);
+            const terrainHeight = intersects[0].point.y;
+            if (playerModel.position.y < terrainHeight + 2) {
+                playerModel.position.y = terrainHeight + 2;
             }
-            break;
-        case 'm':
-            toggleMiningMode();
-            break;
-        case 'e':
-            mineResource();
-            break;
-        case 'enter':
-            enterShip();
-            break;
-        case 'escape':
-            toggleMenu();
-            break;
-        case 'f1':
-            showGuide();
-            break;
-        case 'f5':
-            saveGame();
-            break;
-        case 'f9':
-            loadSavedGame();
-            break;
+        }
     }
+    
+    // Expose movement update
+    window.updatePlayerMovement = updateMovement;
 }
 
-function onKeyUp(event) {
-    switch(event.key.toLowerCase()) {
-        case 'w':
-        case 'arrowup':
-        case 's':
-        case 'arrowdown':
-            movementVector.z = 0;
-            isWalking = movementVector.length() > 0;
-            break;
-        case 'a':
-        case 'arrowleft':
-        case 'd':
-        case 'arrowright':
-            movementVector.x = 0;
-            isWalking = movementVector.length() > 0;
-            break;
-    }
+function setupEventListeners() {
+    // Window resize
+    window.addEventListener('resize', onWindowResize);
+    
+    // Pointer lock for mouse look
+    const canvas = document.getElementById('gameCanvas');
+    canvas.addEventListener('click', () => {
+        canvas.requestPointerLock();
+    });
+    
+    // Mobile joystick
+    const joystickArea = document.getElementById('joystickArea');
+    const joystickHandle = document.getElementById('joystickHandle');
+    
+    let joystickCenter = { x: 0, y: 0 };
+    const joystickRadius = 80;
+    
+    joystickArea.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const rect = joystickArea.getBoundingClientRect();
+        joystickCenter = {
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2
+        };
+        joystickStartPos = {
+            x: e.touches[0].clientX,
+            y: e.touches[0].clientY
+        };
+        joystickActive = true;
+    });
+    
+    document.addEventListener('touchmove', (e) => {
+        if (!joystickActive) return;
+        e.preventDefault();
+        
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - joystickStartPos.x;
+        const deltaY = touch.clientY - joystickStartPos.y;
+        
+        // Calculate distance from center
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        const angle = Math.atan2(deltaY, deltaX);
+        
+        // Limit to joystick radius
+        const limitedDistance = Math.min(distance, joystickRadius);
+        const limitedX = Math.cos(angle) * limitedDistance;
+        const limitedY = Math.sin(angle) * limitedDistance;
+        
+        // Update joystick visual
+        joystickHandle.style.transform = `translate(${limitedX}px, ${limitedY}px)`;
+        
+        // Update movement vector
+        movementVector.x = limitedX / joystickRadius;
+        movementVector.z = limitedY / joystickRadius;
+    });
+    
+    document.addEventListener('touchend', (e) => {
+        if (joystickActive) {
+            joystickActive = false;
+            joystickHandle.style.transform = 'translate(-50%, -50%)';
+            movementVector.set(0, 0, 0);
+        }
+    });
 }
 
-// ======================
-// WINDOW RESIZE
-// ======================
 function onWindowResize() {
     if (camera && renderer) {
         camera.aspect = window.innerWidth / window.innerHeight;
@@ -2845,140 +2661,258 @@ function onWindowResize() {
     }
 }
 
-window.addEventListener('resize', onWindowResize);
+// ======================
+// GAME LOOP
+// ======================
+function animate() {
+    if (!gameInitialized) return;
+    
+    requestAnimationFrame(animate);
+    
+    const deltaTime = clock.getDelta();
+    
+    // Update player movement
+    if (window.updatePlayerMovement) {
+        window.updatePlayerMovement(deltaTime);
+    }
+    
+    // Update camera to follow player
+    if (playerModel && camera) {
+        const playerPos = playerModel.position.clone();
+        const cameraOffset = new THREE.Vector3(0, 3, 8);
+        cameraOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), playerModel.rotation.y);
+        camera.position.copy(playerPos).add(cameraOffset);
+        camera.lookAt(playerPos);
+    }
+    
+    // Animate resource nodes
+    resourceNodes.forEach(node => {
+        if (node.mesh && !node.collected) {
+            // Pulsing animation for energy nodes
+            if (node.type === 'energy') {
+                const pulse = Math.sin(Date.now() * 0.001 * node.mesh.userData.pulseSpeed);
+                const scale = node.mesh.userData.baseScale + pulse * 0.1;
+                node.mesh.scale.set(scale, scale, scale);
+            }
+            
+            // Slow rotation
+            node.mesh.rotation.y += deltaTime * 0.5;
+        }
+    });
+    
+    // Animate floating details
+    scene.traverse((object) => {
+        if (object.userData && object.userData.floatHeight) {
+            const floatOffset = Math.sin(Date.now() * 0.001 * object.userData.floatSpeed + object.userData.floatPhase) * 0.5;
+            object.position.y = object.userData.floatHeight + floatOffset;
+        }
+    });
+    
+    // Regenerate energy
+    gameState.resources.energy = Math.min(100, gameState.resources.energy + BASE_ENERGY_REGEN * deltaTime);
+    
+    // Update statistics
+    gameState.statistics.playTime += deltaTime;
+    
+    // Update distance traveled
+    if (playerModel) {
+        const distance = playerModel.position.distanceTo(lastPosition);
+        gameState.statistics.distanceTraveled += distance;
+        lastPosition.copy(playerModel.position);
+    }
+    
+    // Update UI periodically
+    if (Math.floor(Date.now() / 1000) % 2 === 0) {
+        updateUI();
+    }
+    
+    // Render scene
+    renderer.render(scene, camera);
+}
 
 // ======================
-// SAVE/LOAD SYSTEM
+// STARTUP FUNCTIONS
 // ======================
-function saveGame() {
-    gameState.timestamp = Date.now();
-    gameState.version = GAME_VERSION;
+function showLoadingScreen() {
+    document.getElementById('loadingScreen').style.display = 'flex';
+    document.getElementById('loginScreen').style.display = 'none';
+}
+
+function hideLoadingScreen() {
+    document.getElementById('loadingScreen').style.opacity = '0';
+    setTimeout(() => {
+        document.getElementById('loadingScreen').style.display = 'none';
+    }, 500);
+}
+
+function startGame() {
+    showLoadingScreen();
     
-    try {
-        localStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
-        showNotification("💾 Game saved successfully!", "success", 2000);
-        return true;
-    } catch (e) {
-        showNotification("Failed to save game: " + e.message, "error", 3000);
-        return false;
-    }
+    const username = document.getElementById('username').value.trim() || "SpaceCommander";
+    const faction = document.getElementById('faction').value;
+    
+    gameState.player.name = username;
+    gameState.player.faction = faction;
+    
+    // Simulate loading
+    let progress = 0;
+    const loadingInterval = setInterval(() => {
+        progress += Math.random() * 20;
+        if (progress > 100) progress = 100;
+        
+        document.getElementById('loadingProgress').textContent = `${Math.round(progress)}%`;
+        
+        if (progress >= 100) {
+            clearInterval(loadingInterval);
+            setTimeout(() => {
+                hideLoadingScreen();
+                document.getElementById('gameContainer').style.display = 'block';
+                initGame();
+                showNotification(`Welcome, Commander ${username}!`, "success", 3000);
+            }, 500);
+        }
+    }, 200);
 }
 
 function loadSavedGame() {
-    try {
-        const saved = localStorage.getItem(SAVE_KEY);
-        if (saved) {
-            const loadedState = JSON.parse(saved);
+    const savedData = localStorage.getItem(SAVE_KEY);
+    if (savedData) {
+        try {
+            const loadedState = JSON.parse(savedData);
             
-            gameState = {
-                ...gameState,
-                ...loadedState,
-                player: { ...gameState.player, ...loadedState.player },
-                resources: { ...gameState.resources, ...loadedState.resources }
-            };
-            
-            // Load current planet
-            if (loadedState.currentPlanet && PLANETS[loadedState.currentPlanet]) {
-                currentPlanetData = PLANETS[loadedState.currentPlanet];
+            // Validate loaded data
+            if (loadedState.version === GAME_VERSION) {
+                gameState = loadedState;
+                
+                // Update UI elements
+                document.getElementById('username').value = gameState.player.name;
+                document.getElementById('faction').value = gameState.player.faction;
+                
+                showNotification("Game loaded successfully!", "success", 3000);
+                showNotification(`Welcome back, Commander ${gameState.player.name}!`, "info", 3000);
+            } else {
+                showNotification("Save file version mismatch. Starting new game.", "warning", 4000);
             }
-            
-            updateUI();
-            showNotification("✅ Game loaded successfully!", "success", 3000);
-            return true;
-        } else {
-            showNotification("No saved game found", "warning", 3000);
-            return false;
+        } catch (error) {
+            console.error("Failed to load save:", error);
+            showNotification("Failed to load saved game.", "error", 3000);
         }
-    } catch (e) {
-        showNotification("Failed to load save: " + e.message, "error", 3000);
-        return false;
+    } else {
+        showNotification("No saved game found.", "warning", 3000);
     }
 }
 
-// ======================
-// ADDITIONAL FUNCTIONS
-// ======================
-function openPlanetView() {
-    showNotification(`
-    🪐 ${currentPlanetData.name}
-    
-    Description: ${currentPlanetData.description}
-    Gravity: ${currentPlanetData.gravity.toFixed(1)} m/s²
-    Atmosphere: ${currentPlanetData.atmosphere}
-    Temperature: ${currentPlanetData.temperature}
-    
-    Features: ${currentPlanetData.features.join(', ')}
-    
-    Available Resources:
-    ${Object.keys(currentPlanetData.resources).map(res => `• ${res}`).join('\n')}
-    
-    Keep exploring to discover more!
-    `, "info", 7000);
-}
-
-function toggleGraphics() {
-    const graphicsModes = ["low", "medium", "high"];
-    const currentIndex = graphicsModes.indexOf(gameState.settings.graphics);
-    gameState.settings.graphics = graphicsModes[(currentIndex + 1) % graphicsModes.length];
-    
-    if (renderer) {
-        renderer.setPixelRatio(Math.min(
-            window.devicePixelRatio, 
-            gameState.settings.graphics === "high" ? 2 : 1
-        ));
+function saveGame() {
+    try {
+        gameState.timestamp = Date.now();
+        localStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
+        showNotification("Game saved successfully!", "success", 3000);
+    } catch (error) {
+        console.error("Failed to save game:", error);
+        showNotification("Failed to save game.", "error", 3000);
     }
-    
-    updateUI();
-    showNotification(`Graphics: ${gameState.settings.graphics.toUpperCase()}`, "info", 2000);
 }
 
-function showSettings() {
-    showNotification(`
-    ⚙️ SETTINGS
-    
-    Current Settings:
-    • Graphics: ${gameState.settings.graphics.toUpperCase()}
-    • Sound: ${gameState.settings.sound ? "ON" : "OFF"}
-    • Music: ${gameState.settings.music ? "ON" : "OFF"}
-    • Auto-save: ${gameState.settings.autosave ? "ON" : "OFF"}
-    • Notifications: ${gameState.settings.notifications ? "ON" : "OFF"}
-    
-    Game Version: ${GAME_VERSION}
-    
-    Controls:
-    • WASD/Arrows: Move (Up=Forward, Down=Backward)
-    • Space: Jump
-    • M: Mining mode
-    • E: Mine resource
-    • ESC: Menu
-    • F1: Guide
-    • F5: Save
-    • F9: Load
-    `, "info", 10000);
-}
-
-// ======================
-// INITIALIZATION
-// ======================
-console.log("Eternal Empire - Realistic Edition v" + GAME_VERSION);
-
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("DOM loaded");
-    
-    if (localStorage.getItem(SAVE_KEY)) {
-        showNotification("Save game detected. Click LOAD SAVE to continue.", "info", 5000);
+// Autosave every 60 seconds
+setInterval(() => {
+    if (gameState.settings.autosave && gameInitialized) {
+        saveGame();
     }
-    
+}, 60000);
+
+// ======================
+// MOBILE FUNCTIONS
+// ======================
+function mobileJump() {
+    showNotification("Jump activated!", "info", 1000);
+}
+
+function mobileMine() {
+    mineResource();
+}
+
+function mobileAction() {
+    toggleMiningMode();
+}
+
+function mobileInteract() {
+    showNotification("Interaction activated!", "info", 1000);
+}
+
+// ======================
+// INITIAL LOAD
+// ======================
+window.addEventListener('load', () => {
+    console.log("Eternal Empire loading...");
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('loginScreen').style.display = 'flex';
+    
+    // Try to load saved username
+    loadSavedGame();
 });
 
-setTimeout(() => {
-    if (document.getElementById('loginScreen').style.display !== 'none') {
-        showNotification("Enter your name and launch to explore unique planets!", "info", 6000);
+// ======================
+// UTILITY FUNCTIONS
+// ======================
+function toggleGraphics() {
+    const graphicsMode = document.getElementById('graphicsMode');
+    const current = graphicsMode.textContent;
+    
+    if (current === "HIGH") {
+        graphicsMode.textContent = "MEDIUM";
+        if (renderer) {
+            renderer.setPixelRatio(1);
+        }
+        showNotification("Graphics quality: MEDIUM", "info", 2000);
+    } else if (current === "MEDIUM") {
+        graphicsMode.textContent = "LOW";
+        if (scene && scene.fog) {
+            scene.fog.near = 30;
+            scene.fog.far = 100;
+        }
+        showNotification("Graphics quality: LOW", "info", 2000);
+    } else {
+        graphicsMode.textContent = "HIGH";
+        if (renderer) {
+            renderer.setPixelRatio(window.devicePixelRatio);
+        }
+        if (scene && scene.fog) {
+            scene.fog.near = 50;
+            scene.fog.far = 200;
+        }
+        showNotification("Graphics quality: HIGH", "info", 2000);
     }
-}, 3000);
-</script>
+}
 
+// ======================
+// DEBUG / DEVELOPMENT
+// ======================
+// Add debug controls
+window.addEventListener('keydown', (e) => {
+    // Ctrl+S to save
+    if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        saveGame();
+    }
+    
+    // Ctrl+L to load
+    if (e.ctrlKey && e.key === 'l') {
+        e.preventDefault();
+        loadSavedGame();
+    }
+    
+    // F1 for debug info
+    if (e.key === 'F1') {
+        e.preventDefault();
+        console.log("=== DEBUG INFO ===");
+        console.log("Game State:", gameState);
+        console.log("Player Position:", playerModel ? playerModel.position : "No player");
+        console.log("Resource Nodes:", resourceNodes.length);
+        console.log("FPS:", Math.round(1/clock.getDelta()));
+    }
+});
+
+console.log("Eternal Empire - Realistic Edition v" + GAME_VERSION + " loaded!");
+</script>
 </body>
 </html>
