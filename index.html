@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Eternal Empire - Complete Edition</title>
+    <title>Eternal Empire - Complete Space Game</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -18,124 +17,143 @@
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: radial-gradient(circle at center, #0a0a2a 0%, #000 100%);
+            background: radial-gradient(circle at center, #001122 0%, #000011 100%);
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 1000;
         }
         
-        .login-container {
-            display: flex;
-            width: 90%;
-            max-width: 1200px;
-            height: 600px;
+        .login-box {
             background: rgba(10, 20, 40, 0.95);
+            padding: 40px;
             border-radius: 20px;
-            overflow: hidden;
-            border: 3px solid #00aaff;
-            box-shadow: 0 0 100px rgba(0, 170, 255, 0.5);
+            border: 3px solid #00ccff;
+            box-shadow: 0 0 100px rgba(0, 204, 255, 0.5);
+            text-align: center;
+            width: 500px;
         }
         
-        .login-left {
-            flex: 1;
-            background: linear-gradient(135deg, #001122, #003355);
-            padding: 50px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        
-        .login-title {
+        .game-title {
             color: #00ffff;
             font-size: 48px;
             margin-bottom: 10px;
             text-shadow: 0 0 30px #00ffff;
+            letter-spacing: 3px;
         }
         
-        .login-subtitle {
+        .game-subtitle {
             color: #88aaff;
-            font-size: 18px;
-            margin-bottom: 40px;
-        }
-        
-        .login-input-group {
-            margin: 20px 0;
-        }
-        
-        .login-label {
-            display: block;
-            color: #00aaff;
-            margin-bottom: 8px;
-            font-size: 14px;
+            font-size: 20px;
+            margin-bottom: 30px;
         }
         
         .login-input {
             width: 100%;
             padding: 15px;
+            margin: 10px 0;
             background: rgba(0, 30, 60, 0.7);
             border: 2px solid #0088ff;
             border-radius: 10px;
             color: white;
             font-size: 16px;
-            transition: 0.3s;
-        }
-        
-        .login-input:focus {
-            outline: none;
-            border-color: #00ffff;
-            box-shadow: 0 0 20px #00ffff;
         }
         
         .login-btn {
             width: 100%;
             padding: 18px;
-            margin-top: 30px;
+            margin: 20px 0;
             background: linear-gradient(45deg, #0088ff, #00ccff);
             border: none;
             border-radius: 10px;
             color: white;
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
             cursor: pointer;
             transition: 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 2px;
         }
         
         .login-btn:hover {
             background: linear-gradient(45deg, #00ccff, #00ffff);
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(0, 255, 255, 0.5);
+            transform: scale(1.05);
+            box-shadow: 0 0 30px #00ffff;
         }
         
-        .login-right {
-            flex: 1;
-            background: #000;
-            display: flex;
-            flex-direction: column;
+        .rulebook-btn {
+            background: rgba(255, 170, 0, 0.2);
+            border: 2px solid #ffaa00;
+            color: #ffaa00;
+            padding: 12px;
+            margin-top: 10px;
+        }
+        
+        .rulebook-btn:hover {
+            background: rgba(255, 170, 0, 0.4);
+        }
+        
+        /* Rulebook Modal */
+        #rulebookModal {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
             justify-content: center;
             align-items: center;
+            z-index: 2000;
+        }
+        
+        .rulebook-content {
+            background: rgba(0, 20, 40, 0.98);
+            width: 90%;
+            max-width: 800px;
+            height: 80vh;
+            border-radius: 20px;
+            border: 3px solid #00ffff;
             padding: 30px;
+            overflow-y: auto;
         }
         
-        .feature-list {
-            list-style: none;
-            width: 100%;
+        .rulebook-title {
+            color: #00ffff;
+            font-size: 32px;
+            margin-bottom: 20px;
+            text-align: center;
         }
         
-        .feature-item {
-            display: flex;
-            align-items: center;
-            margin: 20px 0;
-            color: #88aaff;
-            font-size: 16px;
+        .rule-section {
+            margin: 25px 0;
+            padding: 20px;
+            background: rgba(0, 40, 80, 0.3);
+            border-radius: 15px;
+            border-left: 5px solid #00aaff;
         }
         
-        .feature-icon {
-            margin-right: 15px;
+        .rule-section h3 {
             color: #00ff88;
-            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .rule-section ul {
+            margin-left: 20px;
+        }
+        
+        .rule-section li {
+            margin: 8px 0;
+            color: #ccccff;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #ff5555;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 18px;
         }
         
         /* Game Container */
@@ -153,257 +171,128 @@
             left: 0;
             width: 100%;
             padding: 15px 40px;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+            background: rgba(0, 10, 30, 0.9);
+            border-bottom: 2px solid #00aaff;
             display: flex;
             justify-content: space-between;
             z-index: 100;
         }
         
-        .player-info {
-            display: flex;
-            align-items: center;
-            gap: 30px;
-        }
-        
         .resource-display {
             display: flex;
-            gap: 25px;
+            gap: 30px;
         }
         
         .resource-item {
             display: flex;
             align-items: center;
             gap: 10px;
-            background: rgba(0, 30, 60, 0.7);
-            padding: 8px 15px;
-            border-radius: 20px;
-            border: 1px solid #00aaff;
         }
         
         .resource-icon {
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
         }
         
         .resource-value {
-            font-size: 18px;
+            font-size: 22px;
             font-weight: bold;
             color: #00ffff;
-            min-width: 50px;
+            min-width: 80px;
         }
         
-        .health-display {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .health-bar {
-            width: 200px;
-            height: 12px;
-            background: rgba(255, 0, 0, 0.2);
-            border-radius: 6px;
-            overflow: hidden;
-            border: 1px solid #ff5555;
-        }
-        
-        .health-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #ff0000, #ff5555);
-            width: 100%;
-            transition: width 0.3s;
-        }
-        
-        /* Side Panels */
-        .side-panel {
-            position: absolute;
-            top: 100px;
-            background: rgba(0, 20, 40, 0.9);
-            border-radius: 15px;
-            padding: 20px;
-            border: 2px solid;
-            backdrop-filter: blur(10px);
-            z-index: 50;
-            transition: transform 0.3s;
-        }
-        
-        #inventoryPanel {
-            left: 20px;
-            width: 350px;
-            border-color: #0088ff;
-            transform: translateX(-400px);
-        }
-        
-        #inventoryPanel.active {
-            transform: translateX(0);
-        }
-        
-        #buildPanel {
-            right: 20px;
-            width: 400px;
-            border-color: #00cc88;
-            transform: translateX(400px);
-        }
-        
-        #buildPanel.active {
-            transform: translateX(0);
-        }
-        
-        .panel-title {
-            color: #00ffff;
-            font-size: 22px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid;
-            padding-bottom: 10px;
-        }
-        
-        .inventory-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 10px;
-            margin-top: 15px;
-        }
-        
-        .inventory-slot {
-            aspect-ratio: 1;
-            background: rgba(0, 40, 80, 0.5);
-            border: 1px solid #0066aa;
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            text-align: center;
-            padding: 5px;
-            transition: 0.2s;
-        }
-        
-        .inventory-slot:hover {
-            background: rgba(0, 100, 200, 0.3);
-            border-color: #00aaff;
-            transform: scale(1.05);
-        }
-        
-        .inventory-slot.filled {
-            background: rgba(0, 100, 200, 0.3);
-            border-color: #00aaff;
-        }
-        
-        .build-category {
-            margin: 15px 0;
-        }
-        
-        .category-title {
-            color: #88aaff;
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
-        
-        .build-options {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-        
-        .build-option {
-            padding: 15px;
-            background: rgba(0, 60, 120, 0.3);
-            border: 1px solid #0088ff;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        
-        .build-option:hover {
-            background: rgba(0, 100, 200, 0.5);
-            border-color: #00ffff;
-            transform: translateY(-3px);
-        }
-        
-        .build-option.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        /* Bottom HUD */
-        #bottomHUD {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 20px;
-            z-index: 100;
-        }
-        
-        .hud-button {
-            padding: 15px 30px;
-            background: rgba(0, 60, 120, 0.8);
-            border: 2px solid #00aaff;
-            border-radius: 10px;
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-            transition: 0.3s;
-            min-width: 150px;
-            text-align: center;
-        }
-        
-        .hud-button:hover {
-            background: rgba(0, 100, 200, 0.9);
-            border-color: #00ffff;
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0, 170, 255, 0.5);
-        }
-        
-        .hud-button.active {
-            background: rgba(0, 170, 255, 0.9);
-            border-color: #00ffff;
-            box-shadow: 0 0 30px rgba(0, 255, 255, 0.7);
-        }
-        
-        /* Crosshair */
+        /* Game UI Elements */
         #crosshair {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             color: #00ffff;
-            font-size: 24px;
-            text-shadow: 0 0 10px #00ffff;
+            font-size: 28px;
+            text-shadow: 0 0 15px #00ffff;
             z-index: 10;
             pointer-events: none;
         }
         
-        /* Interaction Prompt */
         #interactionPrompt {
             position: absolute;
             top: 55%;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.8);
-            padding: 10px 20px;
+            padding: 12px 24px;
             border-radius: 10px;
-            border: 1px solid #00ffff;
+            border: 2px solid #00ffff;
             color: #00ffff;
-            font-size: 14px;
+            font-size: 16px;
             display: none;
             z-index: 10;
         }
         
-        /* Minimap */
-        #minimap {
+        /* Controls Panel */
+        #controlsPanel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 20, 40, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #00cc88;
+            z-index: 50;
+            width: 300px;
+        }
+        
+        .control-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px;
+            background: rgba(0, 40, 80, 0.3);
+            border-radius: 8px;
+        }
+        
+        .control-key {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        
+        /* Action Buttons */
+        #actionButtons {
             position: absolute;
             bottom: 20px;
             right: 20px;
-            width: 200px;
-            height: 200px;
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid #00aaff;
-            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
             z-index: 50;
+        }
+        
+        .action-btn {
+            padding: 18px 30px;
+            background: rgba(0, 60, 120, 0.8);
+            border: 2px solid #00aaff;
+            border-radius: 15px;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: 0.3s;
+            text-align: center;
+            min-width: 200px;
+        }
+        
+        .action-btn:hover {
+            background: rgba(0, 100, 200, 0.9);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 170, 255, 0.5);
+        }
+        
+        .action-btn.active {
+            background: rgba(0, 170, 255, 0.9);
+            border-color: #00ffff;
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.7);
         }
         
         /* Canvas */
@@ -422,11 +311,11 @@
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.9);
-            padding: 15px 30px;
-            border-radius: 10px;
-            border: 2px solid #00ff88;
+            padding: 20px 40px;
+            border-radius: 15px;
+            border: 3px solid #00ff88;
             color: #00ff88;
-            font-size: 16px;
+            font-size: 18px;
             display: none;
             z-index: 1000;
             text-align: center;
@@ -437,59 +326,131 @@
 
 <!-- Login Screen -->
 <div id="loginScreen">
-    <div class="login-container">
-        <div class="login-left">
-            <div class="login-title">ETERNAL EMPIRE</div>
-            <div class="login-subtitle">Build Your Galactic Dominion</div>
-            
-            <div class="login-input-group">
-                <label class="login-label">COMMANDER NAME</label>
-                <input type="text" id="username" class="login-input" placeholder="Enter your name" maxlength="20">
-            </div>
-            
-            <div class="login-input-group">
-                <label class="login-label">ACCESS CODE</label>
-                <input type="password" id="password" class="login-input" placeholder="Use: start123" value="start123">
-            </div>
-            
-            <button class="login-btn" onclick="login()">INITIALIZE PROTOCOL</button>
-            
-            <div style="margin-top: 30px; color: #88aaff; font-size: 12px;">
-                Progress saves automatically • Supports multiplayer
-            </div>
+    <div class="login-box">
+        <div class="game-title">ETERNAL EMPIRE</div>
+        <div class="game-subtitle">Build • Mine • Fight • Conquer</div>
+        
+        <input type="text" id="username" class="login-input" placeholder="Commander Name" maxlength="20">
+        <input type="password" id="password" class="login-input" placeholder="Access Code (any)">
+        
+        <button class="login-btn" onclick="startGame()">LAUNCH GAME</button>
+        <button class="login-btn rulebook-btn" onclick="showRulebook()">📖 VIEW RULEBOOK</button>
+        
+        <div style="margin-top: 20px; color: #88aaff; font-size: 14px;">
+            Progress auto-saves • Multiplayer Ready
+        </div>
+    </div>
+</div>
+
+<!-- Rulebook Modal -->
+<div id="rulebookModal">
+    <div class="rulebook-content">
+        <button class="close-btn" onclick="hideRulebook()">✕ CLOSE</button>
+        
+        <div class="rulebook-title">ETERNAL EMPIRE RULEBOOK</div>
+        
+        <div class="rule-section">
+            <h3>🎮 GAME OBJECTIVE</h3>
+            <ul>
+                <li>Build a galactic empire across multiple planets</li>
+                <li>Mine resources, construct buildings and ships</li>
+                <li>Defeat enemy empires and expand your territory</li>
+                <li>Progress through 5 unique planets with different resources</li>
+                <li>Unlock powerful technologies and ships</li>
+            </ul>
         </div>
         
-        <div class="login-right">
-            <ul class="feature-list">
-                <li class="feature-item">
-                    <span class="feature-icon">🚀</span>
-                    Build & Customize Spaceships
-                </li>
-                <li class="feature-item">
-                    <span class="feature-icon">⚔️</span>
-                    Fight Alien Empires
-                </li>
-                <li class="feature-item">
-                    <span class="feature-icon">🏗️</span>
-                    Construct Buildings & Bases
-                </li>
-                <li class="feature-item">
-                    <span class="feature-icon">🌌</span>
-                    Travel Between 5 Unique Planets
-                </li>
-                <li class="feature-item">
-                    <span class="feature-icon">⛏️</span>
-                    Mine Resources Physically
-                </li>
-                <li class="feature-item">
-                    <span class="feature-icon">📈</span>
-                    Deep Progression System
-                </li>
-                <li class="feature-item">
-                    <span class="feature-icon">👥</span>
-                    Multiplayer Ready
-                </li>
+        <div class="rule-section">
+            <h3>⚔️ COMBAT SYSTEM</h3>
+            <ul>
+                <li><strong>Enemy Empires:</strong> Each planet has AI-controlled enemy factions</li>
+                <li><strong>Ship Classes:</strong> Scout (fast), Cargo (transport), Battle (combat), Mothership (capital)</li>
+                <li><strong>Combat Mechanics:</strong> Real-time space battles with targeting systems</li>
+                <li><strong>Damage Types:</strong> Energy weapons, ballistic weapons, missiles</li>
+                <li><strong>Shield System:</strong> Recharging shields protect your ships</li>
             </ul>
+        </div>
+        
+        <div class="rule-section">
+            <h3>🏗️ BUILDING SYSTEM</h3>
+            <ul>
+                <li><strong>Auto-Miner:</strong> Automatically mines nearby resources</li>
+                <li><strong>Defense Turret:</strong> Protects your base from enemies</li>
+                <li><strong>Power Generator:</strong> Provides energy for buildings</li>
+                <li><strong>Shipyard:</strong> Constructs all types of spaceships</li>
+                <li><strong>Research Lab:</strong> Unlocks new technologies</li>
+                <li><strong>Trade Hub:</strong> Buy/sell resources with other empires</li>
+            </ul>
+        </div>
+        
+        <div class="rule-section">
+            <h3>🚀 SHIP TYPES</h3>
+            <ul>
+                <li><strong>Scout Ship:</strong> Fast, good for exploration (50 Iron)</li>
+                <li><strong>Cargo Ship:</strong> Carries 500 resources (100 Iron)</li>
+                <li><strong>Battleship:</strong> Heavy weapons, strong shields (200 Iron, 50 Volcanium)</li>
+                <li><strong>Mothership:</strong> Carries 5 smaller ships, mobile base (500 Iron, 200 Volcanium)</li>
+                <li><strong>Mining Ship:</strong> Specialized for asteroid mining (80 Iron)</li>
+            </ul>
+        </div>
+        
+        <div class="rule-section">
+            <h3>🌍 PLANETS & RESOURCES</h3>
+            <ul>
+                <li><strong>Terra Nova:</strong> Iron, Carbon (Starting planet)</li>
+                <li><strong>Pyros V:</strong> Volcanium, Crystal (Lava planet)</li>
+                <li><strong>Cryos-7:</strong> Cryo-Crystal, Energy (Ice planet)</li>
+                <li><strong>Zephyr Prime:</strong> Aero-Gel, Gas (Gas giant)</li>
+                <li><strong>Graviton Core:</strong> Gravity-Alloy (High-gravity planet)</li>
+            </ul>
+        </div>
+        
+        <div class="rule-section">
+            <h3>🎯 CONTROLS</h3>
+            <ul>
+                <li><strong>WASD:</strong> Move character</li>
+                <li><strong>Mouse:</strong> Look around</li>
+                <li><strong>Left Click:</strong> Shoot/Select</li>
+                <li><strong>E:</strong> Interact/Mine</li>
+                <li><strong>B:</strong> Build menu</li>
+                <li><strong>I:</strong> Inventory</li>
+                <li><strong>M:</strong> Toggle mining mode</li>
+                <li><strong>G:</strong> Galaxy map</li>
+                <li><strong>ESC:</strong> Pause menu</li>
+                <li><strong>Ctrl+S:</strong> Quick save</li>
+            </ul>
+        </div>
+        
+        <div class="rule-section">
+            <h3>📈 PROGRESSION</h3>
+            <ul>
+                <li>Start with basic tools on Terra Nova</li>
+                <li>Mine resources to build first ship</li>
+                <li>Travel to new planets for rare materials</li>
+                <li>Research technologies to unlock better equipment</li>
+                <li>Build fleet to conquer enemy territories</li>
+                <li>Establish trade routes for passive income</li>
+                <li>Form alliances or declare war on other empires</li>
+            </ul>
+        </div>
+        
+        <div class="rule-section">
+            <h3>💡 TIPS & STRATEGY</h3>
+            <ul>
+                <li>Start by mining Iron to build basic structures</li>
+                <li>Build defense turrets early to protect from raids</li>
+                <li>Scout ships are cheap and great for exploration</li>
+                <li>Balance resource gathering with expansion</li>
+                <li>Use cargo ships to transport resources between planets</li>
+                <li>Mothership can act as mobile base for distant operations</li>
+                <li>Save often - the universe is dangerous!</li>
+            </ul>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="login-btn" onclick="hideRulebook()" style="width: auto; padding: 15px 40px;">
+                START PLAYING
+            </button>
         </div>
     </div>
 </div>
@@ -498,104 +459,531 @@
 <div id="gameContainer">
     <!-- Top Bar -->
     <div id="topBar">
-        <div class="player-info">
-            <div class="resource-display">
-                <div class="resource-item">
-                    <div class="resource-icon" style="background: #ffaa00;"></div>
-                    <div>IRON: <span class="resource-value" id="ironCount">0</span></div>
-                </div>
-                <div class="resource-item">
-                    <div class="resource-icon" style="background: #ff5555;"></div>
-                    <div>VOLCANIUM: <span class="resource-value" id="volcaniumCount">0</span></div>
-                </div>
-                <div class="resource-item">
-                    <div class="resource-icon" style="background: #00ff88;"></div>
-                    <div>ENERGY: <span class="resource-value" id="energyCount">100</span></div>
-                </div>
-                <div class="resource-item">
-                    <div class="resource-icon" style="background: #00aaff;"></div>
-                    <div>CREDITS: <span class="resource-value" id="creditCount">500</span></div>
-                </div>
+        <div class="resource-display">
+            <div class="resource-item">
+                <div class="resource-icon" style="background: #ffaa00;"></div>
+                <div>IRON: <span class="resource-value" id="ironCount">0</span></div>
+            </div>
+            <div class="resource-item">
+                <div class="resource-icon" style="background: #ff5555;"></div>
+                <div>VOLCANIUM: <span class="resource-value" id="volcaniumCount">0</span></div>
+            </div>
+            <div class="resource-item">
+                <div class="resource-icon" style="background: #00ff88;"></div>
+                <div>ENERGY: <span class="resource-value" id="energyCount">100</span></div>
+            </div>
+            <div class="resource-item">
+                <div class="resource-icon" style="background: #00aaff;"></div>
+                <div>CREDITS: <span class="resource-value" id="creditCount">500</span></div>
             </div>
         </div>
-        
-        <div class="health-display">
-            <div style="color: #ff5555; font-size: 18px;">SHIELD:</div>
-            <div class="health-bar">
-                <div class="health-fill" id="healthBar" style="width: 100%;"></div>
-            </div>
-            <div style="color: #00ffff; font-size: 20px; margin-left: 20px;">
-                SYSTEM: <span id="currentSystem">TERRA NOVA</span>
-            </div>
+        <div style="color: #00ffff; font-size: 24px;">
+            PLANET: <span id="currentPlanet">TERRA NOVA</span>
         </div>
     </div>
     
-    <!-- Side Panels -->
-    <div id="inventoryPanel" class="side-panel">
-        <div class="panel-title">INVENTORY</div>
-        <div style="color: #88aaff; margin-bottom: 10px;">
-            Capacity: <span id="capacityCount">0/100</span>
+    <!-- Game UI -->
+    <div id="crosshair">+</div>
+    <div id="interactionPrompt">Press E to mine</div>
+    
+    <!-- Controls Panel -->
+    <div id="controlsPanel">
+        <h3 style="color: #00cc88; margin-bottom: 15px;">CONTROLS</h3>
+        <div class="control-item">
+            <span>Move</span>
+            <span class="control-key">WASD</span>
         </div>
-        <div class="inventory-grid" id="inventoryGrid">
-            <!-- Generated by JavaScript -->
+        <div class="control-item">
+            <span>Look</span>
+            <span class="control-key">MOUSE</span>
         </div>
-        <div style="margin-top: 20px; color: #ffaa00;">
-            Ship Parts: <span id="shipPartsCount">0/50</span>
+        <div class="control-item">
+            <span>Mine/Interact</span>
+            <span class="control-key">E</span>
+        </div>
+        <div class="control-item">
+            <span>Build Menu</span>
+            <span class="control-key">B</span>
+        </div>
+        <div class="control-item">
+            <span>Inventory</span>
+            <span class="control-key">I</span>
+        </div>
+        <div class="control-item">
+            <span>Mining Mode</span>
+            <span class="control-key">M</span>
         </div>
     </div>
     
-    <div id="buildPanel" class="side-panel">
-        <div class="panel-title">CONSTRUCTION MENU</div>
-        
-        <div class="build-category">
-            <div class="category-title">SHIPS</div>
-            <div class="build-options">
-                <div class="build-option" onclick="buildShip('scout')" id="buildScout">
-                    <div style="font-weight: bold; color: #00aaff;">SCOUT</div>
-                    <div style="font-size: 12px; color: #88aaff;">Fast exploration</div>
-                    <div style="color: #ffaa00; font-size: 12px; margin-top: 5px;">Cost: 50 Iron</div>
-                </div>
-                <div class="build-option" onclick="buildShip('cargo')" id="buildCargo">
-                    <div style="font-weight: bold; color: #00aaff;">CARGO SHIP</div>
-                    <div style="font-size: 12px; color: #88aaff;">High capacity</div>
-                    <div style="color: #ffaa00; font-size: 12px; margin-top: 5px;">Cost: 100 Iron</div>
-                </div>
-                <div class="build-option" onclick="buildShip('battle')" id="buildBattle">
-                    <div style="font-weight: bold; color: #00aaff;">BATTLESHIP</div>
-                    <div style="font-size: 12px; color: #88aaff;">Heavy weapons</div>
-                    <div style="color: #ffaa00; font-size: 12.css; margin-top: 5px;">Cost: 200 Iron</div>
-                </div>
-                <div class="build-option" onclick="buildShip('mother')" id="buildMother">
-                    <div style="font-weight: bold; color: #00aaff;">MOTHERSHIP</div>
-                    <div style="font-size: 12px; color: #88aaff;">Carries smaller ships</div>
-                    <div style="color: #ffaa00; font-size: 12px; margin-top: 5px;">Cost: 500 Iron</div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="build-category">
-            <div class="category-title">BUILDINGS</div>
-            <div class="build-options">
-                <div class="build-option" onclick="buildStructure('miner')">
-                    <div style="font-weight: bold; color: #00cc88;">AUTO-MINER</div>
-                    <div style="color: #ffaa00; font-size: 12px;">Cost: 30 Iron</div>
-                </div>
-                <div class="build-option" onclick="buildStructure('turret')">
-                    <div style="font-weight: bold; color: #00cc88;">DEFENSE TURRET</div>
-                    <div style="color: #ffaa00; font-size: 12px;">Cost: 50 Iron</div>
-                </div>
-                <div class="build-option" onclick="buildStructure('generator')">
-                    <div style="font-weight: bold; color: #00cc88;">POWER GENERATOR</div>
-                    <div style="color: #ffaa00; font-size: 12px;">Cost: 40 Iron, 20 Volcanium</div>
-                </div>
-                <div class="build-option" onclick="buildStructure('shipyard')">
-                    <div style="font-weight: bold; color: #00cc88;">SHIPYARD</div>
-                    <div style="color: #ffaa00; font-size: 12px;">Cost: 200 Iron</div>
-                </div>
-            </div>
-        </div>
+    <!-- Action Buttons -->
+    <div id="actionButtons">
+        <button class="action-btn" onclick="toggleMiningMode()" id="miningBtn">
+            ⛏️ MINING MODE: OFF
+        </button>
+        <button class="action-btn" onclick="enterShip()" id="shipBtn">
+            🚀 ENTER SHIP
+        </button>
+        <button class="action-btn" onclick="openBuildMenu()">
+            🏗️ BUILD MENU
+        </button>
+        <button class="action-btn" onclick="openGalaxyMap()">
+            🌌 GALAXY MAP
+        </button>
+        <button class="action-btn" onclick="showRulebook()">
+            📖 RULEBOOK
+        </button>
     </div>
     
-    <!-- Bottom HUD -->
-    <div id="bottomHUD">
-        <div class="hud-button" onclick
+    <!-- Canvas -->
+    <div id="gameCanvas"></div>
+    
+    <!-- Notification -->
+    <div id="notification"></div>
+</div>
+
+<script>
+// ======================
+// GAME STATE
+// ======================
+let player = {
+    name: '',
+    health: 100,
+    position: { x: 0, y: 2, z: 0 },
+    resources: {
+        iron: 0,
+        volcanium: 0,
+        energy: 100,
+        credits: 500
+    },
+    unlockedPlanets: ['TERRA NOVA'],
+    currentPlanet: 'TERRA NOVA',
+    ships: {
+        scout: 0,
+        cargo: 0,
+        battle: 0,
+        mothership: 0
+    },
+    buildings: [],
+    miningMode: false,
+    enemiesDefeated: 0,
+    level: 1,
+    experience: 0
+};
+
+// ======================
+// THREE.JS SETUP
+// ======================
+let scene, camera, renderer;
+let playerModel, terrain, spaceship;
+let keys = {};
+let clock = new THREE.Clock();
+let resourceNodes = [];
+let enemyShips = [];
+let playerBuildings = [];
+
+function initGame() {
+    console.log("🚀 Initializing Eternal Empire...");
+    
+    // Scene
+    scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x000033, 10, 200);
+    
+    // Camera (Third person)
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 10, 20);
+    
+    // Renderer
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    document.getElementById('gameCanvas').appendChild(renderer.domElement);
+    
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0x404040);
+    scene.add(ambientLight);
+    
+    const sunLight = new THREE.DirectionalLight(0xffffff, 1);
+    sunLight.position.set(50, 100, 50);
+    sunLight.castShadow = true;
+    scene.add(sunLight);
+    
+    // Create player character
+    createPlayer();
+    
+    // Create terrain
+    createTerrain();
+    
+    // Create resource nodes
+    createResources();
+    
+    // Create enemy ships
+    createEnemyShips();
+    
+    // Create player spaceship
+    createSpaceship();
+    
+    // Setup controls
+    setupControls();
+    
+    // Start game loop
+    animate();
+    
+    // Show welcome message
+    showNotification("Welcome to Eternal Empire, Commander " + player.name + "!");
+}
+
+function createPlayer() {
+    // Create human character
+    const bodyGeometry = new THREE.CapsuleGeometry(0.5, 1.5, 8, 16);
+    const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0x1a5fb4 });
+    
+    const headGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+    const headMaterial = new THREE.MeshPhongMaterial({ color: 0xf0c0a0 });
+    
+    playerModel = new THREE.Group();
+    
+    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    body.position.y = 0.75;
+    
+    const head = new THREE.Mesh(headGeometry, headMaterial);
+    head.position.y = 1.8;
+    
+    playerModel.add(body);
+    playerModel.add(head);
+    playerModel.position.set(0, 2, 0);
+    playerModel.castShadow = true;
+    
+    scene.add(playerModel);
+}
+
+function createTerrain() {
+    const terrainGeometry = new THREE.PlaneGeometry(200, 200, 50, 50);
+    
+    // Add terrain variation
+    const vertices = terrainGeometry.attributes.position;
+    for (let i = 0; i < vertices.count; i++) {
+        const x = vertices.getX(i);
+        const z = vertices.getZ(i);
+        const height = Math.sin(x * 0.05) * Math.cos(z * 0.05) * 3;
+        vertices.setY(i, height);
+    }
+    terrainGeometry.computeVertexNormals();
+    
+    const terrainMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0x2ecc71,
+        shininess: 30
+    });
+    
+    terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
+    terrain.rotation.x = -Math.PI / 2;
+    terrain.receiveShadow = true;
+    scene.add(terrain);
+}
+
+function createResources() {
+    // Create iron nodes
+    for (let i = 0; i < 15; i++) {
+        const size = 1 + Math.random();
+        const geometry = new THREE.OctahedronGeometry(size, 0);
+        const material = new THREE.MeshPhongMaterial({ 
+            color: 0x888888,
+            emissive: 0x444444,
+            emissiveIntensity: 0.3
+        });
+        
+        const node = new THREE.Mesh(geometry, material);
+        
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 20 + Math.random() * 60;
+        node.position.set(
+            Math.cos(angle) * distance,
+            size + 0.5,
+            Math.sin(angle) * distance
+        );
+        
+        node.castShadow = true;
+        scene.add(node);
+        
+        resourceNodes.push({
+            mesh: node,
+            type: 'iron',
+            amount: 50 + Math.floor(Math.random() * 100)
+        });
+    }
+    
+    // Create volcanium nodes
+    for (let i = 0; i < 10; i++) {
+        const size = 1.5 + Math.random();
+        const geometry = new THREE.DodecahedronGeometry(size, 0);
+        const material = new THREE.MeshPhongMaterial({ 
+            color: 0xff3300,
+            emissive: 0x550000,
+            emissiveIntensity: 0.5
+        });
+        
+        const node = new THREE.Mesh(geometry, material);
+        
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 30 + Math.random() * 50;
+        node.position.set(
+            Math.cos(angle) * distance,
+            size + 0.5,
+            Math.sin(angle) * distance
+        );
+        
+        node.castShadow = true;
+        scene.add(node);
+        
+        resourceNodes.push({
+            mesh: node,
+            type: 'volcanium',
+            amount: 30 + Math.floor(Math.random() * 70)
+        });
+    }
+}
+
+function createEnemyShips() {
+    // Create enemy cargo ships
+    for (let i = 0; i < 3; i++) {
+        const geometry = new THREE.BoxGeometry(3, 1, 5);
+        const material = new THREE.MeshPhongMaterial({ 
+            color: 0xff0000,
+            emissive: 0x550000,
+            emissiveIntensity: 0.2
+        });
+        
+        const ship = new THREE.Mesh(geometry, material);
+        
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 80 + Math.random() * 40;
+        ship.position.set(
+            Math.cos(angle) * distance,
+            10 + Math.random() * 5,
+            Math.sin(angle) * distance
+        );
+        
+        ship.castShadow = true;
+        scene.add(ship);
+        
+        enemyShips.push({
+            mesh: ship,
+            health: 100,
+            type: 'cargo'
+        });
+    }
+    
+    // Create enemy battleships
+    for (let i = 0; i < 2; i++) {
+        const geometry = new THREE.ConeGeometry(2, 4, 8);
+        const material = new THREE.MeshPhongMaterial({ 
+            color: 0xff5555,
+            emissive: 0x770000,
+            emissiveIntensity: 0.3
+        });
+        
+        const ship = new THREE.Mesh(geometry, material);
+        ship.rotation.x = Math.PI / 2;
+        
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 100 + Math.random() * 30;
+        ship.position.set(
+            Math.cos(angle) * distance,
+            15 + Math.random() * 5,
+            Math.sin(angle) * distance
+        );
+        
+        ship.castShadow = true;
+        scene.add(ship);
+        
+        enemyShips.push({
+            mesh: ship,
+            health: 200,
+            type: 'battle'
+        });
+    }
+}
+
+function createSpaceship() {
+    // Player's starting ship
+    const geometry = new THREE.ConeGeometry(2, 4, 8);
+    const material = new THREE.MeshPhongMaterial({ 
+        color: 0x1a5fb4,
+        emissive: 0x004488,
+        emissiveIntensity: 0.5
+    });
+    
+    spaceship = new THREE.Mesh(geometry, material);
+    spaceship.rotation.x = Math.PI / 2;
+    spaceship.position.set(0, 3, -20);
+    spaceship.castShadow = true;
+    
+    scene.add(spaceship);
+}
+
+function setupControls() {
+    // Mouse look
+    let mouseX = 0, mouseY = 0;
+    let isPointerLocked = false;
+    
+    document.addEventListener('mousemove', (event) => {
+        if (isPointerLocked) {
+            mouseX += event.movementX * 0.002;
+            mouseY += event.movementY * 0.002;
+            mouseY = Math.max(-Math.PI/2, Math.min(Math.PI/2, mouseY));
+            
+            // Update camera
+            camera.rotation.y = mouseX;
+            camera.rotation.x = mouseY;
+        }
+    });
+    
+    // Pointer lock
+    renderer.domElement.addEventListener('click', () => {
+        if (!isPointerLocked) {
+            renderer.domElement.requestPointerLock();
+        }
+    });
+    
+    document.addEventListener('pointerlockchange', () => {
+        isPointerLocked = document.pointerLockElement === renderer.domElement;
+    });
+    
+    // Keyboard controls
+    document.addEventListener('keydown', (event) => {
+        keys[event.key.toLowerCase()] = true;
+        
+        // E to mine/interact
+        if (event.key === 'e' || event.key === 'E') {
+            mineResource();
+        }
+        
+        // M to toggle mining mode
+        if (event.key === 'm' || event.key === 'M') {
+            toggleMiningMode();
+        }
+        
+        // B for build menu
+        if (event.key === 'b' || event.key === 'B') {
+            openBuildMenu();
+        }
+        
+        // I for inventory
+        if (event.key === 'i' || event.key === 'I') {
+            showNotification("Inventory feature coming soon!");
+        }
+        
+        // G for galaxy map
+        if (event.key === 'g' || event.key === 'G') {
+            showNotification("Galaxy Map: Unlock more planets first!");
+        }
+        
+        // Space to jump
+        if (event.key === ' ' && playerModel.position.y < 3) {
+            playerModel.position.y += 5;
+        }
+    });
+    
+    document.addEventListener('keyup', (event) => {
+        keys[event.key.toLowerCase()] = false;
+    });
+    
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+}
+
+function updatePlayerMovement() {
+    if (!playerModel) return;
+    
+    const moveSpeed = 0.1;
+    
+    // Calculate movement direction based on camera orientation
+    const direction = new THREE.Vector3();
+    
+    if (keys['w']) direction.z -= 1;
+    if (keys['s']) direction.z += 1;
+    if (keys['a']) direction.x -= 1;
+    if (keys['d']) direction.x += 1;
+    
+    if (direction.length() > 0) {
+        direction.normalize();
+        
+        // Apply camera rotation to movement
+        const angle = camera.rotation.y;
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        
+        const moveX = direction.x * cos - direction.z * sin;
+        const moveZ = direction.x * sin + direction.z * cos;
+        
+        playerModel.position.x += moveX * moveSpeed;
+        playerModel.position.z += moveZ * moveSpeed;
+        
+        // Update camera position (third person)
+        const cameraDistance = 10;
+        const cameraHeight = 5;
+        camera.position.x = playerModel.position.x - Math.sin(angle) * cameraDistance;
+        camera.position.z = playerModel.position.z - Math.cos(angle) * cameraDistance;
+        camera.position.y = playerModel.position.y + cameraHeight;
+    }
+    
+    // Gravity
+    if (playerModel.position.y > 2) {
+        playerModel.position.y -= 0.2;
+    } else {
+        playerModel.position.y = 2;
+    }
+}
+
+function mineResource() {
+    if (!player.miningMode) {
+        showNotification("Turn on Mining Mode (M) first!");
+        return;
+    }
+    
+    const playerPos = playerModel.position;
+    let mined = false;
+    
+    // Check resource nodes
+    resourceNodes.forEach((node, index) => {
+        const distance = playerPos.distanceTo(node.mesh.position);
+        if (distance < 3) {
+            const amount = Math.min(10, node.amount);
+            node.amount -= amount;
+            
+            if (node.type === 'iron') {
+                player.resources.iron += amount;
+                showNotification(`Mined ${amount} Iron!`);
+            } else if (node.type === 'volcanium') {
+                player.resources.volcanium += amount;
+                showNotification(`Mined ${amount} Volcanium!`);
+            }
+            
+            // Visual feedback
+            node.mesh.scale.multiplyScalar(0.9);
+            
+            if (node.amount <= 0) {
+                scene.remove(node.mesh);
+                resourceNodes.splice(index, 1);
+            }
+            
+            mined = true;
+            updateUI();
+            
+            // Gain experience
+            player.experience += amount;
+            checkLevelUp();
+        }
+    });
+    
+    if (!mined) {
+        showNotification("No resources nearby. Walk to glowing rocks.");
+    }
+}
+
+function toggleMiningMode() {
+    player.miningMode = !
