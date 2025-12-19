@@ -2060,3 +2060,561 @@ function setupCameraControls() {
         controls.dampingFactor = 0.05;
         controls.minDistance = 5;
         controls.maxDistance = 50;
+        controls.maxPolarAngle = Math.PI / 2;
+        controls.enablePan = false;
+    }
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    
+    const delta = clock.getDelta();
+    
+    // Update player movement
+    if (joystickActive && playerModel) {
+        const speed = 10 * delta;
+        playerModel.position.x += movementVector.x * speed;
+        playerModel.position.z += movementVector.z * speed;
+        
+        // Keep player on terrain
+        const playerPos = playerModel.position.clone();
+        playerPos.y = 100; // Start ray above terrain
+        
+        raycaster.set(playerPos, new THREE.Vector3(0, -1, 0));
+        const intersects = raycaster.intersectObject(terrain);
+        
+        if (intersects.length > 0) {
+            playerModel.position.y = intersects[0].point.y + 1.5;
+            
+            // Rotate player to face movement direction
+            if (movementVector.length() > 0.1) {
+                const angle = Math.atan2(movementVector.x, movementVector.z);
+                playerModel.rotation.y = angle;
+            }
+        }
+        
+        // Update statistics
+        gameState.statistics.distanceTraveled += Math.sqrt(
+            movementVector.x * movementVector.x + 
+            movementVector.z * movementVector.z
+        ) * speed;
+    }
+    
+    // Apply gravity to player
+    if (playerModel && playerModel.position.y > 1.5) {
+        playerModel.position.y -= 9.8 * delta;
+        if (playerModel.position.y < 1.5) {
+            playerModel.position.y = 1.5;
+        }
+    }
+    
+    // Animate spaceship
+    if (spaceship) {
+        spaceship.rotation.y += delta * 0.5;
+        spaceship.position.y = 4 + Math.sin(Date.now() * 0.001) * 0.5;
+    }
+    
+    // Animate resource nodes
+    resourceNodes.forEach(node => {
+        if (!node.collected) {
+            node.mesh.rotation.y += delta * 0.5;
+            node.mesh.position.y = node.mesh.geometry.parameters.radius + 
+                Math.sin(Date.now() * 0.001 + node.mesh.position.x) * 0.3 + 0.5;
+        }
+    });
+    
+    // Regenerate energy
+    gameState.resources.energy = Math.min(
+        100, 
+        gameState.resources.energy + BASE_ENERGY_REGEN * delta
+    );
+    
+    // Update camera to follow player
+    if (playerModel && camera && !controls) {
+        camera.position.x = playerModel.position.x;
+        camera.position.z = playerModel.position.z + 25;
+        camera.lookAt(playerModel.position.x, playerModel.position.y + 2, playerModel.position.z);
+    }
+    
+    // Update controls
+    if (controls) {
+        controls.update();
+    }
+    
+    // Update UI every few frames
+    if (Math.floor(Date.now() / 250) % 4 === 0) {
+        updateUI();
+    }
+    
+    // Render scene
+    renderer.render(scene, camera);
+}
+
+// ======================
+// STARTUP SEQUENCE
+// ======================
+function startGame() {
+    console.log("Starting game...");
+    
+    // Hide login screen
+    document.getElementById('loginScreen').style.display = 'none';
+    
+    // Show loading screen
+    document.getElementById('loadingScreen').style.display = 'flex';
+    
+    // Simulate loading process
+    let progress = 0;
+    const loadingInterval = setInterval(() => {
+        progress += Math.random() * 10 + 5;
+        if (progress >= 100) {
+            progress = 100;
+            clearInterval(loadingInterval);
+            
+            // Hide loading screen and show game
+            setTimeout(() => {
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('gameContainer').style.display = 'block';
+                
+                // Initialize game
+                try {
+                    initGameEngine();
+                    updateUI();
+                    showNotification("🎮 Game initialized successfully!", "success", 3000);
+                } catch (error) {
+                    console.error("Game initialization error:", error);
+                    showNotification("Game initialization failed: " + error.message, "error", 5000);
+                    // Fallback to menu
+                    document.getElementById('loginScreen').style.display = 'flex';
+                    document.getElementById('gameContainer').style.display = 'none';
+                }
+            }, 500);
+        }
+        
+        document.getElementById('loadingProgress').textContent = `${Math.floor(progress)}%`;
+    }, 200);
+}
+
+// ======================
+// WINDOW RESIZE HANDLER
+// ======================
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+window.addEventListener('resize', onWindowResize);
+
+// ======================
+// KEYBOARD CONTROLS
+// ======================
+function onKeyDown(event) {
+    switch(event.key.toLowerCase()) {
+        case 'w':
+        case 'arrowup':
+            movementVector.z = -1;
+            break;
+        case 's':
+        case 'arrowdown':
+            movementVector.z = 1;
+            break;
+        case 'a':
+        case 'arrowleft':
+            movementVector.x = -1;
+            break;
+        case 'd':
+        case 'arrowright':
+            movementVector.x = 1;
+            break;
+        case ' ':
+            if (playerModel && playerModel.position.y < 2) {
+                playerModel.position.y += 5;
+                showNotification("Jump!", "info", 1000);
+            }
+            break;
+        case 'm':
+            toggleMiningMode();
+            break;
+        case 'e':
+            mineResource();
+            break;
+        case 'enter':
+            enterShip();
+            break;
+        case 'escape':
+            toggleMenu();
+            break;
+        case 'f1':
+            showGuide();
+            break;
+        case 'f5':
+            saveGame();
+            break;
+        case 'f9':
+            loadSavedGame();
+            break;
+    }
+}
+
+function onKeyUp(event) {
+    switch(event.key.toLowerCase()) {
+        case 'w':
+        case 'arrowup':
+            if (movementVector.z < 0) movementVector.z = 0;
+            break;
+        case 's':
+        case 'arrowdown':
+            if (movementVector.z > 0) movementVector.z = 0;
+            break;
+        case 'a':
+        case 'arrowleft':
+            if (movementVector.x < 0) movementVector.x = 0;
+            break;
+        case 'd':
+        case 'arrowright':
+            if (movementVector.x > 0) movementVector.x = 0;
+            break;
+    }
+}
+
+// Add keyboard event listeners for desktop
+document.addEventListener('keydown', onKeyDown);
+document.addEventListener('keyup', onKeyUp);
+
+// ======================
+// ADDITIONAL GAME FUNCTIONS
+// ======================
+function openResearchTree() {
+    showNotification(`
+    🔬 RESEARCH TREE
+    
+    Available Technologies:
+    
+    [✓] Basic Mining (Unlocked)
+      +10% mining speed
+    
+    [ ] Advanced Mining
+      Requires: Level 2, 50 Iron
+      +25% mining speed, access to rare resources
+    
+    [ ] Ship Construction
+      Requires: Level 3, 100 Iron
+      Unlocks ship building
+    
+    [ ] Basic Weapons
+      Requires: Level 4, 80 Iron, 20 Volcanium
+      Unlocks defense turrets
+    
+    [ ] FTL Travel
+      Requires: Level 5, 200 Iron, 50 Volcanium
+      Unlocks galaxy map travel
+    
+    Research at Research Lab building.
+    `, "info", 8000);
+}
+
+function openPlanetView() {
+    showNotification(`
+    🪐 PLANET OVERVIEW
+    
+    Current Planet: ${gameState.currentPlanet}
+    
+    Resources Available:
+    • Iron: Abundant
+    • Volcanium: Moderate
+    • Energy: High
+    • Rare Metals: Low
+    
+    Planet Features:
+    • Gravity: 1.0G
+    • Atmosphere: Breathable
+    • Temperature: 22°C
+    • Day/Night Cycle: 24 hours
+    
+    Discovered Areas: 15%
+    Unexplored Territory: 85%
+    
+    Keep exploring to find more resources!
+    `, "info", 7000);
+}
+
+function openFleetManager() {
+    const shipCount = Object.values(gameState.ships).reduce((a, b) => a + b, 0);
+    
+    showNotification(`
+    🛸 FLEET MANAGEMENT
+    
+    Total Ships: ${shipCount}
+    
+    Ship Inventory:
+    • Scout Ships: ${gameState.ships.scout}
+    • Cargo Ships: ${gameState.ships.cargo}
+    • Battleships: ${gameState.ships.battle}
+    • Motherships: ${gameState.ships.mothership}
+    • Mining Ships: ${gameState.ships.mining}
+    • Science Vessels: ${gameState.ships.science}
+    • Carriers: ${gameState.ships.carrier}
+    
+    Fleet Status: ${shipCount > 0 ? "Operational" : "No ships"}
+    Fleet Capacity: ${gameState.player.level * 5} ships
+    
+    Build more ships at the Shipyard!
+    `, "info", 7000);
+}
+
+function openDiplomacy() {
+    showNotification(`
+    🤝 DIPLOMACY
+    
+    Known Factions:
+    
+    • Explorer Corps (Friendly)
+      Status: Allied
+      Trade: Open borders
+    
+    • Mining Guild (Neutral)
+      Status: Trading partner
+      Trade: Resource exchange
+    
+    • Warrior Clan (Hostile)
+      Status: At war
+      Trade: Blockaded
+    
+    • Trade Federation (Friendly)
+      Status: Allied
+      Trade: Free trade
+    
+    Diplomacy Options:
+    1. Send envoy (50 Credits)
+    2. Trade resources
+    3. Form alliance (Requires: Level 10)
+    4. Declare war
+    
+    Your reputation: Respected
+    `, "info", 8000);
+}
+
+function toggleGraphics() {
+    const graphicsModes = ["low", "medium", "high"];
+    const currentIndex = graphicsModes.indexOf(gameState.settings.graphics);
+    gameState.settings.graphics = graphicsModes[(currentIndex + 1) % graphicsModes.length];
+    
+    // Update renderer settings
+    if (renderer) {
+        renderer.setPixelRatio(Math.min(
+            window.devicePixelRatio, 
+            gameState.settings.graphics === "high" ? 2 : 
+            gameState.settings.graphics === "medium" ? 1.5 : 1
+        ));
+        renderer.shadowMap.enabled = gameState.settings.graphics !== "low";
+    }
+    
+    updateUI();
+    showNotification(`Graphics: ${gameState.settings.graphics.toUpperCase()}`, "info", 2000);
+}
+
+function showSettings() {
+    showNotification(`
+    ⚙️ SETTINGS
+    
+    Current Settings:
+    • Graphics: ${gameState.settings.graphics.toUpperCase()}
+    • Sound: ${gameState.settings.sound ? "ON" : "OFF"}
+    • Music: ${gameState.settings.music ? "ON" : "OFF"}
+    • Auto-save: ${gameState.settings.autosave ? "ON" : "OFF"}
+    • Notifications: ${gameState.settings.notifications ? "ON" : "OFF"}
+    
+    Game Version: ${GAME_VERSION}
+    Save Time: ${new Date(gameState.timestamp).toLocaleString()}
+    Play Time: ${Math.floor(gameState.statistics.playTime / 60)} minutes
+    
+    Controls:
+    • WASD/Arrows: Move
+    • Space: Jump
+    • M: Mining mode
+    • E: Mine resource
+    • ESC: Menu
+    • F1: Guide
+    • F5: Save
+    • F9: Load
+    `, "info", 10000);
+}
+
+// ======================
+// DEBUG FUNCTIONS
+// ======================
+function toggleDebug() {
+    const debugOverlay = document.getElementById('debugOverlay');
+    debugOverlay.style.display = debugOverlay.style.display === 'none' ? 'block' : 'none';
+    
+    if (debugOverlay.style.display === 'block') {
+        setInterval(() => {
+            if (playerModel) {
+                debugOverlay.innerHTML = `
+                    Player Position: ${playerModel.position.x.toFixed(1)}, ${playerModel.position.y.toFixed(1)}, ${playerModel.position.z.toFixed(1)}<br>
+                    Resources: Iron=${gameState.resources.iron}, Volcanium=${gameState.resources.volcanium}<br>
+                    Energy: ${gameState.resources.energy.toFixed(1)}<br>
+                    FPS: ${Math.round(1/clock.getDelta())}<br>
+                    Resource Nodes: ${resourceNodes.length}<br>
+                    Joystick: ${joystickActive ? 'Active' : 'Inactive'}
+                `;
+            }
+        }, 100);
+    }
+}
+
+// ======================
+// ERROR HANDLING
+// ======================
+window.addEventListener('error', function(e) {
+    console.error('Game error:', e.error);
+    showNotification(`Game Error: ${e.message}`, "error", 5000);
+    
+    // Try to save game on error
+    try {
+        saveGame();
+        showNotification("Game auto-saved due to error", "warning", 3000);
+    } catch (saveError) {
+        console.error("Auto-save failed:", saveError);
+    }
+});
+
+// ======================
+// TOUCH EVENT PREVENTION
+// ======================
+// Prevent pull-to-refresh and other gestures
+document.addEventListener('touchmove', function(e) {
+    if (e.target.closest('#gameContainer')) {
+        e.preventDefault();
+    }
+}, { passive: false });
+
+// ======================
+// INITIALIZATION
+// ======================
+console.log("Eternal Empire - Complete Edition v" + GAME_VERSION);
+
+// Preload some assets
+window.addEventListener('load', function() {
+    console.log("Window loaded, initializing...");
+    
+    // Check if Three.js loaded
+    if (typeof THREE === 'undefined') {
+        showNotification("Error: Three.js failed to load. Please check internet connection.", "error", 10000);
+        return;
+    }
+    
+    // Update loading screen
+    document.getElementById('loadingProgress').textContent = "5%";
+    
+    // Check for saved game
+    if (localStorage.getItem(SAVE_KEY)) {
+        showNotification("Save game detected. Click LOAD SAVE to continue.", "info", 5000);
+    }
+    
+    // Show version in console
+    console.log("%cETERNAL EMPIRE v" + GAME_VERSION, 
+        "color: #00ffff; font-size: 24px; font-weight: bold; text-shadow: 0 0 10px #00ffff;");
+    console.log("%cBuild your galactic dominion!", 
+        "color: #88aaff; font-size: 16px;");
+});
+
+// ======================
+// VISIBILITY CHANGE HANDLER
+// ======================
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        // Auto-save when leaving
+        if (gameState.settings.autosave) {
+            saveGame();
+        }
+    }
+});
+
+// ======================
+// EMERGENCY SAVE
+// ======================
+window.addEventListener('beforeunload', function(e) {
+    if (gameState.settings.autosave) {
+        saveGame();
+        // Optional: Show confirmation
+        // e.returnValue = 'Your game progress will be saved.';
+    }
+});
+
+// ======================
+// EXPORT GAME STATE FOR DEBUGGING
+// ======================
+window.getGameState = function() {
+    return JSON.parse(JSON.stringify(gameState));
+};
+
+window.resetGame = function() {
+    if (confirm("Are you sure you want to reset the game? All progress will be lost!")) {
+        localStorage.removeItem(SAVE_KEY);
+        location.reload();
+    }
+};
+
+// ======================
+// MOBILE ORIENTATION HANDLING
+// ======================
+function lockOrientation() {
+    if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(function(error) {
+            console.log("Orientation lock failed: ", error);
+        });
+    }
+}
+
+// Try to lock orientation on mobile
+if ('orientation' in screen) {
+    window.addEventListener('click', lockOrientation);
+}
+
+// ======================
+// PERFORMANCE OPTIMIZATION
+// ======================
+let lastFrameTime = 0;
+const targetFPS = 60;
+const frameInterval = 1000 / targetFPS;
+
+function optimizedAnimate(currentTime) {
+    requestAnimationFrame(optimizedAnimate);
+    
+    const elapsed = currentTime - lastFrameTime;
+    
+    if (elapsed > frameInterval) {
+        lastFrameTime = currentTime - (elapsed % frameInterval);
+        
+        // Update game logic
+        const delta = clock.getDelta();
+        
+        // [Rest of the animate function logic here...]
+        // Move the entire animate() function logic here
+        
+        // For now, call the original animate
+        animate();
+    }
+}
+
+// Replace the original animate call with optimized version
+// Uncomment this line to use optimized animation:
+// requestAnimationFrame(optimizedAnimate);
+
+// ======================
+// FINAL INITIALIZATION
+// ======================
+console.log("Game script loaded successfully!");
+console.log("Ready to launch Eternal Empire...");
+
+// Show tooltip on startup
+setTimeout(() => {
+    if (document.getElementById('loginScreen').style.display !== 'none') {
+        showNotification("Enter your commander name and click LAUNCH GAME to begin!", "info", 6000);
+    }
+}, 3000);
+</script>
+
+</body>
+</html>
