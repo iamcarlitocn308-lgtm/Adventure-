@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Eternal Empire - Fixed Version</title>
+    <title>Eternal Empire - Working Game</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
@@ -26,7 +26,7 @@
             background: #000;
         }
         
-        /* Bigger Login Screen */
+        /* Login Screen */
         #loginScreen {
             position: fixed;
             top: 0;
@@ -50,10 +50,6 @@
             text-align: center;
             width: 100%;
             max-width: 600px;
-            min-height: 500px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
         }
         
         .game-title {
@@ -79,12 +75,10 @@
             border: 3px solid #0088ff;
             border-radius: 15px;
             color: white;
-            font-size: 20px;
-            font-size: clamp(18px, 5vw, 22px);
+            font-size: 22px;
             text-align: center;
         }
         
-        /* EXTRA BIG BUTTONS */
         .login-btn {
             width: 100%;
             padding: 25px;
@@ -109,13 +103,6 @@
             box-shadow: 0 0 40px #00ffff;
         }
         
-        .rulebook-btn {
-            background: linear-gradient(45deg, #ff8800, #ffaa00);
-            border: 3px solid #ffaa00;
-            font-size: 26px;
-            min-height: 70px;
-        }
-        
         /* Game Container */
         #gameContainer {
             display: none;
@@ -127,7 +114,7 @@
             background: #000;
         }
         
-        /* EXTRA BIG Top Bar */
+        /* Top Bar */
         #topBar {
             position: absolute;
             top: 0;
@@ -163,12 +150,6 @@
             min-width: 140px;
         }
         
-        .resource-icon {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-        }
-        
         .resource-value {
             font-size: 22px;
             font-weight: bold;
@@ -177,7 +158,76 @@
             text-align: right;
         }
         
-        /* EXTRA BIG Mobile Controls */
+        /* Guide Modal */
+        #guideModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .guide-content {
+            background: rgba(0, 30, 60, 0.98);
+            width: 100%;
+            max-width: 800px;
+            max-height: 90vh;
+            border-radius: 25px;
+            border: 4px solid #00ffff;
+            padding: 30px;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .guide-title {
+            color: #00ffff;
+            font-size: 36px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        
+        .guide-section {
+            background: rgba(0, 50, 100, 0.5);
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 15px;
+            border-left: 5px solid #00aaff;
+        }
+        
+        .guide-section h3 {
+            color: #00ff88;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        
+        .guide-section p {
+            color: #ccccff;
+            margin: 8px 0;
+            font-size: 18px;
+            line-height: 1.5;
+        }
+        
+        .close-guide-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #ff5555;
+            border: none;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        /* Mobile Controls */
         #mobileControls {
             position: absolute;
             bottom: 0;
@@ -229,7 +279,6 @@
             pointer-events: auto;
         }
         
-        /* EXTRA BIG Action Buttons */
         .mobile-btn {
             width: 90px;
             height: 90px;
@@ -243,7 +292,6 @@
             align-items: center;
             cursor: pointer;
             transition: all 0.1s;
-            user-select: none;
         }
         
         .mobile-btn:active {
@@ -252,7 +300,7 @@
             box-shadow: 0 0 30px #00ffff;
         }
         
-        /* EXTRA BIG Action Bar */
+        /* Action Bar */
         #mobileActionBar {
             position: absolute;
             bottom: 200px;
@@ -285,19 +333,18 @@
             box-shadow: 0 0 30px #00ff88;
         }
         
-        /* Canvas - Ensure it's visible */
+        /* Canvas */
         #gameCanvas {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: #000022;
-            display: block !important;
+            background: #000033;
         }
         
-        /* Big Notification */
-        #mobileNotification {
+        /* Notification */
+        #notification {
             position: absolute;
             top: 120px;
             left: 50%;
@@ -316,7 +363,7 @@
             line-height: 1.5;
         }
         
-        /* Big Menu Button */
+        /* Menu Button */
         #mobileMenuBtn {
             position: absolute;
             top: 20px;
@@ -368,164 +415,136 @@
             transform: translateX(-10px);
         }
         
-        /* Loading Message */
-        #loadingMessage {
+        /* Simple Graphics Warning */
+        #simpleGraphics {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            color: #00ffff;
-            font-size: 24px;
-            text-align: center;
-            z-index: 9999;
-            display: none;
-        }
-        
-        /* Graphics Warning */
-        #graphicsWarning {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.95);
+            background: rgba(0, 20, 40, 0.98);
             padding: 30px;
             border-radius: 20px;
             border: 4px solid #ffaa00;
             color: #ffaa00;
-            font-size: 20px;
+            font-size: 24px;
             text-align: center;
             max-width: 90%;
-            z-index: 9999;
+            z-index: 3000;
             display: none;
         }
         
-        /* Simple Crosshair */
-        #crosshair {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #00ffff;
-            font-size: 40px;
-            text-shadow: 0 0 20px #00ffff;
-            z-index: 10;
-            pointer-events: none;
+        .simple-btn {
+            padding: 20px 40px;
+            margin: 20px 10px;
+            background: #00aaff;
+            border: none;
+            border-radius: 15px;
+            color: white;
+            font-size: 22px;
+            cursor: pointer;
         }
         
-        /* Force Landscape */
-        #orientationWarning {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 9998;
-            text-align: center;
-            padding: 20px;
+        /* Animation */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
         
-        /* Media Queries for Extra Small Screens */
-        @media (max-height: 700px) {
-            .login-box {
-                padding: 30px;
-                min-height: 400px;
-            }
-            
-            .game-title {
-                font-size: 44px;
-            }
-            
-            .login-btn {
-                padding: 20px;
-                min-height: 70px;
-                font-size: 24px;
-            }
-            
-            .mobile-btn {
-                width: 80px;
-                height: 80px;
-                font-size: 32px;
-            }
-            
-            .joystick-area {
-                width: 130px;
-                height: 130px;
-            }
-            
-            .joystick-base {
-                width: 120px;
-                height: 120px;
-            }
-            
-            .joystick-thumb {
-                width: 60px;
-                height: 60px;
-                bottom: 30px;
-                left: 30px;
-            }
+        .pulse {
+            animation: pulse 2s infinite;
         }
         
-        @media (max-width: 480px) {
-            .resource-item {
-                min-width: 120px;
-                padding: 10px 15px;
-                font-size: 16px;
-            }
-            
-            .resource-value {
-                font-size: 18px;
-            }
-            
-            .action-bar-btn {
-                padding: 18px 25px;
-                font-size: 18px;
-                min-width: 100px;
-            }
-            
-            .mobile-btn {
-                width: 75px;
-                height: 75px;
-                font-size: 28px;
-            }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
-        /* Animation for notifications */
-        @keyframes fadeInOut {
-            0% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-            10% { opacity: 1; transform: translateX(-50%) translateY(0); }
-            90% { opacity: 1; transform: translateX(-50%) translateY(0); }
-            100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-        }
-        
-        .notification-animate {
-            animation: fadeInOut 3s ease-in-out forwards;
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
         }
     </style>
 </head>
 <body>
 
-<!-- Loading Message -->
-<div id="loadingMessage">🔄 Loading Eternal Empire...</div>
-
-<!-- Graphics Warning -->
-<div id="graphicsWarning">
-    ⚠️ Graphics initialization failed.<br>
-    Please refresh the page or check browser support.
+<!-- Simple Graphics Fallback -->
+<div id="simpleGraphics">
+    <div style="font-size: 32px; margin-bottom: 20px;">⚠️ Graphics Mode</div>
+    <div style="margin-bottom: 30px; color: #88aaff; font-size: 20px;">
+        Choose graphics quality for your device:
+    </div>
+    <button class="simple-btn" onclick="startSimpleGraphics()">Simple Mode (Best Performance)</button>
+    <button class="simple-btn" onclick="startAdvancedGraphics()">Advanced Mode (Better Graphics)</button>
+    <div style="margin-top: 30px; color: #ffaa00; font-size: 18px;">
+        Simple mode works on all devices
+    </div>
 </div>
 
-<!-- Orientation Warning -->
-<div id="orientationWarning">
-    <div style="color: #00ffff; font-size: 28px; max-width: 400px; line-height: 1.5;">
-        📱 Please rotate your device to landscape mode<br>
-        for the best gaming experience!
-        <div style="font-size: 100px; margin: 20px 0;">🔄</div>
-        <button onclick="forceLandscape()" style="padding: 15px 30px; background: #00aaff; border: none; color: white; border-radius: 15px; font-size: 20px; margin-top: 20px;">
-            Continue Anyway
-        </button>
+<!-- Guide Modal -->
+<div id="guideModal">
+    <div class="guide-content">
+        <button class="close-guide-btn" onclick="hideGuide()">✕ CLOSE</button>
+        
+        <div class="guide-title">🎮 ETERNAL EMPIRE GUIDE</div>
+        
+        <div class="guide-section">
+            <h3>🚀 HOW TO PLAY</h3>
+            <p><strong>1. Move:</strong> Use the left joystick to move your character</p>
+            <p><strong>2. Mine:</strong> Tap the ⛏️ button to enable mining mode</p>
+            <p><strong>3. Collect:</strong> Walk near glowing rocks to collect resources</p>
+            <p><strong>4. Build:</strong> Collect 50 Iron, then tap the 🚀 button to enter ship</p>
+            <p><strong>5. Progress:</strong> Keep mining to unlock new features!</p>
+        </div>
+        
+        <div class="guide-section">
+            <h3>⛏️ MINING SYSTEM</h3>
+            <p>• <strong>Iron Rocks</strong> (Orange/Yellow) - Basic resource</p>
+            <p>• <strong>Volcanium Rocks</strong> (Red) - Advanced resource</p>
+            <p>• Mining uses Energy (green bar)</p>
+            <p>• Energy recharges over time</p>
+            <p>• Walk CLOSE to rocks to auto-mine</p>
+        </div>
+        
+        <div class="guide-section">
+            <h3>🏗️ BUILDING SYSTEM</h3>
+            <p>• <strong>Scout Ship</strong> - 50 Iron (Fast travel)</p>
+            <p>• <strong>Cargo Ship</strong> - 100 Iron (More storage)</p>
+            <p>• <strong>Battleship</strong> - 200 Iron, 50 Volcanium</p>
+            <p>• <strong>Mining Station</strong> - 150 Iron (Auto-mines)</p>
+            <p>• <strong>Defense Turret</strong> - 80 Iron (Protection)</p>
+        </div>
+        
+        <div class="guide-section">
+            <h3>🌌 GALAXY PROGRESSION</h3>
+            <p>Start on <strong>Terra Nova</strong> (Green planet)</p>
+            <p>Unlock <strong>Pyros V</strong> at 500 Iron (Lava planet)</p>
+            <p>Unlock <strong>Cryos-7</strong> at Level 5 (Ice planet)</p>
+            <p>Each planet has unique resources!</p>
+        </div>
+        
+        <div class="guide-section">
+            <h3>📱 TOUCH CONTROLS</h3>
+            <p><strong>Left Side:</strong> Joystick for movement</p>
+            <p><strong>Right Side:</strong> Action buttons</p>
+            <p><strong>Top Right:</strong> ☰ Menu button</p>
+            <p><strong>Bottom Center:</strong> Quick action buttons</p>
+            <p><strong>Tap Rocks:</strong> Quick mine when close</p>
+        </div>
+        
+        <div class="guide-section">
+            <h3>💡 QUICK TIPS</h3>
+            <p>1. Start by mining Iron near your starting point</p>
+            <p>2. Enable mining mode BEFORE approaching rocks</p>
+            <p>3. Watch your Energy level - rest if it gets low</p>
+            <p>4. Save often using the menu</p>
+            <p>5. Complete the tutorial goals for bonuses</p>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="login-btn" onclick="hideGuide()" style="width: auto; padding: 20px 50px;">
+                START PLAYING NOW
+            </button>
+        </div>
     </div>
 </div>
 
@@ -533,19 +552,19 @@
 <div id="loginScreen">
     <div class="login-box">
         <div class="game-title">ETERNAL EMPIRE</div>
-        <div class="game-subtitle">Touch to Play • Build Your Galaxy</div>
+        <div class="game-subtitle">A Complete Space Adventure</div>
         
-        <input type="text" id="username" class="login-input" placeholder="COMMANDER NAME" maxlength="15">
+        <input type="text" id="username" class="login-input" placeholder="ENTER COMMANDER NAME" maxlength="15">
         
-        <button class="login-btn" onclick="startGame()">
+        <button class="login-btn" onclick="showGraphicsOptions()">
             🚀 START GAME
         </button>
-        <button class="login-btn rulebook-btn" onclick="showQuickGuide()">
-            📖 QUICK GUIDE
+        <button class="login-btn" onclick="showGuide()" style="background: linear-gradient(45deg, #ff8800, #ffaa00);">
+            📖 FULL GUIDE
         </button>
         
-        <div style="margin-top: 30px; color: #88aaff; font-size: 16px;">
-            Tap buttons • Drag joystick • Collect resources
+        <div style="margin-top: 30px; color: #88aaff; font-size: 18px;">
+            Works on all devices • Auto-save • Free to play
         </div>
     </div>
 </div>
@@ -556,30 +575,30 @@
     <div id="topBar">
         <div class="resource-display">
             <div class="resource-item">
-                <div class="resource-icon" style="background: #ffaa00;"></div>
-                <div>IRON: <span class="resource-value" id="ironCount">0</span></div>
+                <div style="color: #ffaa00; font-weight: bold;">IRON:</div>
+                <div class="resource-value" id="ironCount">0</div>
             </div>
             <div class="resource-item">
-                <div class="resource-icon" style="background: #ff5555;"></div>
-                <div>VOLCANIUM: <span class="resource-value" id="volcaniumCount">0</span></div>
+                <div style="color: #ff5555; font-weight: bold;">VOLCANIUM:</div>
+                <div class="resource-value" id="volcaniumCount">0</div>
             </div>
             <div class="resource-item">
-                <div class="resource-icon" style="background: #00ff88;"></div>
-                <div>ENERGY: <span class="resource-value" id="energyCount">100</span></div>
+                <div style="color: #00ff88; font-weight: bold;">ENERGY:</div>
+                <div class="resource-value" id="energyCount">100</div>
             </div>
+        </div>
+        <div style="color: #00ffff; font-size: 24px; font-weight: bold;">
+            LEVEL: <span id="playerLevel">1</span>
         </div>
     </div>
     
-    <!-- Crosshair -->
-    <div id="crosshair">+</div>
-    
-    <!-- Big Menu Button -->
+    <!-- Menu Button -->
     <div id="mobileMenuBtn" onclick="toggleMobileMenu()">☰</div>
     
     <!-- Mobile Menu -->
     <div id="mobileMenu">
         <div class="menu-item" onclick="toggleMiningMode()">
-            ⛏️ MINING MODE: <span id="menuMiningStatus">OFF</span>
+            ⛏️ MINING: <span id="menuMiningStatus">OFF</span>
         </div>
         <div class="menu-item" onclick="enterShip()">
             🚀 ENTER SPACESHIP
@@ -593,18 +612,18 @@
         <div class="menu-item" onclick="saveGame()">
             💾 SAVE GAME
         </div>
-        <div class="menu-item" onclick="showQuickGuide()">
-            📖 QUICK GUIDE
+        <div class="menu-item" onclick="showGuide()">
+            📖 GAME GUIDE
         </div>
-        <div class="menu-item" onclick="resetGame()" style="background: rgba(255,50,50,0.3);">
-            🔄 RESTART GAME
+        <div class="menu-item" onclick="toggleGraphics()">
+            ⚙️ GRAPHICS: <span id="graphicsMode">SIMPLE</span>
         </div>
         <div class="menu-item" onclick="toggleMobileMenu()" style="background: rgba(0,0,0,0.5);">
             ✕ CLOSE MENU
         </div>
     </div>
     
-    <!-- Big Action Bar -->
+    <!-- Action Bar -->
     <div id="mobileActionBar">
         <div class="action-bar-btn" onclick="toggleMiningMode()" id="mobileMiningBtn">
             ⛏️ MINE
@@ -615,12 +634,12 @@
         <div class="action-bar-btn" onclick="showBuildMenu()">
             🏗️ BUILD
         </div>
-        <div class="action-bar-btn" onclick="collectAllResources()">
-            ⭐ COLLECT
+        <div class="action-bar-btn" onclick="showGuide()">
+            📖 GUIDE
         </div>
     </div>
     
-    <!-- Big Mobile Controls -->
+    <!-- Mobile Controls -->
     <div id="mobileControls">
         <div class="joystick-area" id="joystickArea">
             <div class="joystick-base"></div>
@@ -628,7 +647,7 @@
         </div>
         
         <div class="action-buttons">
-            <div class="mobile-btn" id="jumpBtn" ontouchstart="mobileJump()" ontouchend="clearJump()">
+            <div class="mobile-btn" id="jumpBtn" ontouchstart="mobileJump()">
                 ⬆️
             </div>
             <div class="mobile-btn" id="mineBtn" ontouchstart="mobileMine()">
@@ -640,16 +659,16 @@
         </div>
     </div>
     
-    <!-- Game Canvas -->
+    <!-- Canvas -->
     <canvas id="gameCanvas"></canvas>
     
     <!-- Notification -->
-    <div id="mobileNotification"></div>
+    <div id="notification"></div>
 </div>
 
 <script>
 // ======================
-// FIXED GAME STATE
+// GAME STATE
 // ======================
 let player = {
     name: 'Commander',
@@ -659,41 +678,59 @@ let player = {
         energy: 100
     },
     level: 1,
+    experience: 0,
     miningMode: false,
-    position: { x: 0, y: 0, z: 0 }
+    graphicsMode: 'simple' // simple or advanced
 };
-
-// ======================
-// TOUCH CONTROLS STATE
-// ======================
-let joystickActive = false;
-let joystickOrigin = { x: 0, y: 0 };
-let joystickPosition = { x: 0, y: 0 };
-let touchMove = { x: 0, z: 0 };
-let isJumping = false;
 
 // ======================
 // THREE.JS VARIABLES
 // ======================
-let scene, camera, renderer, controls;
+let scene, camera, renderer;
 let playerModel, terrain, spaceship;
 let resourceNodes = [];
-let isWebGLAvailable = true;
+let joystickActive = false;
+let touchMove = { x: 0, z: 0 };
 
 // ======================
-// MOBILE UI FUNCTIONS
+// UI FUNCTIONS
 // ======================
 function showNotification(text, duration = 3000) {
-    const notification = document.getElementById('mobileNotification');
+    const notification = document.getElementById('notification');
     notification.textContent = text;
     notification.style.display = 'block';
-    notification.classList.remove('notification-animate');
+    notification.classList.add('fade-in');
+    
     setTimeout(() => {
-        notification.classList.add('notification-animate');
-        setTimeout(() => {
-            notification.style.display = 'none';
-        }, duration);
-    }, 10);
+        notification.style.display = 'none';
+        notification.classList.remove('fade-in');
+    }, duration);
+}
+
+function updateUI() {
+    document.getElementById('ironCount').textContent = player.resources.iron;
+    document.getElementById('volcaniumCount').textContent = player.resources.volcanium;
+    document.getElementById('energyCount').textContent = Math.floor(player.resources.energy);
+    document.getElementById('playerLevel').textContent = player.level;
+    document.getElementById('menuMiningStatus').textContent = player.miningMode ? 'ON' : 'OFF';
+    document.getElementById('graphicsMode').textContent = player.graphicsMode.toUpperCase();
+    
+    const miningBtn = document.getElementById('mobileMiningBtn');
+    if (player.miningMode) {
+        miningBtn.style.background = 'rgba(0, 255, 100, 0.95)';
+        miningBtn.innerHTML = '✅ MINE';
+    } else {
+        miningBtn.style.background = 'rgba(0, 60, 120, 0.95)';
+        miningBtn.innerHTML = '⛏️ MINE';
+    }
+}
+
+function showGuide() {
+    document.getElementById('guideModal').style.display = 'flex';
+}
+
+function hideGuide() {
+    document.getElementById('guideModal').style.display = 'none';
 }
 
 function toggleMobileMenu() {
@@ -705,326 +742,290 @@ function toggleMobileMenu() {
     }
 }
 
-function updateUI() {
-    document.getElementById('ironCount').textContent = player.resources.iron;
-    document.getElementById('volcaniumCount').textContent = player.resources.volcanium;
-    document.getElementById('energyCount').textContent = Math.floor(player.resources.energy);
-    document.getElementById('menuMiningStatus').textContent = player.miningMode ? 'ON' : 'OFF';
-    
-    const miningBtn = document.getElementById('mobileMiningBtn');
-    if (player.miningMode) {
-        miningBtn.style.background = 'rgba(0, 255, 100, 0.95)';
-        miningBtn.style.borderColor = '#00ff00';
-        miningBtn.style.boxShadow = '0 0 20px #00ff00';
-    } else {
-        miningBtn.style.background = 'rgba(0, 60, 120, 0.95)';
-        miningBtn.style.borderColor = '#00cc88';
-        miningBtn.style.boxShadow = 'none';
-    }
-}
-
-function showQuickGuide() {
-    showNotification(`
-    🎮 QUICK GUIDE:
-    
-    1. Left joystick → Move
-    2. Tap MINE button → Toggle mining
-    3. Walk to glowing rocks
-    4. Rocks auto-mine when close
-    5. Collect 50 Iron for ship
-    6. Tap SHIP to enter
-    7. Menu (☰) for more options
-    `, 8000);
-}
-
 // ======================
-// TOUCH CONTROLS - SIMPLIFIED
+// GRAPHICS FUNCTIONS
 // ======================
-function initTouchControls() {
-    const joystickArea = document.getElementById('joystickArea');
-    const joystickThumb = document.getElementById('joystickThumb');
-    
-    // Touch start
-    joystickArea.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        const touch = e.touches[0];
-        const rect = joystickArea.getBoundingClientRect();
-        
-        joystickOrigin.x = rect.left + 75;
-        joystickOrigin.y = rect.top + 75;
-        joystickActive = true;
-        
-        updateJoystickPosition(touch.clientX, touch.clientY);
-    });
-    
-    // Touch move
-    document.addEventListener('touchmove', (e) => {
-        if (!joystickActive) return;
-        e.preventDefault();
-        
-        const touch = e.touches[0];
-        updateJoystickPosition(touch.clientX, touch.clientY);
-    });
-    
-    // Touch end
-    document.addEventListener('touchend', () => {
-        if (joystickActive) {
-            joystickActive = false;
-            joystickThumb.style.transform = 'translate(0, 0)';
-            touchMove.x = 0;
-            touchMove.z = 0;
-        }
-    });
-    
-    // Tap detection for mining
-    renderer.domElement.addEventListener('touchstart', (e) => {
-        if (e.touches.length === 1 && player.miningMode) {
-            checkMiningTap(e.touches[0]);
-        }
-    }, { passive: true });
+function showGraphicsOptions() {
+    const username = document.getElementById('username').value.trim() || 'Commander';
+    player.name = username;
+    document.getElementById('simpleGraphics').style.display = 'block';
 }
 
-function updateJoystickPosition(x, y) {
-    const joystickThumb = document.getElementById('joystickThumb');
-    const maxDistance = 50;
-    
-    let deltaX = x - joystickOrigin.x;
-    let deltaY = y - joystickOrigin.y;
-    
-    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-    if (distance > maxDistance) {
-        deltaX = (deltaX / distance) * maxDistance;
-        deltaY = (deltaY / distance) * maxDistance;
-    }
-    
-    joystickThumb.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
-    
-    touchMove.x = deltaX / maxDistance;
-    touchMove.z = -deltaY / maxDistance;
+function startSimpleGraphics() {
+    player.graphicsMode = 'simple';
+    document.getElementById('simpleGraphics').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('gameContainer').style.display = 'block';
+    initSimpleGame();
 }
 
-function checkMiningTap(touch) {
-    const x = (touch.clientX / window.innerWidth) * 2 - 1;
-    const y = -(touch.clientY / window.innerHeight) * 2 + 1;
-    
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
-    
-    resourceNodes.forEach((node, index) => {
-        if (node.collected) return;
-        
-        const intersects = raycaster.intersectObject(node.mesh);
-        if (intersects.length > 0) {
-            mineResource(node, index);
-        }
-    });
+function startAdvancedGraphics() {
+    player.graphicsMode = 'advanced';
+    document.getElementById('simpleGraphics').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('gameContainer').style.display = 'block';
+    initAdvancedGame();
 }
 
-// ======================
-// GAME ACTIONS - SIMPLIFIED
-// ======================
-function mobileJump() {
-    if (playerModel && !isJumping) {
-        isJumping = true;
-        playerModel.position.y = 5;
-        showNotification("Jump!");
+function toggleGraphics() {
+    if (player.graphicsMode === 'simple') {
+        player.graphicsMode = 'advanced';
+        showNotification("Switching to Advanced Graphics...");
         setTimeout(() => {
-            if (playerModel) playerModel.position.y = 1.5;
-            isJumping = false;
-        }, 500);
-    }
-}
-
-function clearJump() {
-    // Handle touch end for jump
-}
-
-function mobileMine() {
-    toggleMiningMode();
-}
-
-function mobileAction() {
-    if (player.miningMode) {
-        // Try to mine nearest resource
-        mineNearestResource();
+            initAdvancedGame();
+        }, 1000);
     } else {
-        showNotification("Turn on mining mode first!");
+        player.graphicsMode = 'simple';
+        showNotification("Switching to Simple Graphics...");
+        setTimeout(() => {
+            initSimpleGame();
+        }, 1000);
     }
-}
-
-function toggleMiningMode() {
-    player.miningMode = !player.miningMode;
     updateUI();
-    
-    if (player.miningMode) {
-        showNotification("⛏️ MINING MODE ON\nWalk near rocks or tap them!");
-    } else {
-        showNotification("⛏️ Mining mode off");
-    }
-}
-
-function mineNearestResource() {
-    if (!playerModel || resourceNodes.length === 0) return;
-    
-    let nearestNode = null;
-    let nearestDistance = Infinity;
-    
-    resourceNodes.forEach((node, index) => {
-        if (node.collected) return;
-        
-        const distance = playerModel.position.distanceTo(node.mesh.position);
-        if (distance < 10 && distance < nearestDistance) {
-            nearestDistance = distance;
-            nearestNode = { node, index };
-        }
-    });
-    
-    if (nearestNode) {
-        mineResource(nearestNode.node, nearestNode.index);
-    } else {
-        showNotification("No resources nearby!");
-    }
-}
-
-function collectAllResources() {
-    if (resourceNodes.length === 0) {
-        showNotification("No resources to collect!");
-        return;
-    }
-    
-    let collected = 0;
-    resourceNodes.forEach((node, index) => {
-        if (!node.collected && playerModel.position.distanceTo(node.mesh.position) < 15) {
-            mineResource(node, index);
-            collected++;
-        }
-    });
-    
-    if (collected > 0) {
-        showNotification(`Collected ${collected} resources!`);
-    } else {
-        showNotification("Walk closer to resources!");
-    }
-}
-
-function enterShip() {
-    if (player.resources.iron >= 50) {
-        player.resources.iron -= 50;
-        updateUI();
-        showNotification("🚀 ENTERING SHIP!\nFuel: 50 Iron\nNext: Build more ships!", 4000);
-    } else {
-        showNotification(`Need 50 Iron for ship!\nYou have: ${player.resources.iron} Iron`);
-    }
-}
-
-function showBuildMenu() {
-    showNotification(`
-    🏗️ BUILD MENU:
-    
-    Available to build:
-    
-    • SCOUT SHIP - 50 Iron
-    Fast exploration vessel
-    
-    • CARGO SHIP - 100 Iron
-    Carries resources
-    
-    • MINING STATION - 200 Iron
-    Auto-mines nearby rocks
-    
-    Keep mining to get more Iron!
-    `, 6000);
-}
-
-function showGalaxyMap() {
-    showNotification(`
-    🌌 GALAXY MAP:
-    
-    Current Location:
-    TERRA NOVA - Level ${player.level}
-    
-    Nearby Planets:
-    • Pyros V - 100 Iron (Volcanium)
-    • Cryos-7 - 200 Iron (Crystals)
-    
-    Travel when you have enough resources!
-    `, 5000);
-}
-
-function saveGame() {
-    localStorage.setItem('eternal_save', JSON.stringify(player));
-    showNotification("💾 GAME SAVED!\nProgress stored.", 2000);
-}
-
-function loadGame() {
-    const saved = localStorage.getItem('eternal_save');
-    if (saved) {
-        try {
-            const data = JSON.parse(saved);
-            player = { ...player, ...data };
-            updateUI();
-            return true;
-        } catch (e) {
-            console.log("No save found");
-        }
-    }
-    return false;
-}
-
-function resetGame() {
-    if (confirm("Restart game? Progress will be lost.")) {
-        localStorage.removeItem('eternal_save');
-        player = {
-            name: player.name,
-            resources: { iron: 0, volcanium: 0, energy: 100 },
-            level: 1,
-            miningMode: false
-        };
-        updateUI();
-        showNotification("Game reset! Start fresh.");
-    }
 }
 
 // ======================
-// THREE.JS GAME - FIXED VERSION
+// SIMPLE GRAPHICS MODE (ALWAYS WORKS)
 // ======================
-function initGame() {
-    console.log("Starting game initialization...");
-    
-    // Show loading
-    document.getElementById('loadingMessage').style.display = 'block';
-    
-    // Check WebGL support
-    if (!isWebGLSupported()) {
-        document.getElementById('graphicsWarning').style.display = 'block';
-        document.getElementById('loadingMessage').style.display = 'none';
-        return;
-    }
+function initSimpleGame() {
+    console.log("Starting Simple Graphics Mode...");
     
     try {
-        // Create scene with visible background
+        // Create canvas if it doesn't exist
+        let canvas = document.getElementById('gameCanvas');
+        if (!canvas) {
+            canvas = document.createElement('canvas');
+            canvas.id = 'gameCanvas';
+            document.getElementById('gameContainer').appendChild(canvas);
+        }
+        
+        // Get WebGL context with fallback to 2D
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (!gl) {
+            // Fallback to 2D canvas
+            init2DGame();
+            return;
+        }
+        
+        // Set canvas size
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        // Create minimal Three.js scene
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x000022);
+        scene.background = new THREE.Color(0x001133);
+        
+        // Simple camera
+        camera = new THREE.PerspectiveCamera(75, canvas.width / canvas.height, 0.1, 1000);
+        camera.position.set(0, 15, 25);
+        
+        // Simple renderer
+        renderer = new THREE.WebGLRenderer({ 
+            canvas: canvas,
+            antialias: false,
+            powerPreference: "low-power"
+        });
+        renderer.setSize(canvas.width, canvas.height);
+        renderer.setPixelRatio(1); // Lowest for compatibility
+        
+        // Basic lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        directionalLight.position.set(1, 1, 1);
+        scene.add(directionalLight);
+        
+        // Create simple game objects
+        createSimpleTerrain();
+        createSimplePlayer();
+        createSimpleResources();
+        createSimpleSpaceship();
+        
+        // Load saved game
+        loadGame();
+        
+        // Setup controls
+        initTouchControls();
+        
+        // Start game loop
+        animateSimpleGame();
+        
+        showNotification(`Welcome ${player.name}! Simple graphics mode active.`, 4000);
+        
+    } catch (error) {
+        console.error("Simple graphics failed:", error);
+        // Ultimate fallback to 2D
+        init2DGame();
+    }
+}
+
+function createSimpleTerrain() {
+    // Simple flat ground
+    const geometry = new THREE.PlaneGeometry(100, 100);
+    const material = new THREE.MeshBasicMaterial({ 
+        color: 0x2ecc71,
+        side: THREE.DoubleSide
+    });
+    
+    terrain = new THREE.Mesh(geometry, material);
+    terrain.rotation.x = -Math.PI / 2;
+    scene.add(terrain);
+    
+    // Add a grid for visibility
+    const grid = new THREE.GridHelper(100, 10, 0x0000ff, 0x000088);
+    grid.position.y = 0.1;
+    scene.add(grid);
+}
+
+function createSimplePlayer() {
+    // Simple cube player
+    const geometry = new THREE.BoxGeometry(1, 2, 1);
+    const material = new THREE.MeshBasicMaterial({ 
+        color: 0x1a5fb4
+    });
+    
+    playerModel = new THREE.Mesh(geometry, material);
+    playerModel.position.set(0, 1, 0);
+    scene.add(playerModel);
+}
+
+function createSimpleResources() {
+    resourceNodes = [];
+    
+    // Create simple resources
+    for (let i = 0; i < 10; i++) {
+        const size = 1 + Math.random();
+        const geometry = new THREE.SphereGeometry(size, 8, 8);
+        const material = new THREE.MeshBasicMaterial({ 
+            color: Math.random() > 0.5 ? 0xffaa00 : 0xff5555
+        });
+        
+        const node = new THREE.Mesh(geometry, material);
+        
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 10 + Math.random() * 30;
+        node.position.set(
+            Math.cos(angle) * distance,
+            size,
+            Math.sin(angle) * distance
+        );
+        
+        scene.add(node);
+        
+        resourceNodes.push({
+            mesh: node,
+            type: Math.random() > 0.5 ? 'iron' : 'volcanium',
+            amount: 20 + Math.floor(Math.random() * 50),
+            collected: false
+        });
+    }
+}
+
+function createSimpleSpaceship() {
+    const geometry = new THREE.ConeGeometry(2, 4, 6);
+    const material = new THREE.MeshBasicMaterial({ 
+        color: 0x1a5fb4
+    });
+    
+    spaceship = new THREE.Mesh(geometry, material);
+    spaceship.rotation.x = Math.PI / 2;
+    spaceship.position.set(0, 2, -20);
+    scene.add(spaceship);
+}
+
+function animateSimpleGame() {
+    if (!scene || !camera || !renderer) return;
+    
+    requestAnimationFrame(animateSimpleGame);
+    
+    // Update player movement
+    if (playerModel && joystickActive) {
+        const speed = 0.1;
+        playerModel.position.x += touchMove.x * speed;
+        playerModel.position.z += touchMove.z * speed;
+        
+        // Auto-mine when close
+        if (player.miningMode) {
+            resourceNodes.forEach((node, index) => {
+                if (!node.collected) {
+                    const distance = playerModel.position.distanceTo(node.mesh.position);
+                    if (distance < 3) {
+                        mineResource(node, index);
+                    }
+                }
+            });
+        }
+    }
+    
+    // Animate resources
+    resourceNodes.forEach(node => {
+        if (!node.collected) {
+            node.mesh.rotation.y += 0.01;
+        }
+    });
+    
+    // Animate spaceship
+    if (spaceship) {
+        spaceship.rotation.y += 0.005;
+    }
+    
+    // Camera follows player
+    if (playerModel) {
+        camera.position.x = playerModel.position.x;
+        camera.position.z = playerModel.position.z + 20;
+        camera.lookAt(playerModel.position.x, 0, playerModel.position.z);
+    }
+    
+    // Recharge energy
+    if (player.resources.energy < 100) {
+        player.resources.energy += 0.05;
+    }
+    
+    renderer.render(scene, camera);
+}
+
+// ======================
+// ADVANCED GRAPHICS MODE
+// ======================
+function initAdvancedGame() {
+    console.log("Starting Advanced Graphics Mode...");
+    
+    try {
+        // Clear existing canvas
+        const container = document.getElementById('gameContainer');
+        const oldCanvas = document.getElementById('gameCanvas');
+        if (oldCanvas) {
+            container.removeChild(oldCanvas);
+        }
+        
+        // Create new canvas
+        const canvas = document.createElement('canvas');
+        canvas.id = 'gameCanvas';
+        container.appendChild(canvas);
+        
+        // Create scene with better graphics
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000033);
         scene.fog = new THREE.Fog(0x000033, 10, 100);
         
-        // Create camera
+        // Better camera
         camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(0, 15, 25);
         
-        // Create renderer with fallback
+        // Better renderer
         renderer = new THREE.WebGLRenderer({ 
-            canvas: document.getElementById('gameCanvas'),
+            canvas: canvas,
             antialias: true,
-            alpha: false,
+            alpha: true,
             powerPreference: "high-performance"
         });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         
-        // Add lights
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        // Better lighting
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.8);
         scene.add(ambientLight);
         
         const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
@@ -1032,70 +1033,43 @@ function initGame() {
         directionalLight.castShadow = true;
         scene.add(directionalLight);
         
-        // Create simple terrain
-        createTerrain();
+        // Create better game objects
+        createAdvancedTerrain();
+        createAdvancedPlayer();
+        createAdvancedResources();
+        createAdvancedSpaceship();
+        createSkybox();
         
-        // Create player
-        createPlayer();
+        // Setup orbit controls if available
+        if (typeof THREE.OrbitControls !== 'undefined') {
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+        }
         
-        // Create resources
-        createResources();
+        // Start animation
+        animateAdvancedGame();
         
-        // Create spaceship
-        createSpaceship();
-        
-        // Create skybox
-        createSky();
-        
-        // Setup simple camera controls
-        setupCameraControls();
-        
-        // Initialize touch controls
-        setTimeout(() => {
-            initTouchControls();
-        }, 500);
-        
-        // Hide loading, show game
-        document.getElementById('loadingMessage').style.display = 'none';
-        
-        // Auto-save
-        setInterval(saveGame, 30000);
-        
-        // Start game loop
-        animate();
-        
-        showNotification(`Welcome, ${player.name}!`, 3000);
-        setTimeout(() => {
-            showNotification("Use joystick to move\nTap MINE to collect resources", 4000);
-        }, 3500);
+        showNotification("Advanced graphics mode activated!", 3000);
         
     } catch (error) {
-        console.error("Game initialization failed:", error);
-        document.getElementById('graphicsWarning').style.display = 'block';
-        document.getElementById('loadingMessage').style.display = 'none';
+        console.error("Advanced graphics failed:", error);
+        showNotification("Failed to load advanced graphics. Switching to simple mode.", 3000);
+        setTimeout(() => {
+            initSimpleGame();
+        }, 1000);
     }
 }
 
-function isWebGLSupported() {
-    try {
-        const canvas = document.createElement('canvas');
-        return !!(window.WebGLRenderingContext && 
-                 (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
-    } catch (e) {
-        return false;
-    }
-}
-
-function createTerrain() {
-    // Simple flat terrain
-    const geometry = new THREE.PlaneGeometry(200, 200, 10, 10);
+function createAdvancedTerrain() {
+    const geometry = new THREE.PlaneGeometry(200, 200, 50, 50);
     
-    // Add slight variation
+    // Add terrain variation
     const vertices = geometry.attributes.position;
     for (let i = 0; i < vertices.count; i++) {
         const x = vertices.getX(i);
         const z = vertices.getZ(i);
-        const height = Math.sin(x * 0.05) * Math.cos(z * 0.05) * 2;
+        const height = Math.sin(x * 0.05) * Math.cos(z * 0.05) * 3;
         vertices.setY(i, height);
     }
     geometry.computeVertexNormals();
@@ -1110,15 +1084,9 @@ function createTerrain() {
     terrain.rotation.x = -Math.PI / 2;
     terrain.receiveShadow = true;
     scene.add(terrain);
-    
-    // Add grid for visibility
-    const grid = new THREE.GridHelper(200, 20, 0x00aaff, 0x0088ff);
-    grid.position.y = 0.1;
-    scene.add(grid);
 }
 
-function createPlayer() {
-    // Simple player capsule
+function createAdvancedPlayer() {
     const geometry = new THREE.CapsuleGeometry(0.5, 1.5, 8, 16);
     const material = new THREE.MeshPhongMaterial({ 
         color: 0x1a5fb4,
@@ -1131,24 +1099,22 @@ function createPlayer() {
     scene.add(playerModel);
 }
 
-function createResources() {
+function createAdvancedResources() {
     resourceNodes = [];
     
-    // Create visible resources
     for (let i = 0; i < 15; i++) {
         const size = 1.5 + Math.random();
         const geometry = new THREE.SphereGeometry(size, 16, 16);
         const material = new THREE.MeshPhongMaterial({ 
             color: Math.random() > 0.5 ? 0xffaa00 : 0xff5555,
             emissive: Math.random() > 0.5 ? 0x884400 : 0x550000,
-            emissiveIntensity: 0.8,
-            shininess: 100
+            emissiveIntensity: 0.5
         });
         
         const node = new THREE.Mesh(geometry, material);
         
         const angle = Math.random() * Math.PI * 2;
-        const distance = 10 + Math.random() * 30;
+        const distance = 15 + Math.random() * 35;
         node.position.set(
             Math.cos(angle) * distance,
             size,
@@ -1167,13 +1133,12 @@ function createResources() {
     }
 }
 
-function createSpaceship() {
+function createAdvancedSpaceship() {
     const geometry = new THREE.ConeGeometry(3, 6, 8);
     const material = new THREE.MeshPhongMaterial({ 
         color: 0x1a5fb4,
         emissive: 0x004488,
-        emissiveIntensity: 1,
-        shininess: 100
+        emissiveIntensity: 0.5
     });
     
     spaceship = new THREE.Mesh(geometry, material);
@@ -1183,20 +1148,20 @@ function createSpaceship() {
     scene.add(spaceship);
 }
 
-function createSky() {
+function createSkybox() {
     // Add stars
     const starGeometry = new THREE.BufferGeometry();
-    const starCount = 500;
+    const starCount = 1000;
     const starPositions = new Float32Array(starCount * 3);
     
     for (let i = 0; i < starCount * 3; i++) {
-        starPositions[i] = (Math.random() - 0.5) * 500;
+        starPositions[i] = (Math.random() - 0.5) * 1000;
     }
     
     starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
     const starMaterial = new THREE.PointsMaterial({ 
         color: 0xffffff,
-        size: 2,
+        size: 1,
         sizeAttenuation: true
     });
     
@@ -1204,89 +1169,28 @@ function createSky() {
     scene.add(stars);
 }
 
-function setupCameraControls() {
-    // Simple follow camera
-    if (typeof THREE.OrbitControls !== 'undefined') {
-        controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.minDistance = 5;
-        controls.maxDistance = 50;
-        controls.maxPolarAngle = Math.PI / 2;
-        controls.target.set(0, 0, 0);
-    }
-}
-
-function mineResource(node, index) {
-    if (!player.miningMode || node.collected) return;
+function animateAdvancedGame() {
+    if (!scene || !camera || !renderer) return;
     
-    const amount = Math.min(10, node.amount);
-    node.amount -= amount;
-    
-    if (node.type === 'iron') {
-        player.resources.iron += amount;
-    } else {
-        player.resources.volcanium += amount;
-    }
-    
-    // Visual effects
-    node.mesh.scale.multiplyScalar(0.8);
-    node.mesh.material.emissiveIntensity = 2;
-    
-    if (node.amount <= 0) {
-        node.collected = true;
-        scene.remove(node.mesh);
-        resourceNodes.splice(index, 1);
-        showNotification(`💎 Resource depleted!`, 2000);
-    } else {
-        showNotification(`+${amount} ${node.type.toUpperCase()}!`, 1500);
-    }
-    
-    // Energy consumption
-    player.resources.energy = Math.max(0, player.resources.energy - 1);
-    
-    // Level up
-    player.level += amount / 100;
-    if (Math.floor(player.level) > Math.floor(player.level - amount/100)) {
-        showNotification(`🎉 LEVEL UP!`, 3000);
-    }
-    
-    updateUI();
-}
-
-// ======================
-// GAME LOOP
-// ======================
-function animate() {
-    requestAnimationFrame(animate);
-    
-    const deltaTime = 0.016; // Fixed delta time for consistency
+    requestAnimationFrame(animateAdvancedGame);
     
     // Update player movement
     if (playerModel && joystickActive) {
-        const speed = 10 * deltaTime;
+        const speed = 0.1;
         playerModel.position.x += touchMove.x * speed;
         playerModel.position.z += touchMove.z * speed;
         
-        // Keep player on ground
-        playerModel.position.y = 1.5;
-        
-        // Update camera target
-        if (controls) {
-            controls.target.lerp(playerModel.position, 0.1);
-        }
-    }
-    
-    // Auto-mine when close and mining mode is on
-    if (player.miningMode && playerModel) {
-        resourceNodes.forEach((node, index) => {
-            if (!node.collected) {
-                const distance = playerModel.position.distanceTo(node.mesh.position);
-                if (distance < 3) {
-                    mineResource(node, index);
+        // Auto-mine when close
+        if (player.miningMode) {
+            resourceNodes.forEach((node, index) => {
+                if (!node.collected) {
+                    const distance = playerModel.position.distanceTo(node.mesh.position);
+                    if (distance < 3) {
+                        mineResource(node, index);
+                    }
                 }
-            }
-        });
+            });
+        }
     }
     
     // Animate resources
@@ -1306,89 +1210,410 @@ function animate() {
     
     // Recharge energy
     if (player.resources.energy < 100) {
-        player.resources.energy += 0.1;
-        if (Math.floor(player.resources.energy) % 25 === 0) {
-            updateUI();
+        player.resources.energy += 0.05;
+    }
+    
+    renderer.render(scene, camera);
+}
+
+// ======================
+// 2D FALLBACK MODE
+// ======================
+function init2DGame() {
+    console.log("Starting 2D Fallback Mode...");
+    
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    // Simple 2D game objects
+    const gameObjects = {
+        player: { x: canvas.width/2, y: canvas.height/2, size: 20 },
+        resources: [],
+        ship: { x: canvas.width/2, y: 100, size: 30 }
+    };
+    
+    // Create resources
+    for (let i = 0; i < 8; i++) {
+        gameObjects.resources.push({
+            x: 100 + Math.random() * (canvas.width - 200),
+            y: 200 + Math.random() * (canvas.height - 400),
+            size: 15 + Math.random() * 10,
+            type: Math.random() > 0.5 ? 'iron' : 'volcanium',
+            collected: false
+        });
+    }
+    
+    function drawGame() {
+        // Clear canvas
+        ctx.fillStyle = '#001133';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw grid
+        ctx.strokeStyle = '#003366';
+        ctx.lineWidth = 1;
+        for (let x = 0; x < canvas.width; x += 50) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+            ctx.stroke();
+        }
+        for (let y = 0; y < canvas.height; y += 50) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvas.width, y);
+            ctx.stroke();
+        }
+        
+        // Draw resources
+        gameObjects.resources.forEach(resource => {
+            if (!resource.collected) {
+                ctx.fillStyle = resource.type === 'iron' ? '#ffaa00' : '#ff5555';
+                ctx.beginPath();
+                ctx.arc(resource.x, resource.y, resource.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Glow effect
+                ctx.shadowColor = resource.type === 'iron' ? '#ffaa00' : '#ff5555';
+                ctx.shadowBlur = 15;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        });
+        
+        // Draw ship
+        ctx.fillStyle = '#1a5fb4';
+        ctx.beginPath();
+        ctx.moveTo(gameObjects.ship.x, gameObjects.ship.y);
+        ctx.lineTo(gameObjects.ship.x - gameObjects.ship.size, gameObjects.ship.y + gameObjects.ship.size * 2);
+        ctx.lineTo(gameObjects.ship.x + gameObjects.ship.size, gameObjects.ship.y + gameObjects.ship.size * 2);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Draw player
+        ctx.fillStyle = '#00aaff';
+        ctx.beginPath();
+        ctx.arc(gameObjects.player.x, gameObjects.player.y, gameObjects.player.size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw mining indicator
+        if (player.miningMode) {
+            ctx.strokeStyle = '#00ff00';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.arc(gameObjects.player.x, gameObjects.player.y, gameObjects.player.size + 10, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
         }
     }
     
-    // Update controls
-    if (controls) controls.update();
+    function updateGame() {
+        // Move player with joystick
+        if (joystickActive) {
+            gameObjects.player.x += touchMove.x * 5;
+            gameObjects.player.y -= touchMove.z * 5;
+            
+            // Keep in bounds
+            gameObjects.player.x = Math.max(gameObjects.player.size, 
+                Math.min(canvas.width - gameObjects.player.size, gameObjects.player.x));
+            gameObjects.player.y = Math.max(gameObjects.player.size, 
+                Math.min(canvas.height - gameObjects.player.size, gameObjects.player.y));
+            
+            // Check mining
+            if (player.miningMode) {
+                gameObjects.resources.forEach((resource, index) => {
+                    if (!resource.collected) {
+                        const dx = resource.x - gameObjects.player.x;
+                        const dy = resource.y - gameObjects.player.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < gameObjects.player.size + resource.size) {
+                            resource.collected = true;
+                            if (resource.type === 'iron') {
+                                player.resources.iron += 10;
+                            } else {
+                                player.resources.volcanium += 5;
+                            }
+                            updateUI();
+                            showNotification(`Mined ${resource.type === 'iron' ? 'Iron' : 'Volcanium'}!`, 2000);
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Recharge energy
+        if (player.resources.energy < 100) {
+            player.resources.energy += 0.1;
+            if (Math.floor(player.resources.energy) % 25 === 0) {
+                updateUI();
+            }
+        }
+        
+        drawGame();
+        requestAnimationFrame(updateGame);
+    }
     
-    // Render
-    renderer.render(scene, camera);
+    // Start the 2D game
+    updateGame();
+    showNotification("2D Mode Active - Basic gameplay", 3000);
+}
+
+// ======================
+// TOUCH CONTROLS
+// ======================
+function initTouchControls() {
+    const joystickArea = document.getElementById('joystickArea');
+    const joystickThumb = document.getElementById('joystickThumb');
+    
+    if (!joystickArea || !joystickThumb) return;
+    
+    joystickArea.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = joystickArea.getBoundingClientRect();
+        
+        joystickActive = true;
+        updateJoystick(touch.clientX, touch.clientY, rect);
+    });
+    
+    document.addEventListener('touchmove', (e) => {
+        if (!joystickActive) return;
+        e.preventDefault();
+        
+        const touch = e.touches[0];
+        const rect = joystickArea.getBoundingClientRect();
+        updateJoystick(touch.clientX, touch.clientY, rect);
+    });
+    
+    document.addEventListener('touchend', () => {
+        joystickActive = false;
+        joystickThumb.style.transform = 'translate(0, 0)';
+        touchMove.x = 0;
+        touchMove.z = 0;
+    });
+}
+
+function updateJoystick(x, y, rect) {
+    const joystickThumb = document.getElementById('joystickThumb');
+    const centerX = rect.left + 75;
+    const centerY = rect.top + 75;
+    const maxDistance = 50;
+    
+    let deltaX = x - centerX;
+    let deltaY = y - centerY;
+    
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    if (distance > maxDistance) {
+        deltaX = (deltaX / distance) * maxDistance;
+        deltaY = (deltaY / distance) * maxDistance;
+    }
+    
+    joystickThumb.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+    
+    touchMove.x = deltaX / maxDistance;
+    touchMove.z = -deltaY / maxDistance; // Invert for forward/backward
+}
+
+// ======================
+// GAME FUNCTIONS
+// ======================
+function mineResource(node, index) {
+    if (!player.miningMode || node.collected) return;
+    
+    const amount = Math.min(5, node.amount);
+    node.amount -= amount;
+    
+    if (node.type === 'iron') {
+        player.resources.iron += amount;
+    } else {
+        player.resources.volcanium += amount;
+    }
+    
+    player.resources.energy = Math.max(0, player.resources.energy - 1);
+    
+    if (node.amount <= 0) {
+        node.collected = true;
+        if (scene && node.mesh) {
+            scene.remove(node.mesh);
+        }
+        resourceNodes.splice(index, 1);
+    } else {
+        // Visual feedback
+        if (node.mesh) {
+            node.mesh.scale.multiplyScalar(0.9);
+        }
+    }
+    
+    // Gain experience
+    player.experience += amount;
+    if (player.experience >= player.level * 50) {
+        player.level++;
+        player.experience = 0;
+        showNotification(`🎉 LEVEL UP! Now Level ${player.level}`, 3000);
+    }
+    
+    updateUI();
+    showNotification(`+${amount} ${node.type.toUpperCase()}!`, 1500);
+}
+
+function toggleMiningMode() {
+    player.miningMode = !player.miningMode;
+    updateUI();
+    
+    if (player.miningMode) {
+        showNotification("⛏️ MINING MODE ON\nWalk near rocks to collect!", 3000);
+    } else {
+        showNotification("⛏️ Mining mode off", 2000);
+    }
+}
+
+function mobileJump() {
+    if (playerModel) {
+        playerModel.position.y = 5;
+        setTimeout(() => {
+            if (playerModel) playerModel.position.y = 1.5;
+        }, 500);
+        showNotification("Jump!", 1000);
+    }
+}
+
+function mobileMine() {
+    toggleMiningMode();
+}
+
+function mobileAction() {
+    // Try to mine nearest resource
+    if (player.miningMode && playerModel) {
+        let nearestNode = null;
+        let nearestDistance = Infinity;
+        
+        resourceNodes.forEach((node, index) => {
+            if (!node.collected) {
+                const distance = playerModel.position.distanceTo(node.mesh.position);
+                if (distance < 10 && distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestNode = { node, index };
+                }
+            }
+        });
+        
+        if (nearestNode) {
+            mineResource(nearestNode.node, nearestNode.index);
+        } else {
+            showNotification("No resources nearby!", 2000);
+        }
+    } else {
+        showNotification("Turn on mining mode first!", 2000);
+    }
+}
+
+function enterShip() {
+    if (player.resources.iron >= 50) {
+        player.resources.iron -= 50;
+        updateUI();
+        showNotification("🚀 ENTERING SPACESHIP!\nFuel: 50 Iron\nNext: Build fleet!", 4000);
+    } else {
+        showNotification(`Need 50 Iron for ship!\nYou have: ${player.resources.iron} Iron`, 3000);
+    }
+}
+
+function showBuildMenu() {
+    showNotification(`
+    🏗️ BUILDING SYSTEM:
+    
+    Available Constructions:
+    
+    • SCOUT SHIP - 50 Iron
+    Fast exploration
+    
+    • CARGO SHIP - 100 Iron
+    Resource transport
+    
+    • MINING STATION - 200 Iron
+    Auto-mines nearby
+    
+    • DEFENSE TURRET - 80 Iron
+    Base protection
+    
+    Keep mining to unlock more!
+    `, 6000);
+}
+
+function showGalaxyMap() {
+    showNotification(`
+    🌌 GALAXY PROGRESSION:
+    
+    Current: Terra Nova
+    Resources: Iron, Volcanium
+    
+    Next Planets:
+    • Pyros V - 500 Iron
+    (Volcanium rich)
+    
+    • Cryos-7 - Level 5
+    (Energy crystals)
+    
+    • Zephyr Prime - Level 10
+    (Rare gases)
+    
+    Your Level: ${player.level}
+    `, 7000);
+}
+
+function saveGame() {
+    const saveData = {
+        player: player,
+        timestamp: Date.now()
+    };
+    localStorage.setItem('eternal_empire_save', JSON.stringify(saveData));
+    showNotification("💾 GAME SAVED!\nProgress stored.", 2000);
+}
+
+function loadGame() {
+    const saved = localStorage.getItem('eternal_empire_save');
+    if (saved) {
+        try {
+            const data = JSON.parse(saved);
+            player = { ...player, ...data.player };
+            updateUI();
+            return true;
+        } catch (e) {
+            console.log("No valid save found");
+        }
+    }
+    return false;
 }
 
 // ======================
 // STARTUP
 // ======================
-function startGame() {
-    const username = document.getElementById('username').value.trim() || 'Commander';
-    player.name = username;
-    
-    // Check orientation
-    if (window.innerHeight > window.innerWidth) {
-        document.getElementById('orientationWarning').style.display = 'flex';
-        return;
-    }
-    
-    // Load saved game
-    loadGame();
-    
-    // Switch to game
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('gameContainer').style.display = 'block';
-    
-    // Initialize game
-    setTimeout(() => {
-        initGame();
-    }, 100);
-}
-
-function forceLandscape() {
-    document.getElementById('orientationWarning').style.display = 'none';
-    startGame();
-}
-
-// Handle resize
-window.addEventListener('resize', () => {
-    if (camera && renderer) {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-});
-
-// Handle orientation
-window.addEventListener('orientationchange', () => {
-    setTimeout(() => {
-        if (window.innerHeight > window.innerWidth) {
-            if (document.getElementById('gameContainer').style.display === 'block') {
-                document.getElementById('orientationWarning').style.display = 'flex';
-            }
-        }
-        
-        if (camera && renderer) {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-    }, 300);
-});
-
-// Pre-fill and focus
 window.addEventListener('load', () => {
-    console.log("Eternal Empire Mobile Ready!");
-    document.getElementById('username').value = "MobileCommander";
-    document.getElementById('username').focus();
+    console.log("Eternal Empire loaded!");
     
-    // Add click sound simulation
-    document.querySelectorAll('button').forEach(btn => {
-        btn.addEventListener('touchstart', () => {
-            // Visual feedback is enough
-        });
+    // Pre-fill username
+    document.getElementById('username').value = "SpaceCommander";
+    
+    // Auto-save every minute
+    setInterval(saveGame, 60000);
+    
+    // Handle resize
+    window.addEventListener('resize', () => {
+        const canvas = document.getElementById('gameCanvas');
+        if (canvas) {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
     });
 });
+
+// Add the missing OrbitControls if not available
+if (typeof THREE !== 'undefined' && !THREE.OrbitControls) {
+    console.log("OrbitControls not found, using simple camera");
+}
 </script>
 
 </body>
