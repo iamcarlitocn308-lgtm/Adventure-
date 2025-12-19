@@ -1,6 +1,3 @@
-The issue is that the planet selection is trying to create the planet environment before the game engine is fully initialized. Let me fix this by ensuring the game engine runs first, then shows planet selection. Here's the corrected code:
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -964,6 +961,54 @@ The issue is that the planet selection is trying to create the planet environmen
             z-index: 199;
             display: none;
         }
+        
+        /* ============ BUTTON FIXES ============ */
+        .login-btn, .quick-action, .action-button, .menu-item, .close-guide {
+            cursor: pointer !important;
+            pointer-events: auto !important;
+            touch-action: manipulation !important;
+        }
+        
+        .login-btn:active, .quick-action:active, .action-button:active, .menu-item:active {
+            transform: scale(0.95) !important;
+        }
+        
+        /* Make sure inputs are working */
+        .login-input, select {
+            pointer-events: auto !important;
+        }
+        
+        /* Make sure z-indexes are correct */
+        #loginScreen {
+            z-index: 1000 !important;
+        }
+        
+        #loadingScreen {
+            z-index: 9999 !important;
+        }
+        
+        #gameContainer {
+            z-index: 100 !important;
+        }
+        
+        /* Prevent text selection */
+        .no-select {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        /* Fix for mobile touch */
+        @media (hover: none) and (pointer: coarse) {
+            .login-btn:hover, .quick-action:hover, .menu-item:hover {
+                transform: none !important;
+            }
+            
+            .login-btn:active, .quick-action:active, .menu-item:active {
+                transform: scale(0.95) !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -989,7 +1034,7 @@ The issue is that the planet selection is trying to create the planet environmen
                 </div>
                 <div class="input-group">
                     <label class="input-label">FACTION</label>
-                    <div class="input-help" onclick="toggleFactionHelp()">?</div>
+                    <div class="input-help" id="factionHelp">?</div>
                     <div class="tooltip" id="factionTooltip">
                         <div class="tooltip-title">FACTION GUIDE</div>
                         <div class="tooltip-content">
@@ -1007,15 +1052,15 @@ The issue is that the planet selection is trying to create the planet environmen
                     </select>
                 </div>
                 <div class="btn-group">
-                    <button class="login-btn" onclick="startGame()">
+                    <button class="login-btn" id="launchButton">
                         <span>🚀</span>
                         LAUNCH GAME
                     </button>
-                    <button class="login-btn btn-secondary" onclick="showGuide()">
+                    <button class="login-btn btn-secondary" id="guideButton">
                         <span>📖</span>
                         GAME GUIDE
                     </button>
-                    <button class="login-btn" onclick="loadSavedGame()" style="background: linear-gradient(135deg, #00cc88, #00ffaa);">
+                    <button class="login-btn" id="loadButton" style="background: linear-gradient(135deg, #00cc88, #00ffaa);">
                         <span>💾</span>
                         LOAD SAVE
                     </button>
@@ -1035,7 +1080,7 @@ The issue is that the planet selection is trying to create the planet environmen
                 <div class="planet-subtitle">Each world offers unique resources and challenges</div>
             </div>
             <div class="planet-grid">
-                <div class="planet-card" onclick="selectPlanet('terra_nova')">
+                <div class="planet-card" data-planet="terra_nova">
                     <div class="planet-icon">🌍</div>
                     <div class="planet-name">Terra Nova</div>
                     <div class="planet-desc">Lush Earth-like planet with forests, rivers, and abundant iron resources.</div>
@@ -1045,7 +1090,7 @@ The issue is that the planet selection is trying to create the planet environmen
                         <span class="planet-stat">⛏️ Iron</span>
                     </div>
                 </div>
-                <div class="planet-card" onclick="selectPlanet('pyros_v')">
+                <div class="planet-card" data-planet="pyros_v">
                     <div class="planet-icon">🔥</div>
                     <div class="planet-name">Pyros V</div>
                     <div class="planet-desc">Volcanic planet with lava rivers, geysers, and rich volcanium deposits.</div>
@@ -1055,7 +1100,7 @@ The issue is that the planet selection is trying to create the planet environmen
                         <span class="planet-stat">🔥 Volcanium</span>
                     </div>
                 </div>
-                <div class="planet-card" onclick="selectPlanet('cryos_7')">
+                <div class="planet-card" data-planet="cryos_7">
                     <div class="planet-icon">❄️</div>
                     <div class="planet-name">Cryos-7</div>
                     <div class="planet-desc">Ice planet with frozen oceans, glaciers, and rare cryo-crystals.</div>
@@ -1065,7 +1110,7 @@ The issue is that the planet selection is trying to create the planet environmen
                         <span class="planet-stat">💎 Crystals</span>
                     </div>
                 </div>
-                <div class="planet-card" onclick="selectPlanet('zephyr_prime')">
+                <div class="planet-card" data-planet="zephyr_prime">
                     <div class="planet-icon">🌪️</div>
                     <div class="planet-name">Zephyr Prime</div>
                     <div class="planet-desc">Gas giant with floating islands, storms, and aero-gel clouds.</div>
@@ -1077,7 +1122,7 @@ The issue is that the planet selection is trying to create the planet environmen
                 </div>
             </div>
             <div class="planet-footer">
-                <button class="close-guide" onclick="closePlanetSelection()">START ON TERRA NOVA</button>
+                <button class="close-guide" id="startTerraNova">START ON TERRA NOVA</button>
             </div>
         </div>
     </div>
@@ -1085,7 +1130,7 @@ The issue is that the planet selection is trying to create the planet environmen
     <!-- Game Container -->
     <div id="gameContainer">
         <!-- Menu Overlay (for closing menu) -->
-        <div id="menuOverlay" onclick="toggleMenu()"></div>
+        <div id="menuOverlay"></div>
 
         <!-- Top HUD -->
         <div id="topHUD">
@@ -1130,31 +1175,31 @@ The issue is that the planet selection is trying to create the planet environmen
         <canvas id="gameCanvas"></canvas>
 
         <!-- Menu Button -->
-        <div id="menuButton" onclick="toggleMenu()">☰</div>
+        <div id="menuButton">☰</div>
 
         <!-- Menu Panel -->
         <div id="menuPanel">
             <div class="menu-header">
                 <div class="menu-title-large">GAME MENU</div>
-                <div class="menu-close-btn" onclick="toggleMenu()">✕</div>
+                <div class="menu-close-btn" id="menuCloseBtn">✕</div>
             </div>
             
             <div class="menu-section">
                 <div class="menu-title">PLANETARY ACTIONS</div>
-                <div class="menu-item" onclick="toggleMiningMode()">
+                <div class="menu-item" id="miningModeBtn">
                     <span>⛏️</span>
                     <span>Mining Mode</span>
                     <span class="menu-status" id="miningStatus">OFF</span>
                 </div>
-                <div class="menu-item" onclick="openPlanetSelection()">
+                <div class="menu-item" id="travelPlanetBtn">
                     <span>🪐</span>
                     <span>Travel to Planet</span>
                 </div>
-                <div class="menu-item" onclick="enterShip()">
+                <div class="menu-item" id="enterShipBtn">
                     <span>🚀</span>
                     <span>Enter Spaceship</span>
                 </div>
-                <div class="menu-item" onclick="openBuildMenu()">
+                <div class="menu-item" id="buildMenuBtn">
                     <span>🏗️</span>
                     <span>Construction Menu</span>
                 </div>
@@ -1162,19 +1207,19 @@ The issue is that the planet selection is trying to create the planet environmen
 
             <div class="menu-section">
                 <div class="menu-title">NAVIGATION</div>
-                <div class="menu-item" onclick="openGalaxyMap()">
+                <div class="menu-item" id="galaxyMapBtn">
                     <span>🌌</span>
                     <span>Galaxy Map</span>
                 </div>
-                <div class="menu-item" onclick="openPlanetView()">
+                <div class="menu-item" id="planetViewBtn">
                     <span>🪐</span>
                     <span>Planet Overview</span>
                 </div>
-                <div class="menu-item" onclick="openFleetManager()">
+                <div class="menu-item" id="fleetManagerBtn">
                     <span>🛸</span>
                     <span>Fleet Management</span>
                 </div>
-                <div class="menu-item" onclick="openDiplomacy()">
+                <div class="menu-item" id="diplomacyBtn">
                     <span>🤝</span>
                     <span>Diplomacy</span>
                 </div>
@@ -1182,23 +1227,23 @@ The issue is that the planet selection is trying to create the planet environmen
 
             <div class="menu-section">
                 <div class="menu-title">SYSTEM</div>
-                <div class="menu-item" onclick="saveGame()">
+                <div class="menu-item" id="saveGameBtn">
                     <span>💾</span>
                     <span>Save Game</span>
                 </div>
-                <div class="menu-item" onclick="showGuide()">
+                <div class="menu-item" id="gameGuideBtn">
                     <span>📖</span>
                     <span>Game Guide</span>
                 </div>
-                <div class="menu-item" onclick="toggleGraphics()">
+                <div class="menu-item" id="graphicsBtn">
                     <span>⚙️</span>
                     <span>Graphics: <span id="graphicsMode">HIGH</span></span>
                 </div>
-                <div class="menu-item" onclick="showSettings()">
+                <div class="menu-item" id="settingsBtn">
                     <span>⚙️</span>
                     <span>Settings</span>
                 </div>
-                <div class="menu-item" onclick="showFactionInfo()">
+                <div class="menu-item" id="factionInfoBtn">
                     <span>🏛️</span>
                     <span>Faction Info</span>
                 </div>
@@ -1212,32 +1257,32 @@ The issue is that the planet selection is trying to create the planet environmen
                 <div class="joystick-inner" id="joystickHandle"></div>
             </div>
             <div class="action-buttons">
-                <div class="action-button" id="jumpButton" ontouchstart="mobileJump()">⬆️</div>
-                <div class="action-button" id="mineButton" ontouchstart="mobileMine()">⛏️</div>
-                <div class="action-button" id="actionButton" ontouchstart="mobileAction()">⭐</div>
-                <div class="action-button" id="interactButton" ontouchstart="mobileInteract()">🔄</div>
+                <div class="action-button" id="jumpButton">⬆️</div>
+                <div class="action-button" id="mineButton">⛏️</div>
+                <div class="action-button" id="actionButton">⭐</div>
+                <div class="action-button" id="interactButton">🔄</div>
             </div>
         </div>
 
         <!-- Quick Action Bar -->
         <div id="quickActionBar">
-            <div class="quick-action" onclick="quickMine()">
+            <div class="quick-action" id="quickMineBtn">
                 <span>⛏️</span>
                 MINE
             </div>
-            <div class="quick-action" onclick="quickBuild()">
+            <div class="quick-action" id="quickBuildBtn">
                 <span>🏗️</span>
                 BUILD
             </div>
-            <div class="quick-action" onclick="openPlanetSelection()">
+            <div class="quick-action" id="quickTravelBtn">
                 <span>🪐</span>
                 TRAVEL
             </div>
-            <div class="quick-action" onclick="quickShip()">
+            <div class="quick-action" id="quickShipBtn">
                 <span>🚀</span>
                 SHIP
             </div>
-            <div class="quick-action" onclick="quickSave()">
+            <div class="quick-action" id="quickSaveBtn">
                 <span>💾</span>
                 SAVE
             </div>
@@ -1292,9 +1337,33 @@ The issue is that the planet selection is trying to create the planet environmen
                         <li>Jumping and interaction abilities</li>
                     </div>
                 </div>
+                
+                <div class="guide-section">
+                    <div class="section-title">⚡ RESOURCE SYSTEM</div>
+                    <div class="guide-list">
+                        <li><strong>Iron:</strong> Basic resource for building and crafting</li>
+                        <li><strong>Volcanium:</strong> Found on volcanic planets, used for advanced tech</li>
+                        <li><strong>Energy:</strong> Required for mining and special abilities</li>
+                        <li><strong>Credits:</strong> Currency for trading and upgrades</li>
+                        <li><strong>Cryo-Crystals:</strong> Rare crystals from ice planets</li>
+                        <li><strong>Aero-Gel:</strong> Lightweight material from gas giants</li>
+                    </div>
+                </div>
+                
+                <div class="guide-section">
+                    <div class="section-title">🚀 PROGRESSION</div>
+                    <div class="guide-list">
+                        <li>Start on Terra Nova and mine basic resources</li>
+                        <li>Build your first spaceship to visit other planets</li>
+                        <li>Discover unique resources on each planet</li>
+                        <li>Level up your character by mining and exploring</li>
+                        <li>Unlock advanced technologies and buildings</li>
+                        <li>Establish a multi-planet empire</li>
+                    </div>
+                </div>
             </div>
             <div class="guide-footer">
-                <button class="close-guide" onclick="hideGuide()">START EXPLORING</button>
+                <button class="close-guide" id="closeGuideBtn">START EXPLORING</button>
             </div>
         </div>
     </div>
@@ -1310,6 +1379,8 @@ const BASE_ENERGY_REGEN = 0.1;
 const MINING_RATE = 5;
 const SHIP_COST = 50;
 const LEVEL_EXP_REQUIREMENT = 100;
+const PLAYER_SPEED = 5;
+const GRAVITY = 9.8;
 
 // ======================
 // PLANET DEFINITIONS
@@ -1470,6 +1541,7 @@ let gameInitialized = false;
 // ======================
 let isWalking = false;
 let lastPosition = new THREE.Vector3();
+let keys = {};
 
 // ======================
 // UI MANAGEMENT
@@ -1521,11 +1593,19 @@ function showNotification(message, type = "info", duration = 3000) {
 }
 
 function showGuide() {
-    document.getElementById('guideModal').style.display = 'flex';
+    console.log("Showing guide...");
+    const guideModal = document.getElementById('guideModal');
+    if (guideModal) {
+        guideModal.style.display = 'flex';
+    }
 }
 
 function hideGuide() {
-    document.getElementById('guideModal').style.display = 'none';
+    console.log("Hiding guide...");
+    const guideModal = document.getElementById('guideModal');
+    if (guideModal) {
+        guideModal.style.display = 'none';
+    }
 }
 
 function openPlanetSelection() {
@@ -2054,9 +2134,6 @@ function addTerrainDetails() {
             case 'cryos_7':
                 // Ice crystals
                 const crystalHeight = 1 + Math.random() * 3;
-                const crystalGeometry = new
-                                    // Ice crystals
-                const crystalHeight = 1 + Math.random() * 3;
                 const crystalGeometry = new THREE.CylinderGeometry(0.1, 0.3, crystalHeight, 6);
                 const crystalMaterial = new THREE.MeshStandardMaterial({
                     color: 0x88ccff,
@@ -2359,6 +2436,124 @@ function createFloatingIslands() {
     }
 }
 
+function createForestAreas() {
+    // Create forest clusters
+    for (let cluster = 0; cluster < 3; cluster++) {
+        const clusterX = -60 + Math.random() * 120;
+        const clusterZ = -60 + Math.random() * 120;
+        
+        for (let tree = 0; tree < 10; tree++) {
+            const treeX = clusterX + (Math.random() - 0.5) * 15;
+            const treeZ = clusterZ + (Math.random() - 0.5) * 15;
+            
+            const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.3, 2, 6);
+            const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            
+            const leavesGeometry = new THREE.ConeGeometry(1.2, 2.5, 8);
+            const leavesMaterial = new THREE.MeshStandardMaterial({ color: 0x228822 });
+            const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+            leaves.position.y = 1.8;
+            
+            const treeGroup = new THREE.Group();
+            treeGroup.add(trunk);
+            treeGroup.add(leaves);
+            
+            // Position tree
+            const raycaster = new THREE.Raycaster(
+                new THREE.Vector3(treeX, 100, treeZ),
+                new THREE.Vector3(0, -1, 0)
+            );
+            const intersects = raycaster.intersectObject(terrain);
+            
+            if (intersects.length > 0) {
+                treeGroup.position.set(treeX, intersects[0].point.y, treeZ);
+                scene.add(treeGroup);
+            }
+        }
+    }
+}
+
+function createVolcanoes() {
+    // Create a volcano
+    const volcanoHeight = 25;
+    const volcanoRadius = 8;
+    const volcanoGeometry = new THREE.ConeGeometry(volcanoRadius, volcanoHeight, 16);
+    const volcanoMaterial = new THREE.MeshStandardMaterial({
+        color: 0x883300,
+        roughness: 0.9
+    });
+    
+    const volcano = new THREE.Mesh(volcanoGeometry, volcanoMaterial);
+    volcano.position.set(40, volcanoHeight / 2, 40);
+    
+    // Add crater
+    const craterGeometry = new THREE.SphereGeometry(3, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2);
+    const craterMaterial = new THREE.MeshStandardMaterial({
+        color: 0xff2200,
+        emissive: 0xff3300,
+        emissiveIntensity: 0.3
+    });
+    const crater = new THREE.Mesh(craterGeometry, craterMaterial);
+    crater.position.set(40, volcanoHeight - 2, 40);
+    crater.rotation.x = Math.PI;
+    
+    scene.add(volcano);
+    scene.add(crater);
+}
+
+function createAurora() {
+    // Create aurora borealis effect with particles
+    for (let i = 0; i < 20; i++) {
+        const particleGeometry = new THREE.SphereGeometry(0.3, 4, 4);
+        const particleMaterial = new THREE.MeshBasicMaterial({
+            color: 0x00ffaa,
+            transparent: true,
+            opacity: 0.3
+        });
+        
+        const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+        particle.position.set(
+            -50 + Math.random() * 100,
+            30 + Math.random() * 20,
+            -50 + Math.random() * 100
+        );
+        
+        particle.userData.floatSpeed = 0.1 + Math.random() * 0.2;
+        particle.userData.floatPhase = Math.random() * Math.PI * 2;
+        
+        scene.add(particle);
+    }
+}
+
+function createCloudEffects() {
+    // Create cloud particles
+    for (let i = 0; i < 15; i++) {
+        const cloudGeometry = new THREE.SphereGeometry(2 + Math.random() * 3, 6, 6);
+        const cloudMaterial = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.2
+        });
+        
+        const cloud = new THREE.Mesh(cloudGeometry, cloudMaterial);
+        cloud.position.set(
+            -70 + Math.random() * 140,
+            10 + Math.random() * 15,
+            -70 + Math.random() * 140
+        );
+        
+        cloud.userData.driftSpeed = 0.01 + Math.random() * 0.02;
+        cloud.userData.driftDirection = new THREE.Vector3(
+            Math.random() - 0.5,
+            0,
+            Math.random() - 0.5
+        ).normalize();
+        
+        scene.add(cloud);
+    }
+}
+
 function createMiningParticles(position, type) {
     const particleCount = 10;
     const particles = new THREE.Group();
@@ -2516,8 +2711,6 @@ function setupControls() {
     });
     
     // Keyboard controls
-    const keys = {};
-    
     document.addEventListener('keydown', (event) => {
         keys[event.key.toLowerCase()] = true;
     });
@@ -2527,10 +2720,10 @@ function setupControls() {
     });
     
     // Update movement in game loop
-    function updateMovement(deltaTime) {
+    window.updatePlayerMovement = function(deltaTime) {
         if (!playerModel) return;
         
-        const speed = 5;
+        const speed = PLAYER_SPEED;
         movementVector.set(0, 0, 0);
         
         // Keyboard movement
@@ -2564,7 +2757,7 @@ function setupControls() {
         
         // Apply gravity
         if (playerModel.position.y > 2) {
-            playerModel.position.y -= 9.8 * deltaTime;
+            playerModel.position.y -= GRAVITY * deltaTime;
         } else {
             playerModel.position.y = 2;
         }
@@ -2583,9 +2776,6 @@ function setupControls() {
             }
         }
     }
-    
-    // Expose movement update
-    window.updatePlayerMovement = updateMovement;
 }
 
 function setupEventListeners() {
@@ -2706,6 +2896,25 @@ function animate() {
             const floatOffset = Math.sin(Date.now() * 0.001 * object.userData.floatSpeed + object.userData.floatPhase) * 0.5;
             object.position.y = object.userData.floatHeight + floatOffset;
         }
+        
+        // Animate drifting clouds
+        if (object.userData && object.userData.driftSpeed) {
+            object.position.add(
+                object.userData.driftDirection.clone().multiplyScalar(object.userData.driftSpeed)
+            );
+            
+            // Wrap around if too far
+            if (object.position.x > 100) object.position.x = -100;
+            if (object.position.x < -100) object.position.x = 100;
+            if (object.position.z > 100) object.position.z = -100;
+            if (object.position.z < -100) object.position.z = 100;
+        }
+        
+        // Animate aurora particles
+        if (object.userData && object.userData.floatSpeed && !object.userData.floatHeight) {
+            const floatOffset = Math.sin(Date.now() * 0.001 * object.userData.floatSpeed + object.userData.floatPhase) * 2;
+            object.position.y += floatOffset * 0.01;
+        }
     });
     
     // Regenerate energy
@@ -2734,25 +2943,43 @@ function animate() {
 // STARTUP FUNCTIONS
 // ======================
 function showLoadingScreen() {
+    console.log("Showing loading screen...");
     document.getElementById('loadingScreen').style.display = 'flex';
     document.getElementById('loginScreen').style.display = 'none';
 }
 
 function hideLoadingScreen() {
+    console.log("Hiding loading screen...");
     document.getElementById('loadingScreen').style.opacity = '0';
     setTimeout(() => {
         document.getElementById('loadingScreen').style.display = 'none';
+        document.getElementById('gameContainer').style.display = 'block';
     }, 500);
 }
 
 function startGame() {
-    showLoadingScreen();
+    console.log("Starting game...");
     
-    const username = document.getElementById('username').value.trim() || "SpaceCommander";
-    const faction = document.getElementById('faction').value;
+    // Get user input
+    const usernameInput = document.getElementById('username');
+    const factionSelect = document.getElementById('faction');
     
+    if (!usernameInput || !factionSelect) {
+        console.error("Could not find username or faction inputs!");
+        showNotification("Error: UI elements not found", "error", 3000);
+        return;
+    }
+    
+    const username = usernameInput.value.trim() || "SpaceCommander";
+    const faction = factionSelect.value;
+    
+    console.log(`Starting as ${username} (${faction})`);
+    
+    // Update game state
     gameState.player.name = username;
     gameState.player.faction = faction;
+    
+    showLoadingScreen();
     
     // Simulate loading
     let progress = 0;
@@ -2760,13 +2987,15 @@ function startGame() {
         progress += Math.random() * 20;
         if (progress > 100) progress = 100;
         
-        document.getElementById('loadingProgress').textContent = `${Math.round(progress)}%`;
+        const loadingProgress = document.getElementById('loadingProgress');
+        if (loadingProgress) {
+            loadingProgress.textContent = `${Math.round(progress)}%`;
+        }
         
         if (progress >= 100) {
             clearInterval(loadingInterval);
             setTimeout(() => {
                 hideLoadingScreen();
-                document.getElementById('gameContainer').style.display = 'block';
                 initGame();
                 showNotification(`Welcome, Commander ${username}!`, "success", 3000);
             }, 500);
@@ -2775,7 +3004,9 @@ function startGame() {
 }
 
 function loadSavedGame() {
+    console.log("Loading saved game...");
     const savedData = localStorage.getItem(SAVE_KEY);
+    
     if (savedData) {
         try {
             const loadedState = JSON.parse(savedData);
@@ -2785,8 +3016,11 @@ function loadSavedGame() {
                 gameState = loadedState;
                 
                 // Update UI elements
-                document.getElementById('username').value = gameState.player.name;
-                document.getElementById('faction').value = gameState.player.faction;
+                const usernameInput = document.getElementById('username');
+                const factionSelect = document.getElementById('faction');
+                
+                if (usernameInput) usernameInput.value = gameState.player.name;
+                if (factionSelect) factionSelect.value = gameState.player.faction;
                 
                 showNotification("Game loaded successfully!", "success", 3000);
                 showNotification(`Welcome back, Commander ${gameState.player.name}!`, "info", 3000);
@@ -2803,6 +3037,7 @@ function loadSavedGame() {
 }
 
 function saveGame() {
+    console.log("Saving game...");
     try {
         gameState.timestamp = Date.now();
         localStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
@@ -2840,20 +3075,9 @@ function mobileInteract() {
 }
 
 // ======================
-// INITIAL LOAD
+// ADDITIONAL FUNCTIONS
 // ======================
-window.addEventListener('load', () => {
-    console.log("Eternal Empire loading...");
-    document.getElementById('loadingScreen').style.display = 'none';
-    document.getElementById('loginScreen').style.display = 'flex';
-    
-    // Try to load saved username
-    loadSavedGame();
-});
 
-// ======================
-// UTILITY FUNCTIONS
-// ======================
 function toggleGraphics() {
     const graphicsMode = document.getElementById('graphicsMode');
     const current = graphicsMode.textContent;
@@ -2884,6 +3108,172 @@ function toggleGraphics() {
     }
 }
 
+function showSettings() {
+    showNotification(`
+    ⚙️ SETTINGS MENU
+    
+    Graphics Quality: ${document.getElementById('graphicsMode').textContent}
+    Sound: ${gameState.settings.sound ? 'ON' : 'OFF'}
+    Music: ${gameState.settings.music ? 'ON' : 'OFF'}
+    Autosave: ${gameState.settings.autosave ? 'ON' : 'OFF'}
+    Notifications: ${gameState.settings.notifications ? 'ON' : 'OFF'}
+    
+    Use the menu to toggle these settings.
+    `, "info", 5000);
+}
+
+function showFactionInfo() {
+    const factionInfo = {
+        explorer: "Explorer Corps: +20% movement speed, find rare resources faster",
+        miner: "Mining Guild: +30% mining speed, bigger resource deposits",
+        warrior: "Warrior Clan: +25% damage, stronger ships and defenses",
+        trader: "Trade Federation: +15% credits, cheaper ship construction"
+    };
+    
+    showNotification(`
+    🏛️ FACTION INFO
+    
+    Current Faction: ${gameState.player.faction.toUpperCase()}
+    ${factionInfo[gameState.player.faction]}
+    
+    Benefits are automatically applied to your gameplay.
+    `, "info", 5000);
+}
+
+function openPlanetView() {
+    showNotification(`
+    🪐 PLANET OVERVIEW
+    
+    Current Planet: ${currentPlanetData.name}
+    ${currentPlanetData.description}
+    
+    Gravity: ${currentPlanetData.gravity} m/s²
+    Atmosphere: ${currentPlanetData.atmosphere}
+    Temperature: ${currentPlanetData.temperature}
+    
+    Features: ${currentPlanetData.features.join(', ')}
+    `, "info", 6000);
+}
+
+function openFleetManager() {
+    const shipCount = Object.values(gameState.ships).reduce((a, b) => a + b, 0);
+    
+    showNotification(`
+    🛸 FLEET MANAGEMENT
+    
+    Total Ships: ${shipCount}
+    
+    Scout Ships: ${gameState.ships.scout}
+    Cargo Ships: ${gameState.ships.cargo}
+    Battle Ships: ${gameState.ships.battle}
+    Mining Ships: ${gameState.ships.mining}
+    Science Ships: ${gameState.ships.science}
+    Carrier Ships: ${gameState.ships.carrier}
+    Mothership: ${gameState.ships.mothership}
+    
+    Visit a Shipyard to construct more ships!
+    `, "info", 7000);
+}
+
+function openDiplomacy() {
+    showNotification(`
+    🤝 DIPLOMACY
+    
+    Relations with other factions:
+    
+    • Explorer Corps: ${gameState.player.faction === 'explorer' ? 'Your Faction' : 'Neutral'}
+    • Mining Guild: ${gameState.player.faction === 'miner' ? 'Your Faction' : 'Neutral'}
+    • Warrior Clan: ${gameState.player.faction === 'warrior' ? 'Your Faction' : 'Neutral'}
+    • Trade Federation: ${gameState.player.faction === 'trader' ? 'Your Faction' : 'Neutral'}
+    
+    Complete missions to improve relations!
+    `, "info", 6000);
+}
+
+// ======================
+// INITIAL LOAD - FIXED
+// ======================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM fully loaded, binding buttons...");
+    
+    // Show login screen immediately
+    document.getElementById('loginScreen').style.display = 'flex';
+    
+    // Make sure loading screen is hidden
+    document.getElementById('loadingScreen').style.display = 'none';
+    
+    // Make sure game container is hidden initially
+    document.getElementById('gameContainer').style.display = 'none';
+    
+    // ======================
+    // BUTTON BINDING
+    // ======================
+    
+    // Login screen buttons
+    document.getElementById('launchButton').addEventListener('click', startGame);
+    document.getElementById('guideButton').addEventListener('click', showGuide);
+    document.getElementById('loadButton').addEventListener('click', loadSavedGame);
+    document.getElementById('factionHelp').addEventListener('click', toggleFactionHelp);
+    
+    // Guide modal buttons
+    document.getElementById('closeGuideBtn').addEventListener('click', hideGuide);
+    
+    // Planet selection buttons
+    document.querySelectorAll('.planet-card').forEach(card => {
+        card.addEventListener('click', function() {
+            selectPlanet(this.getAttribute('data-planet'));
+        });
+    });
+    document.getElementById('startTerraNova').addEventListener('click', function() {
+        selectPlanet('terra_nova');
+    });
+    
+    // Menu system buttons
+    document.getElementById('menuButton').addEventListener('click', toggleMenu);
+    document.getElementById('menuCloseBtn').addEventListener('click', toggleMenu);
+    document.getElementById('menuOverlay').addEventListener('click', toggleMenu);
+    
+    // Menu items
+    document.getElementById('miningModeBtn').addEventListener('click', toggleMiningMode);
+    document.getElementById('travelPlanetBtn').addEventListener('click', openPlanetSelection);
+    document.getElementById('enterShipBtn').addEventListener('click', enterShip);
+    document.getElementById('buildMenuBtn').addEventListener('click', openBuildMenu);
+    document.getElementById('galaxyMapBtn').addEventListener('click', openGalaxyMap);
+    document.getElementById('planetViewBtn').addEventListener('click', openPlanetView);
+    document.getElementById('fleetManagerBtn').addEventListener('click', openFleetManager);
+    document.getElementById('diplomacyBtn').addEventListener('click', openDiplomacy);
+    document.getElementById('saveGameBtn').addEventListener('click', saveGame);
+    document.getElementById('gameGuideBtn').addEventListener('click', showGuide);
+    document.getElementById('graphicsBtn').addEventListener('click', toggleGraphics);
+    document.getElementById('settingsBtn').addEventListener('click', showSettings);
+    document.getElementById('factionInfoBtn').addEventListener('click', showFactionInfo);
+    
+    // Quick action buttons
+    document.getElementById('quickMineBtn').addEventListener('click', quickMine);
+    document.getElementById('quickBuildBtn').addEventListener('click', quickBuild);
+    document.getElementById('quickTravelBtn').addEventListener('click', openPlanetSelection);
+    document.getElementById('quickShipBtn').addEventListener('click', quickShip);
+    document.getElementById('quickSaveBtn').addEventListener('click', quickSave);
+    
+    // Mobile control buttons
+    document.getElementById('jumpButton').addEventListener('touchstart', mobileJump);
+    document.getElementById('mineButton').addEventListener('touchstart', mobileMine);
+    document.getElementById('actionButton').addEventListener('touchstart', mobileAction);
+    document.getElementById('interactButton').addEventListener('touchstart', mobileInteract);
+    
+    // Also add click events for desktop testing
+    document.getElementById('jumpButton').addEventListener('click', mobileJump);
+    document.getElementById('mineButton').addEventListener('click', mobileMine);
+    document.getElementById('actionButton').addEventListener('click', mobileAction);
+    document.getElementById('interactButton').addEventListener('click', mobileInteract);
+    
+    // Try to load saved username
+    loadSavedGame();
+    
+    console.log("All buttons bound successfully!");
+    console.log("Game ready to play!");
+});
+
 // ======================
 // DEBUG / DEVELOPMENT
 // ======================
@@ -2910,9 +3300,80 @@ window.addEventListener('keydown', (e) => {
         console.log("Resource Nodes:", resourceNodes.length);
         console.log("FPS:", Math.round(1/clock.getDelta()));
     }
+    
+    // F2 to add resources (debug)
+    if (e.key === 'F2') {
+        e.preventDefault();
+        gameState.resources.iron += 100;
+        gameState.resources.credits += 500;
+        gameState.resources.energy = 100;
+        updateUI();
+        showNotification("DEBUG: Added 100 Iron, 500 Credits", "success", 2000);
+    }
+    
+    // F3 to level up (debug)
+    if (e.key === 'F3') {
+        e.preventDefault();
+        gameState.player.experience = gameState.player.level * LEVEL_EXP_REQUIREMENT;
+        checkLevelUp();
+    }
+    
+    // F4 to unlock all planets (debug)
+    if (e.key === 'F4') {
+        e.preventDefault();
+        gameState.unlockedPlanets = Object.keys(PLANETS);
+        showNotification("DEBUG: All planets unlocked!", "success", 2000);
+    }
 });
 
+// ======================
+// GLOBAL EXPORT
+// ======================
+// Make sure all functions are globally accessible
+window.startGame = startGame;
+window.showGuide = showGuide;
+window.hideGuide = hideGuide;
+window.loadSavedGame = loadSavedGame;
+window.saveGame = saveGame;
+window.openPlanetSelection = openPlanetSelection;
+window.closePlanetSelection = closePlanetSelection;
+window.selectPlanet = selectPlanet;
+window.toggleMiningMode = toggleMiningMode;
+window.toggleMenu = toggleMenu;
+window.enterShip = enterShip;
+window.openBuildMenu = openBuildMenu;
+window.openGalaxyMap = openGalaxyMap;
+window.openPlanetView = openPlanetView;
+window.openFleetManager = openFleetManager;
+window.openDiplomacy = openDiplomacy;
+window.quickMine = quickMine;
+window.quickBuild = quickBuild;
+window.quickShip = quickShip;
+window.quickSave = quickSave;
+window.toggleFactionHelp = toggleFactionHelp;
+window.mobileJump = mobileJump;
+window.mobileMine = mobileMine;
+window.mobileAction = mobileAction;
+window.mobileInteract = mobileInteract;
+window.toggleGraphics = toggleGraphics;
+window.showSettings = showSettings;
+window.showFactionInfo = showFactionInfo;
+window.mineResource = mineResource;
+window.checkLevelUp = checkLevelUp;
+window.updateUI = updateUI;
+window.showNotification = showNotification;
+
 console.log("Eternal Empire - Realistic Edition v" + GAME_VERSION + " loaded!");
+console.log("Total lines of code: ~2900+ lines");
+console.log("Game features:");
+console.log("- 4 unique planets with different environments");
+console.log("- Realistic human astronaut character");
+console.log("- Resource mining and collection system");
+console.log("- Planet travel system");
+console.log("- Level progression system");
+console.log("- Save/load functionality");
+console.log("- Mobile and desktop controls");
+console.log("- 3D graphics with Three.js");
 </script>
 </body>
 </html>
