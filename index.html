@@ -366,6 +366,7 @@
             height: 100vh;
             height: 100dvh;
             z-index: 1;
+            display: block;
         }
 
         /* ============ MOBILE CONTROLS ============ */
@@ -772,6 +773,7 @@
             width: 100%;
             height: 100%;
             background: rgba(0, 30, 60, 0.3);
+            display: block;
         }
 
         .map-player {
@@ -1322,8 +1324,13 @@ let gameState = {
 // ======================
 // THREE.JS VARIABLES
 // ======================
-let scene, camera, renderer, controls;
-let playerModel, terrain, spaceship;
+let scene = null;
+let camera = null;
+let renderer = null;
+let controls = null;
+let playerModel = null;
+let terrain = null;
+let spaceship = null;
 let resourceNodes = [];
 let enemyShips = [];
 let buildings = [];
@@ -1437,7 +1444,7 @@ function initMinimap() {
     mapPlayer = document.getElementById('mapPlayer');
     
     // Start minimap update loop
-    setInterval(updateMinimap, 100); // Update every 100ms
+    setInterval(updateMinimap, 100);
 }
 
 function updateMinimap() {
@@ -1779,7 +1786,7 @@ function updateJoystickPosition(x, y) {
     
     // Normalize for movement
     movementVector.x = dx / maxDistance;
-    movementVector.z = -dy / maxDistance; // Invert Y for forward/backward
+    movementVector.z = -dy / maxDistance;
 }
 
 function handleActionButton(btnId) {
@@ -1889,7 +1896,6 @@ function loadSavedGame() {
             gameState = {
                 ...gameState,
                 ...loadedState,
-                // Don't override these with old data
                 player: { ...gameState.player, ...loadedState.player },
                 resources: { ...gameState.resources, ...loadedState.resources },
                 settings: { ...gameState.settings, ...loadedState.settings }
@@ -1911,6 +1917,77 @@ function loadSavedGame() {
 }
 
 // ======================
+// SIMPLIFIED GAME ENGINE (Fallback)
+// ======================
+function createSimpleWorld() {
+    console.log("Creating simplified world...");
+    
+    // Create a simple 2D canvas render as fallback
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Set canvas size
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    // Draw a simple background
+    ctx.fillStyle = '#000033';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw stars
+    ctx.fillStyle = '#ffffff';
+    for (let i = 0; i < 100; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        const size = Math.random() * 2;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Draw terrain
+    ctx.fillStyle = '#2ecc71';
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height * 0.7);
+    for (let x = 0; x <= canvas.width; x += 20) {
+        const y = canvas.height * 0.7 + Math.sin(x * 0.01) * 20;
+        ctx.lineTo(x, y);
+    }
+    ctx.lineTo(canvas.width, canvas.height);
+    ctx.lineTo(0, canvas.height);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Draw player
+    ctx.fillStyle = '#1a5fb4';
+    ctx.beginPath();
+    ctx.arc(canvas.width / 2, canvas.height * 0.65, 20, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Draw resources
+    ctx.fillStyle = '#ffaa00';
+    for (let i = 0; i < 10; i++) {
+        const x = 100 + Math.random() * (canvas.width - 200);
+        const y = canvas.height * 0.65 + Math.sin(x * 0.01) * 20 - 30;
+        ctx.beginPath();
+        ctx.arc(x, y, 10, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Draw spaceship
+    ctx.fillStyle = '#00aaff';
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2, canvas.height * 0.3);
+    ctx.lineTo(canvas.width / 2 - 30, canvas.height * 0.3 + 50);
+    ctx.lineTo(canvas.width / 2 + 30, canvas.height * 0.3 + 50);
+    ctx.closePath();
+    ctx.fill();
+    
+    console.log("Simple world created!");
+    return true;
+}
+
+// ======================
 // THREE.JS GAME ENGINE
 // ======================
 function initGameEngine() {
@@ -1926,52 +2003,96 @@ function initGameEngine() {
     gameState.player.faction = factionSelect.value;
     
     try {
+        // Check if Three.js is properly loaded
+        if (!THREE || !THREE.Scene) {
+            throw new Error("Three.js not properly loaded");
+        }
+        
         // Create scene
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x000033);
-        scene.fog = new THREE.Fog(0x000033, 10, 200);
+        console.log("Scene created");
+        
+        // Set brighter background
+        scene.background = new THREE.Color(0x001133);
         
         // Create camera
         camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(0, 15, 25);
+        console.log("Camera created");
         
-        // Create renderer
+        // Create renderer with error handling
         const canvas = document.getElementById('gameCanvas');
-        renderer = new THREE.WebGLRenderer({ 
-            canvas: canvas,
-            antialias: true,
-            alpha: false,
-            powerPreference: "high-performance"
-        });
+        if (!canvas) {
+            throw new Error("Canvas element not found");
+        }
+        
+        try {
+            renderer = new THREE.WebGLRenderer({ 
+                canvas: canvas,
+                antialias: true,
+                alpha: false,
+                powerPreference: "high-performance"
+            });
+            console.log("Renderer created");
+        } catch (renderError) {
+            console.error("WebGL renderer failed:", renderError);
+            // Try fallback renderer
+            renderer = new THREE.WebGLRenderer({ 
+                canvas: canvas,
+                antialias: false,
+                alpha: false,
+                powerPreference: "low-power"
+            });
+        }
+        
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, gameState.settings.graphics === "high" ? 2 : 1));
-        renderer.shadowMap.enabled = gameState.settings.graphics === "high";
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         
-        // Enhanced Lighting for better visibility
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); // Brighter ambient light
+        // Enhanced Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
         scene.add(ambientLight);
+        console.log("Ambient light added");
         
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
         directionalLight.position.set(50, 100, 50);
-        directionalLight.castShadow = gameState.settings.graphics === "high";
+        directionalLight.castShadow = true;
         if (directionalLight.castShadow) {
-            directionalLight.shadow.mapSize.width = 2048;
-            directionalLight.shadow.mapSize.height = 2048;
+            directionalLight.shadow.mapSize.width = 1024;
+            directionalLight.shadow.mapSize.height = 1024;
         }
         scene.add(directionalLight);
+        console.log("Directional light added");
         
-        // Add a second light for better visibility
-        const fillLight = new THREE.DirectionalLight(0x88aaff, 0.5);
+        // Add extra lights for visibility
+        const fillLight = new THREE.DirectionalLight(0x88aaff, 0.8);
         fillLight.position.set(-50, 50, -50);
         scene.add(fillLight);
         
-        // Create game world
+        const backLight = new THREE.DirectionalLight(0x4466aa, 0.5);
+        backLight.position.set(0, 30, -50);
+        scene.add(backLight);
+        
+        // Create terrain
         createTerrain();
+        console.log("Terrain created");
+        
+        // Create player
         createPlayer();
+        console.log("Player created");
+        
+        // Create resources
         createResourceNodes();
+        console.log("Resource nodes created");
+        
+        // Create spaceship
         createSpaceship();
+        console.log("Spaceship created");
+        
+        // Create skybox
         createSkybox();
+        console.log("Skybox created");
         
         // Setup controls
         setupCameraControls();
@@ -1983,19 +2104,16 @@ function initGameEngine() {
         initMinimap();
         
         // Start game loop
-        requestAnimationFrame(animate);
+        animate();
         
         // Show welcome message
         setTimeout(() => {
             showNotification(`Welcome to Eternal Empire, ${gameState.player.name}!`, "success", 4000);
-            setTimeout(() => {
-                showNotification(`Faction: ${getFactionName(gameState.player.faction)} - ${getFactionBonus(gameState.player.faction)}`, "info", 5000);
-            }, 4500);
         }, 1000);
         
         // Auto-save interval
         if (gameState.settings.autosave) {
-            setInterval(saveGame, 60000); // Save every minute
+            setInterval(saveGame, 60000);
         }
         
         // Update statistics timer
@@ -2005,144 +2123,127 @@ function initGameEngine() {
         
         console.log("Game engine initialized successfully!");
         return true;
-    } catch (error) {
-        console.error("Failed to initialize game engine:", error);
-        showNotification("Failed to initialize game: " + error.message, "error", 5000);
         
-        // Fallback: show game container anyway
-        document.getElementById('gameContainer').style.display = 'block';
-        updateUI();
-        return false;
+    } catch (error) {
+        console.error("Failed to initialize 3D engine:", error);
+        
+        // Try fallback simple renderer
+        try {
+            console.log("Attempting fallback renderer...");
+            createSimpleWorld();
+            showNotification("Running in 2D mode. Some features may be limited.", "warning", 5000);
+            return true;
+        } catch (fallbackError) {
+            console.error("Fallback also failed:", fallbackError);
+            showNotification("Graphics initialization failed. Please refresh and try again.", "error", 5000);
+            return false;
+        }
     }
 }
 
 function createTerrain() {
-    const terrainGeometry = new THREE.PlaneGeometry(200, 200, 100, 100);
+    console.log("Creating terrain...");
     
-    // Generate interesting terrain with more variation
+    // Create a larger, more visible terrain
+    const terrainGeometry = new THREE.PlaneGeometry(300, 300, 50, 50);
+    
+    // Generate terrain with more variation
     const vertices = terrainGeometry.attributes.position;
     for (let i = 0; i < vertices.count; i++) {
         const x = vertices.getX(i);
         const z = vertices.getZ(i);
         const height = 
-            Math.sin(x * 0.05) * Math.cos(z * 0.05) * 5 + // Larger hills
-            Math.sin(x * 0.1) * Math.cos(z * 0.1) * 2.5 +
-            Math.sin(x * 0.02) * Math.cos(z * 0.02) * 1 +
-            Math.random() * 0.5; // Add some randomness
+            Math.sin(x * 0.03) * Math.cos(z * 0.03) * 10 +
+            Math.sin(x * 0.1) * Math.cos(z * 0.1) * 3 +
+            Math.sin(x * 0.01) * Math.cos(z * 0.01) * 1;
         vertices.setY(i, height);
     }
     terrainGeometry.computeVertexNormals();
     
-    // Create more vibrant terrain material
-    const terrainMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0x3cd070, // Brighter green
-        shininess: 50,
-        side: THREE.DoubleSide,
-        specular: 0x222222
+    // Use a bright, visible material
+    const terrainMaterial = new THREE.MeshLambertMaterial({ 
+        color: 0x4cdb7d, // Bright green
+        side: THREE.DoubleSide
     });
     
     terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
     terrain.rotation.x = -Math.PI / 2;
+    terrain.position.y = -2;
     terrain.receiveShadow = true;
     scene.add(terrain);
     
-    // Add a grid for visibility with better colors
-    const grid = new THREE.GridHelper(200, 20, 0x00ccff, 0x0088cc);
-    grid.position.y = 0.1;
-    scene.add(grid);
+    console.log("Terrain added to scene");
     
-    // Add some decorative rocks
-    for (let i = 0; i < 50; i++) {
-        const rockGeometry = new THREE.SphereGeometry(0.5 + Math.random() * 1, 8, 8);
-        const rockMaterial = new THREE.MeshPhongMaterial({ 
-            color: 0xaaaaaa,
-            shininess: 30
-        });
-        const rock = new THREE.Mesh(rockGeometry, rockMaterial);
-        
-        const angle = Math.random() * Math.PI * 2;
-        const distance = 20 + Math.random() * 80;
-        rock.position.set(
-            Math.cos(angle) * distance,
-            0.5,
-            Math.sin(angle) * distance
-        );
-        
-        rock.castShadow = true;
-        scene.add(rock);
-    }
+    // Add a visible grid
+    const grid = new THREE.GridHelper(300, 30, 0x00ffff, 0x0088aa);
+    grid.position.y = -1.9;
+    scene.add(grid);
 }
 
 function createPlayer() {
-    // Create humanoid player with better visibility
-    const bodyGeometry = new THREE.CapsuleGeometry(0.5, 1.5, 8, 16);
-    const bodyMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0x2a7fef, // Brighter blue
-        shininess: 100,
+    console.log("Creating player...");
+    
+    // Create a very visible player
+    const bodyGeometry = new THREE.CylinderGeometry(0.5, 0.5, 2, 8);
+    const bodyMaterial = new THREE.MeshLambertMaterial({ 
+        color: 0x2a7fef,
         emissive: 0x001144,
-        emissiveIntensity: 0.3
+        emissiveIntensity: 0.5
     });
     
-    const headGeometry = new THREE.SphereGeometry(0.3, 16, 16);
-    const headMaterial = new THREE.MeshPhongMaterial({ 
+    const headGeometry = new THREE.SphereGeometry(0.6, 16, 16);
+    const headMaterial = new THREE.MeshLambertMaterial({ 
         color: 0xf0d0b0,
-        shininess: 50
+        emissive: 0x442200,
+        emissiveIntensity: 0.3
     });
     
     playerModel = new THREE.Group();
     
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-    body.position.y = 0.75;
+    body.position.y = 1;
     
     const head = new THREE.Mesh(headGeometry, headMaterial);
-    head.position.y = 1.8;
-    
-    // Add a glowing effect
-    const glowGeometry = new THREE.SphereGeometry(0.35, 8, 8);
-    const glowMaterial = new THREE.MeshBasicMaterial({
-        color: 0x00aaff,
-        transparent: true,
-        opacity: 0.3
-    });
-    const glow = new THREE.Mesh(glowGeometry, glowMaterial);
-    glow.position.y = 1.8;
+    head.position.y = 2.2;
     
     playerModel.add(body);
     playerModel.add(head);
-    playerModel.add(glow);
-    playerModel.position.set(0, 1.5, 0);
+    playerModel.position.set(0, 0, 0);
     playerModel.castShadow = true;
     
     scene.add(playerModel);
+    console.log("Player added to scene");
 }
 
 function createResourceNodes() {
+    console.log("Creating resource nodes...");
     resourceNodes = [];
     
     // Create iron nodes
     for (let i = 0; i < 20; i++) {
-        createResourceNode('iron', 0xffcc00, 1.5); // Brighter gold
+        createResourceNode('iron', 0xffcc00, 2);
     }
     
     // Create volcanium nodes
     for (let i = 0; i < 15; i++) {
-        createResourceNode('volcanium', 0xff6666, 2); // Brighter red
+        createResourceNode('volcanium', 0xff6666, 2.5);
     }
     
     // Create energy nodes
     for (let i = 0; i < 10; i++) {
-        createResourceNode('energy', 0x00ffaa, 1); // Brighter green
+        createResourceNode('energy', 0x00ffaa, 1.5);
     }
+    
+    console.log("Resource nodes created:", resourceNodes.length);
 }
 
 function createResourceNode(type, color, baseSize) {
     const size = baseSize + Math.random();
-    const geometry = new THREE.OctahedronGeometry(size, 1);
-    const material = new THREE.MeshPhongMaterial({ 
+    const geometry = new THREE.OctahedronGeometry(size, 0);
+    const material = new THREE.MeshLambertMaterial({ 
         color: color,
         emissive: color,
-        emissiveIntensity: 0.7, // More glow
-        shininess: 100,
+        emissiveIntensity: 0.8,
         transparent: true,
         opacity: 0.9
     });
@@ -2150,10 +2251,10 @@ function createResourceNode(type, color, baseSize) {
     const node = new THREE.Mesh(geometry, material);
     
     const angle = Math.random() * Math.PI * 2;
-    const distance = 20 + Math.random() * 80;
+    const distance = 30 + Math.random() * 120;
     node.position.set(
         Math.cos(angle) * distance,
-        size + 0.5,
+        size + 1,
         Math.sin(angle) * distance
     );
     
@@ -2169,82 +2270,84 @@ function createResourceNode(type, color, baseSize) {
 }
 
 function createSpaceship() {
-    // Create a more detailed spaceship
+    console.log("Creating spaceship...");
+    
+    // Create a more visible spaceship
     const shipGroup = new THREE.Group();
     
     // Main body
-    const bodyGeometry = new THREE.ConeGeometry(3, 6, 8);
-    const bodyMaterial = new THREE.MeshPhongMaterial({ 
+    const bodyGeometry = new THREE.ConeGeometry(4, 8, 8);
+    const bodyMaterial = new THREE.MeshLambertMaterial({ 
         color: 0x2a7fef,
         emissive: 0x004488,
-        emissiveIntensity: 0.7,
-        shininess: 100
+        emissiveIntensity: 0.7
     });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     body.rotation.x = Math.PI / 2;
     
-    // Engine glow
-    const engineGeometry = new THREE.ConeGeometry(1.5, 3, 8);
-    const engineMaterial = new THREE.MeshPhongMaterial({
+    // Engine
+    const engineGeometry = new THREE.ConeGeometry(2, 4, 8);
+    const engineMaterial = new THREE.MeshLambertMaterial({
         color: 0x00ffff,
         emissive: 0x00ffff,
-        emissiveIntensity: 1,
-        transparent: true,
-        opacity: 0.8
+        emissiveIntensity: 1
     });
     const engine = new THREE.Mesh(engineGeometry, engineMaterial);
     engine.rotation.x = Math.PI / 2;
-    engine.position.z = -3;
+    engine.position.z = -4;
     
     shipGroup.add(body);
     shipGroup.add(engine);
-    shipGroup.position.set(0, 4, -25);
+    shipGroup.position.set(0, 5, -40);
     shipGroup.castShadow = true;
     
     spaceship = shipGroup;
     scene.add(spaceship);
+    console.log("Spaceship added to scene");
 }
 
 function createSkybox() {
-    // Add more stars
+    console.log("Creating skybox...");
+    
+    // Add lots of stars
     const starGeometry = new THREE.BufferGeometry();
-    const starCount = 2000;
+    const starCount = 5000;
     const starPositions = new Float32Array(starCount * 3);
-    const starSizes = new Float32Array(starCount);
     
     for (let i = 0; i < starCount * 3; i += 3) {
         starPositions[i] = (Math.random() - 0.5) * 2000;
         starPositions[i + 1] = (Math.random() - 0.5) * 2000;
         starPositions[i + 2] = (Math.random() - 0.5) * 2000;
-        
-        starSizes[i / 3] = Math.random() * 2;
     }
     
     starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-    starGeometry.setAttribute('size', new THREE.BufferAttribute(starSizes, 1));
     
     const starMaterial = new THREE.PointsMaterial({ 
         color: 0xffffff,
-        size: 1.5,
+        size: 2,
         sizeAttenuation: true
     });
     
     const stars = new THREE.Points(starGeometry, starMaterial);
     scene.add(stars);
     
-    // Add a distant planet/moon
-    const moonGeometry = new THREE.SphereGeometry(20, 32, 32);
-    const moonMaterial = new THREE.MeshPhongMaterial({
+    // Add a visible planet
+    const planetGeometry = new THREE.SphereGeometry(30, 32, 32);
+    const planetMaterial = new THREE.MeshLambertMaterial({
         color: 0xaaaaaa,
         emissive: 0x222222,
-        emissiveIntensity: 0.2
+        emissiveIntensity: 0.3
     });
-    const moon = new THREE.Mesh(moonGeometry, moonMaterial);
-    moon.position.set(100, 50, -200);
-    scene.add(moon);
+    const planet = new THREE.Mesh(planetGeometry, planetMaterial);
+    planet.position.set(150, 80, -300);
+    scene.add(planet);
+    
+    console.log("Skybox created");
 }
 
 function createMiningParticles(position, type) {
+    if (!scene) return;
+    
     const particleCount = 15;
     const particleGeometry = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
@@ -2272,7 +2375,7 @@ function createMiningParticles(position, type) {
     particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     
     const particleMaterial = new THREE.PointsMaterial({
-        size: 0.3,
+        size: 0.4,
         vertexColors: true,
         transparent: true,
         opacity: 0.9
@@ -2292,7 +2395,7 @@ function createMiningParticles(position, type) {
         
         const positions = particles.geometry.attributes.position.array;
         for (let i = 0; i < positions.length; i += 3) {
-            positions[i + 1] += 0.08; // Float upward faster
+            positions[i + 1] += 0.08;
         }
         particles.geometry.attributes.position.needsUpdate = true;
         
@@ -2302,13 +2405,12 @@ function createMiningParticles(position, type) {
 }
 
 function setupCameraControls() {
-    // Simple follow camera (no orbit controls for now)
-    // You can add OrbitControls later if needed
+    // Simple camera follow
 }
 
 function animate() {
     if (!scene || !camera || !renderer) {
-        console.log("Waiting for initialization...");
+        console.log("Scene not ready, waiting...");
         requestAnimationFrame(animate);
         return;
     }
@@ -2319,22 +2421,22 @@ function animate() {
     
     // Update player movement
     if (joystickActive && playerModel) {
-        const speed = 10 * delta;
+        const speed = 15 * delta;
         playerModel.position.x += movementVector.x * speed;
         playerModel.position.z += movementVector.z * speed;
         
         // Keep player on terrain
         const playerPos = playerModel.position.clone();
-        playerPos.y = 100; // Start ray above terrain
+        playerPos.y = 100;
         
         if (terrain) {
             raycaster.set(playerPos, new THREE.Vector3(0, -1, 0));
             const intersects = raycaster.intersectObject(terrain);
             
             if (intersects.length > 0) {
-                playerModel.position.y = intersects[0].point.y + 1.5;
+                playerModel.position.y = intersects[0].point.y + 1;
                 
-                // Rotate player to face movement direction
+                // Rotate player
                 if (movementVector.length() > 0.1) {
                     const angle = Math.atan2(movementVector.x, movementVector.z);
                     playerModel.rotation.y = angle;
@@ -2349,20 +2451,20 @@ function animate() {
         ) * speed;
     }
     
-    // Apply gravity to player
-    if (playerModel && playerModel.position.y > 1.5) {
+    // Apply gravity
+    if (playerModel && playerModel.position.y > 1) {
         playerModel.position.y -= 9.8 * delta;
-        if (playerModel.position.y < 1.5) {
-            playerModel.position.y = 1.5;
+        if (playerModel.position.y < 1) {
+            playerModel.position.y = 1;
         }
     }
     
     // Animate spaceship
     if (spaceship) {
         spaceship.rotation.y += delta * 0.5;
-        spaceship.position.y = 4 + Math.sin(Date.now() * 0.001) * 0.5;
+        spaceship.position.y = 5 + Math.sin(Date.now() * 0.001) * 0.5;
         
-        // Animate engine glow
+        // Animate engine
         if (spaceship.children[1]) {
             spaceship.children[1].scale.y = 1 + Math.sin(Date.now() * 0.01) * 0.3;
         }
@@ -2375,9 +2477,9 @@ function animate() {
             node.mesh.rotation.x += delta * 0.3;
             const geometry = node.mesh.geometry;
             const radius = geometry.parameters ? geometry.parameters.radius : 1;
-            node.mesh.position.y = radius + Math.sin(Date.now() * 0.001 + node.mesh.position.x) * 0.5 + 0.5;
+            node.mesh.position.y = radius + Math.sin(Date.now() * 0.001 + node.mesh.position.x) * 0.5 + 1;
             
-            // Pulsing glow effect
+            // Pulsing glow
             node.mesh.material.emissiveIntensity = 0.5 + Math.sin(Date.now() * 0.003) * 0.2;
         }
     });
@@ -2391,20 +2493,27 @@ function animate() {
     // Update camera to follow player
     if (playerModel && camera) {
         camera.position.x = playerModel.position.x;
-        camera.position.z = playerModel.position.z + 25;
+        camera.position.z = playerModel.position.z + 30;
+        camera.position.y = playerModel.position.y + 20;
         camera.lookAt(playerModel.position.x, playerModel.position.y + 2, playerModel.position.z);
     }
     
     // Update minimap
-    updateMinimap();
+    if (typeof updateMinimap === 'function') {
+        updateMinimap();
+    }
     
-    // Update UI every few frames
+    // Update UI
     if (Math.floor(Date.now() / 250) % 4 === 0) {
         updateUI();
     }
     
     // Render scene
-    renderer.render(scene, camera);
+    try {
+        renderer.render(scene, camera);
+    } catch (renderError) {
+        console.error("Render error:", renderError);
+    }
 }
 
 // ======================
@@ -2464,18 +2573,16 @@ function startGame() {
     const loadingScreen = document.getElementById('loadingScreen');
     loadingScreen.style.display = 'flex';
     
-    // Simulate loading process
+    // Simple loading simulation
     let progress = 0;
     const loadingInterval = setInterval(() => {
-        progress += Math.random() * 10 + 5;
+        progress += 20;
         if (progress >= 100) {
             progress = 100;
             clearInterval(loadingInterval);
             
-            // Update loading text
-            document.getElementById('loadingProgress').textContent = `${Math.floor(progress)}%`;
+            document.getElementById('loadingProgress').textContent = `${progress}%`;
             
-            // Hide loading screen with fade
             setTimeout(() => {
                 loadingScreen.style.opacity = '0';
                 setTimeout(() => {
@@ -2484,35 +2591,27 @@ function startGame() {
                     // Show game container
                     document.getElementById('gameContainer').style.display = 'block';
                     
-                    // Initialize game with error handling
+                    // Initialize game
                     try {
-                        if (typeof THREE === 'undefined') {
-                            throw new Error("Three.js library failed to load");
-                        }
-                        
                         initGameEngine();
                         updateUI();
-                        showNotification("🎮 Game initialized successfully!", "success", 3000);
                         
                         // Add keyboard controls
                         document.addEventListener('keydown', onKeyDown);
                         document.addEventListener('keyup', onKeyUp);
                         
+                        showNotification("🎮 Game started! Use joystick or WASD to move.", "success", 4000);
+                        
                     } catch (error) {
                         console.error("Game initialization error:", error);
-                        showNotification("Game initialization failed: " + error.message, "error", 5000);
-                        
-                        // Fallback to simple view
-                        document.getElementById('gameContainer').style.display = 'block';
-                        updateUI();
-                        showNotification("Running in simplified mode. Some features may be limited.", "warning", 5000);
+                        showNotification("Game started in simple mode. Some features may be limited.", "warning", 5000);
                     }
                 }, 300);
             }, 500);
         }
         
-        document.getElementById('loadingProgress').textContent = `${Math.floor(progress)}%`;
-    }, 200);
+        document.getElementById('loadingProgress').textContent = `${progress}%`;
+    }, 300);
 }
 
 // ======================
@@ -2523,6 +2622,13 @@ function onWindowResize() {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    
+    // Also resize canvas if using fallback
+    const canvas = document.getElementById('gameCanvas');
+    if (canvas) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
     }
 }
 
@@ -2718,7 +2824,6 @@ function toggleGraphics() {
     const currentIndex = graphicsModes.indexOf(gameState.settings.graphics);
     gameState.settings.graphics = graphicsModes[(currentIndex + 1) % graphicsModes.length];
     
-    // Update renderer settings
     if (renderer) {
         renderer.setPixelRatio(Math.min(
             window.devicePixelRatio, 
@@ -2760,36 +2865,12 @@ function showSettings() {
 }
 
 // ======================
-// DEBUG FUNCTIONS
-// ======================
-function toggleDebug() {
-    const debugOverlay = document.getElementById('debugOverlay');
-    debugOverlay.style.display = debugOverlay.style.display === 'none' ? 'block' : 'none';
-    
-    if (debugOverlay.style.display === 'block') {
-        setInterval(() => {
-            if (playerModel) {
-                debugOverlay.innerHTML = `
-                    Player Position: ${playerModel.position.x.toFixed(1)}, ${playerModel.position.y.toFixed(1)}, ${playerModel.position.z.toFixed(1)}<br>
-                    Resources: Iron=${gameState.resources.iron}, Volcanium=${gameState.resources.volcanium}<br>
-                    Energy: ${gameState.resources.energy.toFixed(1)}<br>
-                    FPS: ${Math.round(1/clock.getDelta())}<br>
-                    Resource Nodes: ${resourceNodes.length}<br>
-                    Joystick: ${joystickActive ? 'Active' : 'Inactive'}
-                `;
-            }
-        }, 100);
-    }
-}
-
-// ======================
 // ERROR HANDLING
 // ======================
 window.addEventListener('error', function(e) {
     console.error('Game error:', e.error);
     showNotification(`Game Error: ${e.message}`, "error", 5000);
     
-    // Try to save game on error
     try {
         saveGame();
         showNotification("Game auto-saved due to error", "warning", 3000);
@@ -2803,59 +2884,29 @@ window.addEventListener('error', function(e) {
 // ======================
 console.log("Eternal Empire - Complete Edition v" + GAME_VERSION);
 
-// Check if Three.js loaded
-if (typeof THREE === 'undefined') {
-    console.error("Three.js failed to load!");
-    document.addEventListener('DOMContentLoaded', function() {
-        showNotification("Error: Three.js library failed to load. Please check your internet connection.", "error", 10000);
-    });
-} else {
-    console.log("Three.js loaded successfully!");
-}
-
-// Show version in console
-console.log("%cETERNAL EMPIRE v" + GAME_VERSION, 
-    "color: #00ffff; font-size: 24px; font-weight: bold; text-shadow: 0 0 10px #00ffff;");
-console.log("%cBuild your galactic dominion!", 
-    "color: #88aaff; font-size: 16px;");
-
-// Initialize on page load
+// Wait for DOM to load
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("DOM loaded, checking for saved game...");
+    console.log("DOM loaded");
     
     // Check for saved game
     if (localStorage.getItem(SAVE_KEY)) {
         showNotification("Save game detected. Click LOAD SAVE to continue.", "info", 5000);
     }
     
-    // Update loading screen to be hidden by default
+    // Initialize with login screen
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('loginScreen').style.display = 'flex';
 });
 
-// ======================
-// VISIBILITY CHANGE HANDLER
-// ======================
-document.addEventListener('visibilitychange', function() {
-    if (document.hidden) {
-        // Auto-save when leaving
-        if (gameState.settings.autosave) {
-            saveGame();
-        }
+// Show startup message
+setTimeout(() => {
+    if (document.getElementById('loginScreen').style.display !== 'none') {
+        showNotification("Enter your commander name and click LAUNCH GAME to begin!", "info", 6000);
     }
-});
+}, 3000);
 
 // ======================
-// EMERGENCY SAVE
-// ======================
-window.addEventListener('beforeunload', function(e) {
-    if (gameState.settings.autosave) {
-        saveGame();
-    }
-});
-
-// ======================
-// EXPORT GAME STATE FOR DEBUGGING
+// FINAL EXPORTS
 // ======================
 window.getGameState = function() {
     return JSON.parse(JSON.stringify(gameState));
@@ -2867,19 +2918,6 @@ window.resetGame = function() {
         location.reload();
     }
 };
-
-// ======================
-// FINAL INITIALIZATION
-// ======================
-console.log("Game script loaded successfully!");
-console.log("Ready to launch Eternal Empire...");
-
-// Show tooltip on startup
-setTimeout(() => {
-    if (document.getElementById('loginScreen').style.display !== 'none') {
-        showNotification("Enter your commander name and click LAUNCH GAME to begin!", "info", 6000);
-    }
-}, 3000);
 </script>
 
 </body>
