@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eternal Empire - Phase 1</title>
+    <title>Eternal Empire - Realistic Space Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         /* ============ RESET ============ */
@@ -30,13 +30,12 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: linear-gradient(135deg, #000011 0%, #001122 100%);
+            background: #000;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            transition: opacity 1s ease;
         }
 
         .loading-spinner {
@@ -53,7 +52,6 @@
             color: #00ffff;
             font-size: 20px;
             font-weight: bold;
-            margin-bottom: 10px;
             text-shadow: 0 0 10px #00ffff;
         }
 
@@ -70,17 +68,18 @@
             align-items: center;
             z-index: 900;
             opacity: 0;
-            animation: fadeIn 1s ease forwards 0.5s;
+            animation: fadeIn 1s ease forwards;
         }
 
         .login-container {
             width: 90%;
             max-width: 400px;
-            background: rgba(0, 20, 40, 0.95);
+            background: rgba(0, 0, 0, 0.8);
             border-radius: 20px;
-            border: 3px solid #00aaff;
+            border: 2px solid #00aaff;
             padding: 30px;
-            box-shadow: 0 0 40px rgba(0, 170, 255, 0.5);
+            box-shadow: 0 0 50px rgba(0, 170, 255, 0.3),
+                        inset 0 0 20px rgba(0, 170, 255, 0.1);
             backdrop-filter: blur(10px);
         }
 
@@ -91,7 +90,8 @@
             text-align: center;
             margin-bottom: 10px;
             text-shadow: 0 0 15px #00ffff;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
+            font-family: 'Courier New', monospace;
         }
 
         .game-subtitle {
@@ -99,6 +99,7 @@
             text-align: center;
             margin-bottom: 30px;
             font-size: 14px;
+            letter-spacing: 1px;
         }
 
         .input-group {
@@ -111,23 +112,27 @@
             margin-bottom: 8px;
             font-size: 16px;
             font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .login-input {
             width: 100%;
             padding: 15px;
-            background: rgba(0, 30, 60, 0.7);
-            border: 2px solid #0088ff;
-            border-radius: 10px;
+            background: rgba(0, 30, 60, 0.3);
+            border: 1px solid #0088ff;
+            border-radius: 8px;
             color: white;
             font-size: 16px;
             transition: all 0.3s;
+            font-family: 'Courier New', monospace;
         }
 
         .login-input:focus {
             outline: none;
             border-color: #00ffff;
             box-shadow: 0 0 15px #00ffff;
+            background: rgba(0, 40, 80, 0.5);
         }
 
         .login-btn {
@@ -140,13 +145,17 @@
             font-size: 18px;
             font-weight: bold;
             cursor: pointer;
-            margin-top: 10px;
+            margin-top: 20px;
             transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Courier New', monospace;
         }
 
         .login-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(0, 170, 255, 0.4);
+            box-shadow: 0 5px 25px rgba(0, 170, 255, 0.5);
+            background: linear-gradient(135deg, #00aaff, #00ffff);
         }
 
         .login-btn:active {
@@ -172,16 +181,172 @@
             display: block;
         }
 
+        /* ============ SPACESHIP INTERIOR UI ============ */
+        #shipInterior {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+            display: none;
+        }
+
+        .cockpit-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 30% 50%, transparent 60%, rgba(0, 20, 40, 0.3) 100%);
+        }
+
+        .ship-hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .hud-panel {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #00aaff;
+            border-radius: 5px;
+            padding: 10px 15px;
+            color: #00ffff;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            min-width: 150px;
+        }
+
+        .hud-title {
+            color: #88aaff;
+            font-size: 12px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .hud-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #00ffff;
+        }
+
+        .ship-controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+        }
+
+        .control-btn {
+            background: rgba(0, 40, 80, 0.8);
+            border: 2px solid #00aaff;
+            border-radius: 10px;
+            padding: 15px 25px;
+            color: white;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: all 0.3s;
+        }
+
+        .control-btn:hover {
+            background: rgba(0, 80, 160, 0.9);
+            border-color: #00ffff;
+            box-shadow: 0 0 20px #00ffff;
+        }
+
+        /* ============ FIRST PERSON UI ============ */
+        #firstPersonUI {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 20;
+            display: none;
+        }
+
+        .helmet-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, transparent 70%, rgba(0, 10, 30, 0.1) 100%);
+            border: 2px solid rgba(0, 170, 255, 0.1);
+            border-radius: 50%;
+            transform: scale(1.5);
+        }
+
+        .fps-hud {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            right: 30px;
+        }
+
+        .resource-bar {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #00aaff;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .bar-label {
+            color: #88aaff;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            min-width: 100px;
+        }
+
+        .bar-value {
+            color: #00ffff;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .action-prompt {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00ff88;
+            border-radius: 10px;
+            padding: 20px 30px;
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            text-align: center;
+            max-width: 80%;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
         /* ============ CROSSHAIR ============ */
         #crosshair {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             pointer-events: none;
-            z-index: 100;
+            z-index: 30;
         }
 
         .crosshair-dot {
@@ -193,126 +358,45 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px #00ffff;
+        }
+
+        .crosshair-line {
+            position: absolute;
+            background: #00ffff;
             box-shadow: 0 0 5px #00ffff;
         }
 
-        /* ============ UI OVERLAY ============ */
-        #uiOverlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 50;
-        }
-
-        .player-info {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(0, 20, 40, 0.8);
-            padding: 15px;
-            border-radius: 10px;
-            border: 2px solid #00aaff;
-            min-width: 200px;
-        }
-
-        .player-name {
-            color: #00ffff;
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .planet-name {
-            color: #88aaff;
-            font-size: 14px;
-        }
-
-        .resource-display {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(0, 20, 40, 0.8);
-            padding: 15px;
-            border-radius: 10px;
-            border: 2px solid #00ff88;
-            text-align: right;
-        }
-
-        .resource-item {
-            margin-bottom: 8px;
-        }
-
-        .resource-label {
-            color: #88aaff;
-            font-size: 12px;
-            margin-right: 10px;
-        }
-
-        .resource-value {
-            color: #00ffff;
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        /* ============ MOBILE CONTROLS ============ */
-        #mobileControls {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 150px;
-            display: none;
-            z-index: 60;
-        }
-
-        .joystick-container {
-            position: absolute;
-            bottom: 30px;
-            left: 30px;
-            width: 120px;
-            height: 120px;
-        }
-
-        .joystick-outer {
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 30, 60, 0.7);
-            border: 4px solid #00aaff;
-            border-radius: 50%;
-            position: absolute;
-        }
-
-        .joystick-inner {
-            width: 60px;
-            height: 60px;
-            background: rgba(0, 170, 255, 0.9);
-            border: 3px solid #00ffff;
-            border-radius: 50%;
-            position: absolute;
-            top: 50%;
+        .crosshair-top {
+            width: 2px;
+            height: 8px;
+            top: calc(50% - 10px);
             left: 50%;
-            transform: translate(-50%, -50%);
+            transform: translateX(-50%);
         }
 
-        .action-button {
-            position: absolute;
-            bottom: 30px;
-            right: 30px;
-            width: 80px;
-            height: 80px;
-            background: rgba(0, 60, 120, 0.9);
-            border: 4px solid #00aaff;
-            border-radius: 50%;
-            color: white;
-            font-size: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            pointer-events: auto;
-            cursor: pointer;
+        .crosshair-bottom {
+            width: 2px;
+            height: 8px;
+            top: calc(50% + 2px);
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .crosshair-left {
+            width: 8px;
+            height: 2px;
+            top: 50%;
+            left: calc(50% - 10px);
+            transform: translateY(-50%);
+        }
+
+        .crosshair-right {
+            width: 8px;
+            height: 2px;
+            top: 50%;
+            left: calc(50% + 2px);
+            transform: translateY(-50%);
         }
 
         /* ============ ANIMATIONS ============ */
@@ -331,42 +415,42 @@
             50% { opacity: 0.7; }
         }
 
-        /* ============ RESPONSIVE ============ */
-        @media (max-width: 768px) {
-            .game-title { font-size: 28px; }
-            .login-container { padding: 20px; }
-            .player-info, .resource-display { padding: 10px; min-width: 150px; }
-            #mobileControls { display: block; }
-        }
-
-        @media (max-width: 480px) {
-            .game-title { font-size: 24px; }
-            .player-info, .resource-display { 
-                position: relative; 
-                top: 0; 
-                left: 0; 
-                right: 0;
-                margin: 10px;
-                width: calc(100% - 20px);
-            }
-            .resource-display { text-align: left; }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
 
         /* ============ INSTRUCTIONS ============ */
         #instructions {
             position: absolute;
-            bottom: 20px;
+            bottom: 100px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 20, 40, 0.9);
-            padding: 15px;
-            border-radius: 10px;
-            border: 2px solid #00ff88;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00aaff;
+            border-radius: 5px;
+            padding: 10px 15px;
             color: #88ccff;
-            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
             text-align: center;
             max-width: 80%;
-            animation: pulse 2s infinite;
+        }
+
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 768px) {
+            .game-title { font-size: 28px; }
+            .login-container { padding: 20px; }
+            .hud-panel { min-width: 120px; font-size: 12px; }
+            .hud-value { font-size: 16px; }
+            .control-btn { padding: 12px 20px; font-size: 14px; }
+        }
+
+        @media (max-width: 480px) {
+            .game-title { font-size: 24px; }
+            .ship-hud { flex-direction: column; gap: 10px; }
+            .ship-controls { flex-direction: column; bottom: 20px; }
+            .resource-bar { flex-direction: column; align-items: flex-start; gap: 5px; }
         }
     </style>
 </head>
@@ -374,31 +458,31 @@
     <!-- Loading Screen -->
     <div id="loadingScreen">
         <div class="loading-spinner"></div>
-        <div class="loading-text">Loading Eternal Empire</div>
+        <div class="loading-text">INITIALIZING SPACE SYSTEMS</div>
     </div>
 
     <!-- Login Screen -->
     <div id="loginScreen">
         <div class="login-container">
             <div class="game-title">ETERNAL EMPIRE</div>
-            <div class="game-subtitle">Phase 1: First Contact</div>
+            <div class="game-subtitle">REALISTIC SPACE EDITION</div>
             
             <div class="input-group">
-                <label class="input-label">COMMANDER NAME</label>
-                <input type="text" id="username" class="login-input" placeholder="Enter your name" maxlength="20" value="Explorer">
+                <label class="input-label">COMMANDER ID</label>
+                <input type="text" id="username" class="login-input" placeholder="ENTER COMMANDER NAME" maxlength="20" value="CAPTAIN">
             </div>
             
             <div class="input-group">
-                <label class="input-label">FACTION</label>
+                <label class="input-label">FACTION SELECTION</label>
                 <select id="faction" class="login-input">
-                    <option value="explorer">Explorer Corps</option>
-                    <option value="miner">Mining Guild</option>
-                    <option value="warrior">Warrior Clan</option>
-                    <option value="trader">Trade Federation</option>
+                    <option value="explorer">EXPLORER CORPS</option>
+                    <option value="miner">MINING GUILD</option>
+                    <option value="warrior">WARRIOR CLAN</option>
+                    <option value="trader">TRADE FEDERATION</option>
                 </select>
             </div>
             
-            <button class="login-btn" id="launchButton">🚀 LAUNCH GAME</button>
+            <button class="login-btn" id="launchButton">🚀 INITIATE LAUNCH SEQUENCE</button>
         </div>
     </div>
 
@@ -406,40 +490,70 @@
     <div id="gameContainer">
         <canvas id="gameCanvas"></canvas>
         
-        <!-- UI Overlay -->
-        <div id="uiOverlay">
-            <div id="crosshair">
-                <div class="crosshair-dot"></div>
-            </div>
+        <!-- Spaceship Interior -->
+        <div id="shipInterior">
+            <div class="cockpit-overlay"></div>
             
-            <div class="player-info">
-                <div class="player-name" id="playerName">COMMANDER</div>
-                <div class="planet-name" id="planetName">Terra Nova</div>
-            </div>
-            
-            <div class="resource-display">
-                <div class="resource-item">
-                    <span class="resource-label">IRON:</span>
-                    <span class="resource-value" id="ironValue">0</span>
+            <div class="ship-hud">
+                <div class="hud-panel">
+                    <div class="hud-title">SHIP STATUS</div>
+                    <div class="hud-value" id="shipStatus">NOMINAL</div>
                 </div>
-                <div class="resource-item">
-                    <span class="resource-label">ENERGY:</span>
-                    <span class="resource-value" id="energyValue">100</span>
+                
+                <div class="hud-panel">
+                    <div class="hud-title">TARGET PLANET</div>
+                    <div class="hud-value" id="targetPlanet">TERRA NOVA</div>
+                </div>
+                
+                <div class="hud-panel">
+                    <div class="hud-title">DISTANCE</div>
+                    <div class="hud-value" id="distanceToPlanet">384,400 KM</div>
                 </div>
             </div>
             
-            <div id="instructions">
-                WASD to move • Mouse to look • Click to mine • M: Toggle mining
+            <div class="ship-controls">
+                <button class="control-btn" id="exitShipBtn">EXIT SHIP</button>
+                <button class="control-btn" id="scanPlanetBtn">SCAN PLANET</button>
+                <button class="control-btn" id="landShipBtn">LAND</button>
             </div>
         </div>
         
-        <!-- Mobile Controls -->
-        <div id="mobileControls">
-            <div class="joystick-container" id="joystickArea">
-                <div class="joystick-outer"></div>
-                <div class="joystick-inner" id="joystickHandle"></div>
+        <!-- First Person UI -->
+        <div id="firstPersonUI">
+            <div class="helmet-overlay"></div>
+            
+            <div class="fps-hud">
+                <div class="resource-bar">
+                    <div class="bar-label">OXYGEN:</div>
+                    <div class="bar-value" id="oxygenValue">100%</div>
+                </div>
+                
+                <div class="resource-bar">
+                    <div class="bar-label">ENERGY:</div>
+                    <div class="bar-value" id="energyValue">100%</div>
+                </div>
+                
+                <div class="resource-bar">
+                    <div class="bar-label">IRON:</div>
+                    <div class="bar-value" id="ironValue">0 UNITS</div>
+                </div>
             </div>
-            <div class="action-button" id="jumpButton">⬆️</div>
+            
+            <div class="action-prompt" id="actionPrompt"></div>
+        </div>
+        
+        <!-- Crosshair -->
+        <div id="crosshair">
+            <div class="crosshair-dot"></div>
+            <div class="crosshair-line crosshair-top"></div>
+            <div class="crosshair-line crosshair-bottom"></div>
+            <div class="crosshair-line crosshair-left"></div>
+            <div class="crosshair-line crosshair-right"></div>
+        </div>
+        
+        <!-- Instructions -->
+        <div id="instructions">
+            SPACEBAR: EXIT SHIP • WASD: MOVE • MOUSE: LOOK • E: INTERACT
         </div>
     </div>
 
@@ -449,18 +563,26 @@
 // ======================
 const gameState = {
     player: {
-        name: "",
+        name: "CAPTAIN",
         faction: "explorer",
-        health: 100,
+        oxygen: 100,
         energy: 100,
-        position: { x: 0, y: 2, z: 0 },
+        position: { x: 0, y: 0, z: 0 },
+        inShip: true,
+        onPlanet: false,
         miningMode: false
     },
     resources: {
         iron: 0,
         energy: 100
     },
-    currentPlanet: "terra_nova",
+    ship: {
+        landed: false,
+        position: { x: 0, y: 0, z: -50 },
+        health: 100,
+        fuel: 100
+    },
+    currentView: "space", // "space", "ship", "planet"
     settings: {
         autosave: true,
         notifications: true
@@ -471,257 +593,540 @@ const gameState = {
 // THREE.JS VARIABLES
 // ======================
 let scene, camera, renderer;
-let terrain, playerObject;
+let earth, spaceship, planet, playerObject;
+let stars = [];
+let spaceObjects = [];
 let resourceNodes = [];
 let keys = {};
 let mouseX = 0, mouseY = 0;
 let isPointerLocked = false;
 let movementVector = { x: 0, z: 0 };
+let clock = new THREE.Clock();
+let shipCamera, fpsCamera;
+let currentCamera;
+let shipControlsActive = true;
 
 // ======================
 // INITIALIZATION
 // ======================
 function initGame() {
-    console.log("Initializing game...");
+    console.log("Initializing realistic space game...");
     
     // Get player info from login
-    gameState.player.name = document.getElementById('username').value || "Explorer";
+    gameState.player.name = document.getElementById('username').value || "CAPTAIN";
     gameState.player.faction = document.getElementById('faction').value;
-    
-    // Update UI
-    document.getElementById('playerName').textContent = gameState.player.name;
     
     // Create Three.js scene
     scene = new THREE.Scene();
-    scene.fog = new THREE.Fog(0x87CEEB, 50, 300);
+    scene.fog = new THREE.Fog(0x000000, 1, 10000);
     
-    // Create camera
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 2, 0);
+    // Create cameras
+    shipCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100000);
+    fpsCamera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000);
+    
+    currentCamera = shipCamera;
     
     // Create renderer
     const canvas = document.getElementById('gameCanvas');
     renderer = new THREE.WebGLRenderer({ 
         canvas: canvas,
-        antialias: true 
+        antialias: true,
+        powerPreference: 'high-performance'
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.setPixelRatio(window.devicePixelRatio);
     
     // Setup lighting
     setupLighting();
     
-    // Create terrain
-    createTerrain();
+    // Create space scene
+    createSpaceScene();
     
-    // Create player
-    createPlayer();
+    // Create realistic Earth
+    createEarth();
     
-    // Create resources
-    createResources();
+    // Create realistic spaceship
+    createSpaceship();
+    
+    // Create target planet (Terra Nova)
+    createPlanet();
     
     // Setup controls
     setupControls();
+    
+    // Setup event listeners
+    setupEventListeners();
     
     // Start game loop
     animate();
     
     // Show game container
     document.getElementById('gameContainer').style.display = 'block';
+    document.getElementById('shipInterior').style.display = 'block';
     
     // Show welcome message
-    showNotification(`Welcome to Terra Nova, ${gameState.player.name}!`, "info", 5000);
+    showNotification("WELCOME TO DEEP SPACE, COMMANDER", "info", 5000);
+    showNotification("APPROACHING TARGET: TERRA NOVA", "info", 6000);
+    
+    // Update HUD
+    updateHUD();
 }
 
 // ======================
-// LIGHTING
+// SPACE SCENE
 // ======================
-function setupLighting() {
-    // Ambient light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambientLight);
+function createSpaceScene() {
+    // Add stars
+    const starGeometry = new THREE.BufferGeometry();
+    const starCount = 10000;
+    const positions = new Float32Array(starCount * 3);
     
-    // Sun light
-    const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    sunLight.position.set(100, 100, 50);
-    sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = 2048;
-    sunLight.shadow.mapSize.height = 2048;
-    sunLight.shadow.camera.near = 0.5;
-    sunLight.shadow.camera.far = 500;
-    sunLight.shadow.camera.left = -100;
-    sunLight.shadow.camera.right = 100;
-    sunLight.shadow.camera.top = 100;
-    sunLight.shadow.camera.bottom = -100;
-    scene.add(sunLight);
+    for (let i = 0; i < starCount * 3; i += 3) {
+        positions[i] = (Math.random() - 0.5) * 20000;
+        positions[i + 1] = (Math.random() - 0.5) * 20000;
+        positions[i + 2] = (Math.random() - 0.5) * 20000;
+    }
     
-    // Sky color
-    scene.background = new THREE.Color(0x87CEEB);
+    starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    
+    const starMaterial = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 0.1,
+        sizeAttenuation: true
+    });
+    
+    const starsMesh = new THREE.Points(starGeometry, starMaterial);
+    scene.add(starsMesh);
+    stars.push(starsMesh);
+    
+    // Add distant nebula
+    const nebulaGeometry = new THREE.SphereGeometry(5000, 32, 32);
+    const nebulaMaterial = new THREE.MeshBasicMaterial({
+        color: 0x3300aa,
+        transparent: true,
+        opacity: 0.05,
+        side: THREE.BackSide
+    });
+    const nebula = new THREE.Mesh(nebulaGeometry, nebulaMaterial);
+    scene.add(nebula);
 }
 
 // ======================
-// TERRAIN
+// REALISTIC EARTH
 // ======================
-function createTerrain() {
-    const size = 200;
-    const segments = 128;
+function createEarth() {
+    // Earth sphere
+    const earthGeometry = new THREE.SphereGeometry(15, 64, 64);
     
-    const geometry = new THREE.PlaneGeometry(size, size, segments, segments);
+    // Earth texture simulation
+    const earthMaterial = new THREE.MeshStandardMaterial({
+        color: 0x1a5fb4, // Blue oceans
+        roughness: 0.8,
+        metalness: 0.2,
+        emissive: 0x000000,
+        emissiveIntensity: 0
+    });
     
-    // Add some hills
-    const vertices = geometry.attributes.position.array;
+    earth = new THREE.Mesh(earthGeometry, earthMaterial);
+    earth.position.set(-100, 0, -200);
+    scene.add(earth);
+    
+    // Add clouds layer
+    const cloudsGeometry = new THREE.SphereGeometry(15.1, 64, 64);
+    const cloudsMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.3,
+        side: THREE.DoubleSide
+    });
+    const clouds = new THREE.Mesh(cloudsGeometry, cloudsMaterial);
+    earth.add(clouds);
+    
+    // Add continent-like details
+    const detailGeometry = new THREE.SphereGeometry(15.05, 64, 64);
+    const detailMaterial = new THREE.MeshStandardMaterial({
+        color: 0x2ecc71, // Green continents
+        transparent: true,
+        opacity: 0.4,
+        side: THREE.DoubleSide
+    });
+    const details = new THREE.Mesh(detailGeometry, detailMaterial);
+    earth.add(details);
+    
+    // Position camera to view Earth
+    shipCamera.position.set(-80, 10, -180);
+    shipCamera.lookAt(earth.position);
+}
+
+// ======================
+// REALISTIC SPACESHIP
+// ======================
+function createSpaceship() {
+    const shipGroup = new THREE.Group();
+    
+    // Main fuselage (cylindrical body)
+    const fuselageGeometry = new THREE.CylinderGeometry(2, 1.5, 15, 16);
+    const fuselageMaterial = new THREE.MeshStandardMaterial({
+        color: 0x444444,
+        roughness: 0.7,
+        metalness: 0.8,
+        emissive: 0x222222,
+        emissiveIntensity: 0.1
+    });
+    const fuselage = new THREE.Mesh(fuselageGeometry, fuselageMaterial);
+    fuselage.rotation.x = Math.PI / 2;
+    shipGroup.add(fuselage);
+    
+    // Cockpit
+    const cockpitGeometry = new THREE.SphereGeometry(1.8, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+    const cockpitMaterial = new THREE.MeshStandardMaterial({
+        color: 0x88ccff,
+        roughness: 0.1,
+        metalness: 0.9,
+        transparent: true,
+        opacity: 0.7,
+        emissive: 0x001133,
+        emissiveIntensity: 0.2
+    });
+    const cockpit = new THREE.Mesh(cockpitGeometry, cockpitMaterial);
+    cockpit.position.set(0, 0, 7.5);
+    cockpit.rotation.x = Math.PI;
+    shipGroup.add(cockpit);
+    
+    // Engines (rear)
+    const engineGeometry = new THREE.ConeGeometry(1.5, 4, 8);
+    const engineMaterial = new THREE.MeshStandardMaterial({
+        color: 0xff5500,
+        emissive: 0xff3300,
+        emissiveIntensity: 0.5,
+        roughness: 0.3,
+        metalness: 0.9
+    });
+    
+    // Main engine
+    const mainEngine = new THREE.Mesh(engineGeometry, engineMaterial);
+    mainEngine.position.set(0, 0, -8);
+    mainEngine.rotation.x = Math.PI;
+    shipGroup.add(mainEngine);
+    
+    // Side engines
+    for (let i = 0; i < 4; i++) {
+        const angle = (i / 4) * Math.PI * 2;
+        const sideEngine = new THREE.Mesh(engineGeometry, engineMaterial);
+        sideEngine.position.set(Math.cos(angle) * 3, Math.sin(angle) * 3, -6);
+        sideEngine.rotation.x = Math.PI;
+        sideEngine.scale.set(0.5, 0.5, 0.5);
+        shipGroup.add(sideEngine);
+    }
+    
+    // Wings/stabilizers
+    const wingGeometry = new THREE.BoxGeometry(8, 0.5, 3);
+    const wingMaterial = new THREE.MeshStandardMaterial({
+        color: 0x333333,
+        roughness: 0.8,
+        metalness: 0.6
+    });
+    
+    // Top wing
+    const topWing = new THREE.Mesh(wingGeometry, wingMaterial);
+    topWing.position.set(0, 2.5, 0);
+    shipGroup.add(topWing);
+    
+    // Bottom wing
+    const bottomWing = new THREE.Mesh(wingGeometry, wingMaterial);
+    bottomWing.position.set(0, -2.5, 0);
+    shipGroup.add(bottomWing);
+    
+    // Side wings
+    const sideWingGeometry = new THREE.BoxGeometry(0.5, 5, 3);
+    const leftWing = new THREE.Mesh(sideWingGeometry, wingMaterial);
+    leftWing.position.set(-4, 0, 0);
+    shipGroup.add(leftWing);
+    
+    const rightWing = new THREE.Mesh(sideWingGeometry, wingMaterial);
+    rightWing.position.set(4, 0, 0);
+    shipGroup.add(rightWing);
+    
+    // Details and panels
+    const detailGeometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+    const detailMaterial = new THREE.MeshStandardMaterial({
+        color: 0x00aaff,
+        emissive: 0x0088ff,
+        emissiveIntensity: 0.3
+    });
+    
+    // Add panel details
+    for (let i = 0; i < 20; i++) {
+        const detail = new THREE.Mesh(detailGeometry, detailMaterial);
+        detail.position.set(
+            (Math.random() - 0.5) * 3,
+            (Math.random() - 0.5) * 3,
+            (Math.random() - 0.5) * 12
+        );
+        detail.scale.set(
+            1 + Math.random(),
+            1 + Math.random(),
+            1 + Math.random()
+        );
+        shipGroup.add(detail);
+    }
+    
+    // Add thruster glow (point light)
+    const engineLight = new THREE.PointLight(0xff8800, 2, 50);
+    engineLight.position.set(0, 0, -9);
+    shipGroup.add(engineLight);
+    
+    // Add running lights
+    const redLight = new THREE.PointLight(0xff0000, 1, 10);
+    redLight.position.set(-4, 2, 6);
+    shipGroup.add(redLight);
+    
+    const greenLight = new THREE.PointLight(0x00ff00, 1, 10);
+    greenLight.position.set(4, 2, 6);
+    shipGroup.add(greenLight);
+    
+    // Position ship
+    shipGroup.position.copy(gameState.ship.position);
+    shipGroup.rotation.y = Math.PI;
+    
+    spaceship = shipGroup;
+    scene.add(spaceship);
+    
+    // Set camera inside cockpit
+    const cockpitCamera = new THREE.Object3D();
+    cockpitCamera.position.set(0, 0.5, 6);
+    spaceship.add(cockpitCamera);
+    
+    // Update ship camera to be inside cockpit
+    shipCamera.position.copy(cockpitCamera.getWorldPosition(new THREE.Vector3()));
+    shipCamera.rotation.copy(cockpitCamera.getWorldRotation(new THREE.Quaternion()));
+}
+
+// ======================
+// TARGET PLANET (TERRA NOVA)
+// ======================
+function createPlanet() {
+    // Planet sphere
+    const planetGeometry = new THREE.SphereGeometry(8, 64, 64);
+    
+    // Create realistic planet material
+    const planetMaterial = new THREE.MeshStandardMaterial({
+        color: 0x2ecc71, // Green terrestrial planet
+        roughness: 0.8,
+        metalness: 0.2,
+        emissive: 0x000000,
+        emissiveIntensity: 0
+    });
+    
+    planet = new THREE.Mesh(planetGeometry, planetMaterial);
+    planet.position.set(0, 0, 200); // Far in front of ship
+    scene.add(planet);
+    
+    // Add atmosphere
+    const atmosphereGeometry = new THREE.SphereGeometry(8.2, 64, 64);
+    const atmosphereMaterial = new THREE.MeshStandardMaterial({
+        color: 0x88aaff,
+        transparent: true,
+        opacity: 0.2,
+        side: THREE.DoubleSide
+    });
+    const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
+    planet.add(atmosphere);
+    
+    // Add surface details (mountains, etc)
+    const detailGeometry = new THREE.SphereGeometry(8.01, 64, 64);
+    const detailMaterial = new THREE.MeshStandardMaterial({
+        color: 0x3d9970,
+        transparent: true,
+        opacity: 0.3,
+        side: THREE.DoubleSide
+    });
+    const details = new THREE.Mesh(detailGeometry, detailMaterial);
+    planet.add(details);
+    
+    // Add water (oceans)
+    const waterGeometry = new THREE.SphereGeometry(7.99, 64, 64);
+    const waterMaterial = new THREE.MeshStandardMaterial({
+        color: 0x1a5fb4,
+        transparent: true,
+        opacity: 0.4,
+        side: THREE.DoubleSide,
+        roughness: 0.1,
+        metalness: 0.9
+    });
+    const water = new THREE.Mesh(waterGeometry, waterMaterial);
+    planet.add(water);
+    
+    // Add clouds
+    const cloudGeometry = new THREE.SphereGeometry(8.1, 64, 64);
+    const cloudMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.3,
+        side: THREE.DoubleSide
+    });
+    const clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
+    planet.add(clouds);
+}
+
+// ======================
+// LANDING SEQUENCE
+// ======================
+function landShip() {
+    if (gameState.ship.landed) return;
+    
+    showNotification("INITIATING LANDING SEQUENCE...", "info", 3000);
+    
+    // Animate ship landing
+    const landingTarget = new THREE.Vector3(0, 5, 50);
+    
+    // Create landing animation
+    const animateLanding = () => {
+        const currentPos = spaceship.position;
+        const direction = landingTarget.clone().sub(currentPos);
+        
+        if (direction.length() > 0.1) {
+            spaceship.position.add(direction.multiplyScalar(0.02));
+            spaceship.lookAt(planet.position);
+            requestAnimationFrame(animateLanding);
+        } else {
+            gameState.ship.landed = true;
+            showNotification("LANDING SUCCESSFUL - SHIP SECURED", "success", 3000);
+            showNotification("PRESS SPACEBAR TO EXIT SHIP", "info", 4000);
+        }
+    };
+    
+    animateLanding();
+}
+
+// ======================
+// EXIT SHIP - GO FIRST PERSON
+// ======================
+function exitShip() {
+    if (!gameState.ship.landed) {
+        showNotification("CANNOT EXIT - SHIP NOT LANDED", "warning");
+        return;
+    }
+    
+    gameState.player.inShip = false;
+    gameState.player.onPlanet = true;
+    gameState.currentView = "planet";
+    
+    // Hide ship interior UI
+    document.getElementById('shipInterior').style.display = 'none';
+    
+    // Show first person UI
+    document.getElementById('firstPersonUI').style.display = 'block';
+    
+    // Switch to FPS camera
+    currentCamera = fpsCamera;
+    
+    // Position FPS camera at ship door
+    fpsCamera.position.set(
+        spaceship.position.x,
+        spaceship.position.y + 2,
+        spaceship.position.z + 5
+    );
+    
+    // Create planet surface
+    createPlanetSurface();
+    
+    showNotification("EXITING SHIP - ENTERING TERRA NOVA SURFACE", "info", 3000);
+    showNotification("WASD TO MOVE • MOUSE TO LOOK • E TO INTERACT", "info", 5000);
+}
+
+// ======================
+// PLANET SURFACE
+// ======================
+function createPlanetSurface() {
+    // Clear space objects (but keep planet)
+    spaceObjects.forEach(obj => {
+        if (obj !== planet && obj !== spaceship) {
+            scene.remove(obj);
+        }
+    });
+    
+    // Create terrain around landing site
+    const terrainSize = 200;
+    const terrainSegments = 128;
+    
+    const terrainGeometry = new THREE.PlaneGeometry(terrainSize, terrainSize, terrainSegments, terrainSegments);
+    const vertices = terrainGeometry.attributes.position.array;
+    
+    // Create rolling hills
     for (let i = 0; i < vertices.length; i += 3) {
         const x = vertices[i];
         const z = vertices[i + 2];
         
-        // Create rolling hills
         let height = 0;
         height += Math.sin(x * 0.05) * Math.cos(z * 0.05) * 3;
-        height += Math.sin(x * 0.1) * Math.cos(z * 0.1) * 1.5;
-        height += Math.random() * 0.5; // Small randomness
+        height += Math.sin(x * 0.02) * Math.cos(z * 0.02) * 1.5;
+        height += Math.random() * 0.3;
         
         vertices[i + 1] = height;
     }
     
-    geometry.computeVertexNormals();
+    terrainGeometry.computeVertexNormals();
     
-    const material = new THREE.MeshStandardMaterial({ 
+    const terrainMaterial = new THREE.MeshStandardMaterial({
         color: 0x2ecc71,
         roughness: 0.8,
         metalness: 0.2
     });
     
-    terrain = new THREE.Mesh(geometry, material);
+    const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
     terrain.rotation.x = -Math.PI / 2;
+    terrain.position.set(0, -8, 0);
     terrain.receiveShadow = true;
     terrain.castShadow = true;
-    
     scene.add(terrain);
     
-    // Add some trees and rocks
-    addTerrainDetails();
-}
-
-function addTerrainDetails() {
-    // Add some trees
-    for (let i = 0; i < 30; i++) {
-        const x = Math.random() * 180 - 90;
-        const z = Math.random() * 180 - 90;
+    // Add trees and vegetation
+    for (let i = 0; i < 50; i++) {
+        const x = Math.random() * 80 - 40;
+        const z = Math.random() * 80 - 40;
         
-        // Create tree trunk
-        const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.3, 2, 8);
+        // Skip near ship
+        if (Math.abs(x) < 10 && Math.abs(z) < 10) continue;
+        
+        // Create tree
+        const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.3, 3, 8);
         const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
         const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
         
-        // Create leaves
         const leavesGeometry = new THREE.ConeGeometry(1.5, 3, 8);
         const leavesMaterial = new THREE.MeshStandardMaterial({ color: 0x228822 });
         const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
-        leaves.position.y = 1.5;
+        leaves.position.y = 2;
         
         const tree = new THREE.Group();
         tree.add(trunk);
         tree.add(leaves);
         
-        // Position on terrain
-        const raycaster = new THREE.Raycaster(
-            new THREE.Vector3(x, 100, z),
-            new THREE.Vector3(0, -1, 0)
-        );
-        const intersects = raycaster.intersectObject(terrain);
+        tree.position.set(x, -8, z);
+        tree.scale.setScalar(0.8 + Math.random() * 0.4);
+        tree.rotation.y = Math.random() * Math.PI * 2;
         
-        if (intersects.length > 0) {
-            tree.position.set(x, intersects[0].point.y, z);
-            tree.scale.setScalar(0.8 + Math.random() * 0.4);
-            tree.rotation.y = Math.random() * Math.PI * 2;
-            
-            tree.traverse(child => {
-                if (child.isMesh) {
-                    child.castShadow = true;
-                    child.receiveShadow = true;
-                }
-            });
-            
-            scene.add(tree);
-        }
+        scene.add(tree);
     }
     
-    // Add some rocks
-    for (let i = 0; i < 20; i++) {
-        const x = Math.random() * 180 - 90;
-        const z = Math.random() * 180 - 90;
-        
-        const rockGeometry = new THREE.DodecahedronGeometry(0.5 + Math.random() * 0.5, 0);
-        const rockMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x666666,
-            roughness: 0.9
-        });
-        const rock = new THREE.Mesh(rockGeometry, rockMaterial);
-        
-        // Position on terrain
-        const raycaster = new THREE.Raycaster(
-            new THREE.Vector3(x, 100, z),
-            new THREE.Vector3(0, -1, 0)
-        );
-        const intersects = raycaster.intersectObject(terrain);
-        
-        if (intersects.length > 0) {
-            rock.position.set(x, intersects[0].point.y, z);
-            rock.rotation.set(
-                Math.random() * Math.PI,
-                Math.random() * Math.PI,
-                Math.random() * Math.PI
-            );
-            
-            rock.castShadow = true;
-            rock.receiveShadow = true;
-            
-            scene.add(rock);
-        }
-    }
-}
-
-// ======================
-// PLAYER
-// ======================
-function createPlayer() {
-    // Create a simple player capsule
-    const group = new THREE.Group();
+    // Create resource nodes
+    createResources();
     
-    // Body (cylinder)
-    const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 1.8, 8);
-    const bodyMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x3498db,
-        roughness: 0.7
-    });
-    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-    body.position.y = 0.9;
+    // Update lighting for planet surface
+    const sunLight = new THREE.DirectionalLight(0xffffff, 1);
+    sunLight.position.set(100, 100, 100);
+    sunLight.castShadow = true;
+    scene.add(sunLight);
     
-    // Helmet (sphere)
-    const helmetGeometry = new THREE.SphereGeometry(0.4, 8, 8);
-    const helmetMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x2980b9,
-        roughness: 0.5,
-        metalness: 0.5
-    });
-    const helmet = new THREE.Mesh(helmetGeometry, helmetMaterial);
-    helmet.position.y = 1.6;
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
     
-    group.add(body);
-    group.add(helmet);
-    
-    group.traverse(child => {
-        if (child.isMesh) {
-            child.castShadow = true;
-        }
-    });
-    
-    playerObject = group;
-    scene.add(playerObject);
-    
-    // Position player
-    playerObject.position.set(0, 2, 0);
+    // Add sky
+    scene.background = new THREE.Color(0x87CEEB);
+    scene.fog = new THREE.Fog(0x87CEEB, 50, 300);
 }
 
 // ======================
@@ -731,68 +1136,134 @@ function createResources() {
     resourceNodes = [];
     
     // Create iron deposits
-    for (let i = 0; i < 15; i++) {
-        createResourceNode('iron', 0xaaaaaa);
-    }
-    
-    // Create energy crystals
-    for (let i = 0; i < 10; i++) {
-        createResourceNode('energy', 0x00ff00);
-    }
-}
-
-function createResourceNode(type, color) {
-    const x = Math.random() * 160 - 80;
-    const z = Math.random() * 160 - 80;
-    
-    let geometry, material;
-    
-    if (type === 'iron') {
-        geometry = new THREE.OctahedronGeometry(0.6, 1);
-        material = new THREE.MeshStandardMaterial({
-            color: color,
-            roughness: 0.7,
-            metalness: 0.8
-        });
-    } else if (type === 'energy') {
-        geometry = new THREE.ConeGeometry(0.4, 1, 6);
-        material = new THREE.MeshStandardMaterial({
-            color: color,
-            emissive: color,
-            emissiveIntensity: 0.5,
-            roughness: 0.3,
-            metalness: 0.9
-        });
-    }
-    
-    const mesh = new THREE.Mesh(geometry, material);
-    
-    // Position on terrain
-    const raycaster = new THREE.Raycaster(
-        new THREE.Vector3(x, 100, z),
-        new THREE.Vector3(0, -1, 0)
-    );
-    const intersects = raycaster.intersectObject(terrain);
-    
-    if (intersects.length > 0) {
-        mesh.position.set(x, intersects[0].point.y + 0.3, z);
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
+    for (let i = 0; i < 20; i++) {
+        const x = Math.random() * 60 - 30;
+        const z = Math.random() * 60 - 30;
         
-        // Add floating animation
-        mesh.userData = {
-            floatSpeed: 0.5 + Math.random() * 0.5,
-            floatPhase: Math.random() * Math.PI * 2,
-            rotationSpeed: 0.5 + Math.random() * 0.5,
-            originalY: mesh.position.y,
-            type: type,
+        // Skip near ship
+        if (Math.abs(x) < 8 && Math.abs(z) < 8) continue;
+        
+        const geometry = new THREE.OctahedronGeometry(0.8, 1);
+        const material = new THREE.MeshStandardMaterial({
+            color: 0xaaaaaa,
+            roughness: 0.7,
+            metalness: 0.8,
+            emissive: 0x222222,
+            emissiveIntensity: 0.1
+        });
+        
+        const resource = new THREE.Mesh(geometry, material);
+        resource.position.set(x, -5, z);
+        resource.castShadow = true;
+        
+        resource.userData = {
+            type: 'iron',
             amount: 50 + Math.random() * 50,
             collected: false
         };
         
-        scene.add(mesh);
-        resourceNodes.push(mesh);
+        scene.add(resource);
+        resourceNodes.push(resource);
     }
+    
+    // Create energy crystals
+    for (let i = 0; i < 15; i++) {
+        const x = Math.random() * 60 - 30;
+        const z = Math.random() * 60 - 30;
+        
+        // Skip near ship
+        if (Math.abs(x) < 8 && Math.abs(z) < 8) continue;
+        
+        const geometry = new THREE.ConeGeometry(0.4, 1.2, 6);
+        const material = new THREE.MeshStandardMaterial({
+            color: 0x00ff00,
+            emissive: 0x00ff00,
+            emissiveIntensity: 0.5,
+            roughness: 0.3,
+            metalness: 0.9
+        });
+        
+        const resource = new THREE.Mesh(geometry, material);
+        resource.position.set(x, -5, z);
+        resource.castShadow = true;
+        
+        resource.userData = {
+            type: 'energy',
+            amount: 30 + Math.random() * 40,
+            collected: false
+        };
+        
+        scene.add(resource);
+        resourceNodes.push(resource);
+    }
+}
+
+// ======================
+// MINING SYSTEM
+// ======================
+function mineResource() {
+    if (!gameState.player.onPlanet || !fpsCamera) return;
+    
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(new THREE.Vector2(0, 0), fpsCamera);
+    
+    const intersects = raycaster.intersectObjects(resourceNodes);
+    
+    if (intersects.length > 0) {
+        const resource = intersects[0].object;
+        
+        if (resource.userData && !resource.userData.collected) {
+            // Mine the resource
+            const amount = Math.min(10, resource.userData.amount);
+            resource.userData.amount -= amount;
+            
+            // Add to player inventory
+            if (resource.userData.type === 'iron') {
+                gameState.resources.iron += amount;
+                showNotification(`MINED ${amount} IRON`, "success");
+            } else if (resource.userData.type === 'energy') {
+                gameState.resources.energy = Math.min(100, gameState.resources.energy + amount);
+                showNotification(`COLLECTED ${amount} ENERGY`, "success");
+            }
+            
+            // Update UI
+            updateHUD();
+            
+            // Visual feedback
+            resource.scale.multiplyScalar(0.8);
+            
+            // Check if depleted
+            if (resource.userData.amount <= 0) {
+                resource.userData.collected = true;
+                scene.remove(resource);
+                
+                // Remove from array
+                const index = resourceNodes.indexOf(resource);
+                if (index > -1) {
+                    resourceNodes.splice(index, 1);
+                }
+                
+                showNotification("RESOURCE DEPLETED", "info");
+            }
+        }
+    } else {
+        showPrompt("NO RESOURCE IN SIGHT");
+    }
+}
+
+// ======================
+// LIGHTING
+// ======================
+function setupLighting() {
+    // Space ambient light
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
+    scene.add(ambientLight);
+    
+    // Sun light (directional)
+    const sunLight = new THREE.DirectionalLight(0xffffff, 1);
+    sunLight.position.set(1000, 1000, 1000);
+    sunLight.castShadow = true;
+    scene.add(sunLight);
 }
 
 // ======================
@@ -804,20 +1275,35 @@ function setupControls() {
         const key = e.key.toLowerCase();
         keys[key] = true;
         
+        // Exit ship
+        if (key === ' ' && gameState.player.inShip && gameState.ship.landed) {
+            exitShip();
+        }
+        
+        // Interact/Mine
+        if (key === 'e' && gameState.player.onPlanet) {
+            mineResource();
+        }
+        
         // Toggle mining mode
-        if (key === 'm') {
+        if (key === 'm' && gameState.player.onPlanet) {
             gameState.player.miningMode = !gameState.player.miningMode;
             showNotification(
                 gameState.player.miningMode ? 
-                "Mining Mode: ON - Click resources to mine" : 
-                "Mining Mode: OFF",
+                "MINING MODE: ACTIVE" : 
+                "MINING MODE: DISABLED",
                 gameState.player.miningMode ? "success" : "info"
             );
         }
         
-        // Jump
-        if (key === ' ' && playerObject) {
-            playerObject.position.y += 0.5;
+        // Enter ship
+        if (key === 'f' && gameState.player.onPlanet) {
+            const distanceToShip = fpsCamera.position.distanceTo(spaceship.position);
+            if (distanceToShip < 10) {
+                enterShip();
+            } else {
+                showNotification("TOO FAR FROM SHIP", "warning");
+            }
         }
     });
     
@@ -834,16 +1320,9 @@ function setupControls() {
         }
     });
     
-    // Click to mine
-    document.addEventListener('click', (e) => {
-        if (gameState.player.miningMode && isPointerLocked) {
-            mineResource();
-        }
-    });
-    
     // Pointer lock
     document.addEventListener('click', () => {
-        if (!isPointerLocked) {
+        if (!isPointerLocked && gameState.player.onPlanet) {
             document.body.requestPointerLock();
         }
     });
@@ -851,122 +1330,42 @@ function setupControls() {
     document.addEventListener('pointerlockchange', () => {
         isPointerLocked = document.pointerLockElement === document.body;
     });
-    
-    // Mobile controls
-    setupMobileControls();
-    
-    // Window resize
-    window.addEventListener('resize', onWindowResize);
 }
 
-function setupMobileControls() {
-    const joystickArea = document.getElementById('joystickArea');
-    const joystickHandle = document.getElementById('joystickHandle');
+function setupEventListeners() {
+    // Landing button
+    document.getElementById('landShipBtn').addEventListener('click', landShip);
     
-    let joystickActive = false;
-    let startX = 0, startY = 0;
+    // Exit ship button
+    document.getElementById('exitShipBtn').addEventListener('click', exitShip);
     
-    joystickArea.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        joystickActive = true;
-        const touch = e.touches[0];
-        const rect = joystickArea.getBoundingClientRect();
-        startX = rect.left + rect.width / 2;
-        startY = rect.top + rect.height / 2;
+    // Scan button
+    document.getElementById('scanPlanetBtn').addEventListener('click', () => {
+        showNotification("SCANNING PLANET... RESOURCES DETECTED", "info");
     });
     
-    joystickArea.addEventListener('touchmove', (e) => {
-        if (!joystickActive) return;
-        e.preventDefault();
-        
-        const touch = e.touches[0];
-        let deltaX = touch.clientX - startX;
-        let deltaZ = touch.clientY - startY;
-        
-        // Limit movement
-        const maxDist = 40;
-        const dist = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
-        if (dist > maxDist) {
-            deltaX = (deltaX / dist) * maxDist;
-            deltaZ = (deltaZ / dist) * maxDist;
+    // Launch button
+    document.getElementById('launchButton').addEventListener('click', () => {
+        const username = document.getElementById('username').value.trim();
+        if (!username) {
+            showNotification("ENTER COMMANDER NAME", "warning");
+            return;
         }
         
-        // Update visual
-        joystickHandle.style.transform = `translate(${deltaX}px, ${deltaZ}px)`;
-        
-        // Update movement vector
-        movementVector.x = deltaX / maxDist;
-        movementVector.z = deltaZ / maxDist;
+        // Fade out login screen
+        document.getElementById('loginScreen').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('loginScreen').style.display = 'none';
+            initGame();
+        }, 500);
     });
     
-    joystickArea.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        joystickActive = false;
-        joystickHandle.style.transform = 'translate(0, 0)';
-        movementVector.x = 0;
-        movementVector.z = 0;
-    });
-    
-    // Jump button
-    document.getElementById('jumpButton').addEventListener('click', () => {
-        if (playerObject) {
-            playerObject.position.y += 0.5;
+    // Enter key to launch
+    document.getElementById('username').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            document.getElementById('launchButton').click();
         }
     });
-}
-
-// ======================
-// MINING SYSTEM
-// ======================
-function mineResource() {
-    if (!camera) return;
-    
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-    
-    const intersects = raycaster.intersectObjects(resourceNodes);
-    
-    if (intersects.length > 0) {
-        const resource = intersects[0].object;
-        
-        if (resource.userData && !resource.userData.collected) {
-            // Mine the resource
-            const amount = Math.min(10, resource.userData.amount);
-            resource.userData.amount -= amount;
-            
-            // Add to player inventory
-            if (resource.userData.type === 'iron') {
-                gameState.resources.iron += amount;
-            } else if (resource.userData.type === 'energy') {
-                gameState.resources.energy = Math.min(100, gameState.resources.energy + amount);
-            }
-            
-            // Update UI
-            updateUI();
-            
-            // Show notification
-            showNotification(`Mined ${amount} ${resource.userData.type}!`, "success");
-            
-            // Visual feedback
-            resource.scale.multiplyScalar(0.8);
-            
-            // Check if depleted
-            if (resource.userData.amount <= 0) {
-                resource.userData.collected = true;
-                scene.remove(resource);
-                
-                // Remove from array
-                const index = resourceNodes.indexOf(resource);
-                if (index > -1) {
-                    resourceNodes.splice(index, 1);
-                }
-                
-                showNotification("Resource depleted!", "info");
-            }
-        }
-    } else {
-        showNotification("No resource in sight", "warning");
-    }
 }
 
 // ======================
@@ -975,23 +1374,66 @@ function mineResource() {
 function animate() {
     requestAnimationFrame(animate);
     
-    // Update player movement
-    updatePlayerMovement();
+    const delta = clock.getDelta();
     
-    // Update resource animations
-    updateResourceAnimations();
+    // Update animations based on view
+    if (gameState.currentView === "space") {
+        updateSpaceScene(delta);
+    } else if (gameState.currentView === "planet") {
+        updatePlanetScene(delta);
+        updatePlayerMovement(delta);
+    }
     
     // Update camera
     updateCamera();
     
+    // Update resource animations
+    updateResourceAnimations(delta);
+    
     // Render
-    renderer.render(scene, camera);
+    renderer.render(scene, currentCamera);
 }
 
-function updatePlayerMovement() {
-    if (!playerObject) return;
+function updateSpaceScene(delta) {
+    // Rotate Earth slowly
+    if (earth) {
+        earth.rotation.y += 0.1 * delta;
+        earth.children.forEach(child => {
+            child.rotation.y += 0.2 * delta; // Clouds rotate faster
+        });
+    }
     
-    const moveSpeed = 0.1;
+    // Rotate target planet
+    if (planet) {
+        planet.rotation.y += 0.2 * delta;
+        planet.children.forEach(child => {
+            child.rotation.y += 0.3 * delta;
+        });
+    }
+    
+    // Move ship toward planet if not landed
+    if (!gameState.ship.landed && spaceship) {
+        const direction = new THREE.Vector3(0, 0, 1);
+        spaceship.translateZ(0.5);
+        
+        // Update distance display
+        const distance = spaceship.position.distanceTo(planet.position);
+        document.getElementById('distanceToPlanet').textContent = 
+            Math.floor(distance).toLocaleString() + " KM";
+    }
+}
+
+function updatePlanetScene(delta) {
+    // Rotate planet slowly
+    if (planet) {
+        planet.rotation.y += 0.05 * delta;
+    }
+}
+
+function updatePlayerMovement(delta) {
+    if (!gameState.player.onPlanet || !fpsCamera) return;
+    
+    const moveSpeed = 5 * delta;
     
     // Get movement direction
     let moveX = 0;
@@ -1003,10 +1445,6 @@ function updatePlayerMovement() {
     if (keys['a'] || keys['arrowleft']) moveX -= 1;
     if (keys['d'] || keys['arrowright']) moveX += 1;
     
-    // Mobile joystick input
-    moveX += movementVector.x;
-    moveZ += movementVector.z;
-    
     // Normalize diagonal movement
     if (moveX !== 0 || moveZ !== 0) {
         const length = Math.sqrt(moveX * moveX + moveZ * moveZ);
@@ -1014,41 +1452,53 @@ function updatePlayerMovement() {
         moveZ /= length;
     }
     
-    // Apply movement
-    playerObject.position.x += moveX * moveSpeed;
-    playerObject.position.z += moveZ * moveSpeed;
+    // Apply movement relative to camera direction
+    const forward = new THREE.Vector3(0, 0, -1);
+    forward.applyQuaternion(fpsCamera.quaternion);
+    forward.y = 0;
+    forward.normalize();
+    
+    const right = new THREE.Vector3(1, 0, 0);
+    right.applyQuaternion(fpsCamera.quaternion);
+    right.y = 0;
+    right.normalize();
+    
+    fpsCamera.position.addScaledVector(forward, moveZ * moveSpeed);
+    fpsCamera.position.addScaledVector(right, moveX * moveSpeed);
     
     // Keep player on ground
-    if (terrain) {
-        const raycaster = new THREE.Raycaster(
-            new THREE.Vector3(playerObject.position.x, 100, playerObject.position.z),
-            new THREE.Vector3(0, -1, 0)
-        );
-        const intersects = raycaster.intersectObject(terrain);
-        
-        if (intersects.length > 0) {
-            const groundHeight = intersects[0].point.y;
-            if (playerObject.position.y < groundHeight + 0.9) {
-                playerObject.position.y = groundHeight + 0.9;
-            }
+    fpsCamera.position.y = Math.max(1.6, fpsCamera.position.y);
+    
+    // Apply gravity
+    if (fpsCamera.position.y > 1.6) {
+        fpsCamera.position.y -= 9.8 * delta;
+    }
+    
+    // Update oxygen (simulate usage)
+    if (gameState.player.oxygen > 0) {
+        gameState.player.oxygen -= 0.01 * delta;
+        if (gameState.player.oxygen < 20) {
+            showPrompt("OXYGEN LEVEL CRITICAL");
         }
     }
     
-    // Apply gravity
-    playerObject.position.y -= 0.01;
-    playerObject.position.y = Math.max(0.9, playerObject.position.y);
+    // Update distance to ship for prompt
+    const distanceToShip = fpsCamera.position.distanceTo(spaceship.position);
+    if (distanceToShip < 10) {
+        showPrompt("PRESS F TO ENTER SHIP");
+    } else {
+        hidePrompt();
+    }
 }
 
-function updateResourceAnimations() {
+function updateResourceAnimations(delta) {
     resourceNodes.forEach(resource => {
         if (resource.userData && !resource.userData.collected) {
             // Floating animation
-            resource.userData.floatPhase += 0.02;
-            const floatOffset = Math.sin(resource.userData.floatPhase * resource.userData.floatSpeed) * 0.1;
-            resource.position.y = resource.userData.originalY + floatOffset;
+            resource.position.y = -5 + Math.sin(Date.now() * 0.001 + resource.position.x) * 0.2;
             
             // Rotation
-            resource.rotation.y += 0.01 * resource.userData.rotationSpeed;
+            resource.rotation.y += 0.5 * delta;
             
             // Pulsing effect for energy crystals
             if (resource.userData.type === 'energy') {
@@ -1060,31 +1510,33 @@ function updateResourceAnimations() {
 }
 
 function updateCamera() {
-    if (!playerObject || !camera) return;
-    
-    // Camera follows player
-    camera.position.x = playerObject.position.x;
-    camera.position.y = playerObject.position.y + 0.5;
-    camera.position.z = playerObject.position.z + 2;
-    
-    // Apply mouse look
-    camera.rotation.y = mouseX;
-    camera.rotation.x = mouseY;
-    
-    // Look at player
-    camera.lookAt(
-        playerObject.position.x,
-        playerObject.position.y + 0.5,
-        playerObject.position.z
-    );
+    if (gameState.currentView === "planet" && fpsCamera) {
+        // Apply mouse look for FPS camera
+        fpsCamera.rotation.y = mouseX;
+        fpsCamera.rotation.x = mouseY;
+    } else if (gameState.currentView === "space" && shipCamera && spaceship) {
+        // Keep ship camera inside cockpit
+        const cockpitPos = spaceship.localToWorld(new THREE.Vector3(0, 0.5, 6));
+        shipCamera.position.copy(cockpitPos);
+        shipCamera.rotation.copy(spaceship.rotation);
+    }
 }
 
 // ======================
 // UI FUNCTIONS
 // ======================
-function updateUI() {
-    document.getElementById('ironValue').textContent = gameState.resources.iron;
-    document.getElementById('energyValue').textContent = Math.floor(gameState.resources.energy);
+function updateHUD() {
+    // Update ship HUD
+    document.getElementById('shipStatus').textContent = 
+        gameState.ship.landed ? "LANDED" : "IN FLIGHT";
+    
+    // Update FPS HUD
+    document.getElementById('oxygenValue').textContent = 
+        Math.floor(gameState.player.oxygen) + "%";
+    document.getElementById('energyValue').textContent = 
+        Math.floor(gameState.resources.energy) + "%";
+    document.getElementById('ironValue').textContent = 
+        gameState.resources.iron + " UNITS";
 }
 
 function showNotification(message, type = "info", duration = 3000) {
@@ -1098,17 +1550,21 @@ function showNotification(message, type = "info", duration = 3000) {
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        background: rgba(0, 20, 40, 0.9);
+        background: rgba(0, 0, 0, 0.9);
         color: ${type === 'success' ? '#00ff88' : type === 'warning' ? '#ffaa00' : '#00aaff'};
         padding: 15px 25px;
         border-radius: 10px;
         border: 2px solid ${type === 'success' ? '#00ff88' : type === 'warning' ? '#ffaa00' : '#00aaff'};
+        font-family: 'Courier New', monospace;
         font-size: 16px;
         font-weight: bold;
         z-index: 1000;
         pointer-events: none;
         opacity: 0;
         animation: fadeInOut 0.3s ease forwards;
+        text-align: center;
+        max-width: 80%;
+        text-shadow: 0 0 10px currentColor;
     `;
     
     document.body.appendChild(notification);
@@ -1124,6 +1580,17 @@ function showNotification(message, type = "info", duration = 3000) {
     }, duration);
 }
 
+function showPrompt(message) {
+    const prompt = document.getElementById('actionPrompt');
+    prompt.textContent = message;
+    prompt.style.opacity = '1';
+}
+
+function hidePrompt() {
+    const prompt = document.getElementById('actionPrompt');
+    prompt.style.opacity = '0';
+}
+
 // Add fade animation
 const style = document.createElement('style');
 style.textContent = `
@@ -1135,15 +1602,41 @@ style.textContent = `
 document.head.appendChild(style);
 
 // ======================
+// ENTER SHIP
+// ======================
+function enterShip() {
+    gameState.player.inShip = true;
+    gameState.player.onPlanet = false;
+    gameState.currentView = "space";
+    
+    // Show ship interior UI
+    document.getElementById('shipInterior').style.display = 'block';
+    
+    // Hide first person UI
+    document.getElementById('firstPersonUI').style.display = 'none';
+    
+    // Switch to ship camera
+    currentCamera = shipCamera;
+    
+    showNotification("ENTERING SHIP - SYSTEMS ONLINE", "info", 3000);
+}
+
+// ======================
 // WINDOW RESIZE
 // ======================
-function onWindowResize() {
-    if (camera && renderer) {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
+window.addEventListener('resize', () => {
+    if (shipCamera && renderer) {
+        shipCamera.aspect = window.innerWidth / window.innerHeight;
+        shipCamera.updateProjectionMatrix();
+        
+        if (fpsCamera) {
+            fpsCamera.aspect = window.innerWidth / window.innerHeight;
+            fpsCamera.updateProjectionMatrix();
+        }
+        
         renderer.setSize(window.innerWidth, window.innerHeight);
     }
-}
+});
 
 // ======================
 // STARTUP
@@ -1157,32 +1650,10 @@ setTimeout(() => {
     }, 1000);
 }, 2000);
 
-// Launch button
-document.getElementById('launchButton').addEventListener('click', () => {
-    const username = document.getElementById('username').value.trim();
-    if (!username) {
-        showNotification("Please enter a commander name!", "warning");
-        return;
-    }
-    
-    // Fade out login screen
-    document.getElementById('loginScreen').style.opacity = '0';
-    setTimeout(() => {
-        document.getElementById('loginScreen').style.display = 'none';
-        initGame();
-    }, 500);
-});
-
-// Enter key to launch
-document.getElementById('username').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        document.getElementById('launchButton').click();
-    }
-});
-
 // Auto-focus username field
 setTimeout(() => {
     document.getElementById('username').focus();
+    document.getElementById('username').select();
 }, 2500);
     </script>
 </body>
