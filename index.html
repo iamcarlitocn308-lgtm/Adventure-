@@ -36,6 +36,7 @@
             justify-content: center;
             align-items: center;
             z-index: 1000;
+            transition: opacity 1s ease;
         }
 
         .loading-spinner {
@@ -1332,20 +1333,15 @@ function setupControls() {
     });
 }
 
+// ======================
+// EVENT LISTENERS SETUP - FIXED VERSION
+// ======================
 function setupEventListeners() {
-    // Landing button
-    document.getElementById('landShipBtn').addEventListener('click', landShip);
+    console.log("Setting up event listeners...");
     
-    // Exit ship button
-    document.getElementById('exitShipBtn').addEventListener('click', exitShip);
-    
-    // Scan button
-    document.getElementById('scanPlanetBtn').addEventListener('click', () => {
-        showNotification("SCANNING PLANET... RESOURCES DETECTED", "info");
-    });
-    
-    // Launch button
-    document.getElementById('launchButton').addEventListener('click', () => {
+    // Launch button - FIXED
+    document.getElementById('launchButton').addEventListener('click', function() {
+        console.log("Launch button clicked!");
         const username = document.getElementById('username').value.trim();
         if (!username) {
             showNotification("ENTER COMMANDER NAME", "warning");
@@ -1360,12 +1356,25 @@ function setupEventListeners() {
         }, 500);
     });
     
+    // Landing button
+    document.getElementById('landShipBtn').addEventListener('click', landShip);
+    
+    // Exit ship button
+    document.getElementById('exitShipBtn').addEventListener('click', exitShip);
+    
+    // Scan button
+    document.getElementById('scanPlanetBtn').addEventListener('click', () => {
+        showNotification("SCANNING PLANET... RESOURCES DETECTED", "info");
+    });
+    
     // Enter key to launch
     document.getElementById('username').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             document.getElementById('launchButton').click();
         }
     });
+    
+    console.log("Event listeners set up!");
 }
 
 // ======================
@@ -1639,7 +1648,7 @@ window.addEventListener('resize', () => {
 });
 
 // ======================
-// STARTUP
+// STARTUP - FIXED
 // ======================
 // Hide loading screen after 2 seconds
 setTimeout(() => {
@@ -1647,6 +1656,7 @@ setTimeout(() => {
     setTimeout(() => {
         document.getElementById('loadingScreen').style.display = 'none';
         document.getElementById('loginScreen').style.opacity = '1';
+        console.log("Login screen visible");
     }, 1000);
 }, 2000);
 
@@ -1654,7 +1664,21 @@ setTimeout(() => {
 setTimeout(() => {
     document.getElementById('username').focus();
     document.getElementById('username').select();
+    console.log("Username field focused");
 }, 2500);
+
+// DEBUG: Add click handler to check if button works
+document.getElementById('launchButton').addEventListener('click', function() {
+    console.log("DEBUG: Launch button clicked!");
+});
+
+// Also try with Enter key in username field
+document.getElementById('username').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        console.log("DEBUG: Enter key pressed in username field");
+        document.getElementById('launchButton').click();
+    }
+});
     </script>
 </body>
 </html>
