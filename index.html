@@ -1,138 +1,1189 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Eternal Empire - Test</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eternal Empire - Phase 1</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; }
-        canvas { display: block; }
-        #loading { 
-            position: fixed; 
-            top: 50%; 
-            left: 50%; 
-            transform: translate(-50%, -50%); 
-            color: white; 
-            font-size: 24px; 
-            z-index: 1000; 
+        /* ============ RESET ============ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            background: #000;
+            color: white;
+        }
+
+        /* ============ LOADING SCREEN ============ */
+        #loadingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #000011 0%, #001122 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 1s ease;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid rgba(0, 170, 255, 0.3);
+            border-top: 6px solid #00aaff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        .loading-text {
+            color: #00ffff;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px #00ffff;
+        }
+
+        /* ============ LOGIN SCREEN ============ */
+        #loginScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at center, #000033 0%, #000011 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 900;
+            opacity: 0;
+            animation: fadeIn 1s ease forwards 0.5s;
+        }
+
+        .login-container {
+            width: 90%;
+            max-width: 400px;
+            background: rgba(0, 20, 40, 0.95);
+            border-radius: 20px;
+            border: 3px solid #00aaff;
+            padding: 30px;
+            box-shadow: 0 0 40px rgba(0, 170, 255, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .game-title {
+            color: #00ffff;
+            font-size: 36px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+            text-shadow: 0 0 15px #00ffff;
+            letter-spacing: 2px;
+        }
+
+        .game-subtitle {
+            color: #88aaff;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            display: block;
+            color: #00aaff;
+            margin-bottom: 8px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 15px;
+            background: rgba(0, 30, 60, 0.7);
+            border: 2px solid #0088ff;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .login-input:focus {
+            outline: none;
+            border-color: #00ffff;
+            box-shadow: 0 0 15px #00ffff;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #0088ff, #00aaff);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 170, 255, 0.4);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        /* ============ GAME CONTAINER ============ */
+        #gameContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: none;
+        }
+
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* ============ CROSSHAIR ============ */
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .crosshair-dot {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #00ffff;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 5px #00ffff;
+        }
+
+        /* ============ UI OVERLAY ============ */
+        #uiOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .player-info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 20, 40, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #00aaff;
+            min-width: 200px;
+        }
+
+        .player-name {
+            color: #00ffff;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .planet-name {
+            color: #88aaff;
+            font-size: 14px;
+        }
+
+        .resource-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 20, 40, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #00ff88;
+            text-align: right;
+        }
+
+        .resource-item {
+            margin-bottom: 8px;
+        }
+
+        .resource-label {
+            color: #88aaff;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+
+        .resource-value {
+            color: #00ffff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* ============ MOBILE CONTROLS ============ */
+        #mobileControls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 150px;
+            display: none;
+            z-index: 60;
+        }
+
+        .joystick-container {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            width: 120px;
+            height: 120px;
+        }
+
+        .joystick-outer {
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 30, 60, 0.7);
+            border: 4px solid #00aaff;
+            border-radius: 50%;
+            position: absolute;
+        }
+
+        .joystick-inner {
+            width: 60px;
+            height: 60px;
+            background: rgba(0, 170, 255, 0.9);
+            border: 3px solid #00ffff;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .action-button {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            width: 80px;
+            height: 80px;
+            background: rgba(0, 60, 120, 0.9);
+            border: 4px solid #00aaff;
+            border-radius: 50%;
+            color: white;
+            font-size: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        /* ============ ANIMATIONS ============ */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 768px) {
+            .game-title { font-size: 28px; }
+            .login-container { padding: 20px; }
+            .player-info, .resource-display { padding: 10px; min-width: 150px; }
+            #mobileControls { display: block; }
+        }
+
+        @media (max-width: 480px) {
+            .game-title { font-size: 24px; }
+            .player-info, .resource-display { 
+                position: relative; 
+                top: 0; 
+                left: 0; 
+                right: 0;
+                margin: 10px;
+                width: calc(100% - 20px);
+            }
+            .resource-display { text-align: left; }
+        }
+
+        /* ============ INSTRUCTIONS ============ */
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 20, 40, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #00ff88;
+            color: #88ccff;
+            font-size: 14px;
+            text-align: center;
+            max-width: 80%;
+            animation: pulse 2s infinite;
         }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
-    <div id="loading">Loading Game...</div>
-    <canvas id="gameCanvas"></canvas>
+    <!-- Loading Screen -->
+    <div id="loadingScreen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading Eternal Empire</div>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="loginScreen">
+        <div class="login-container">
+            <div class="game-title">ETERNAL EMPIRE</div>
+            <div class="game-subtitle">Phase 1: First Contact</div>
+            
+            <div class="input-group">
+                <label class="input-label">COMMANDER NAME</label>
+                <input type="text" id="username" class="login-input" placeholder="Enter your name" maxlength="20" value="Explorer">
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">FACTION</label>
+                <select id="faction" class="login-input">
+                    <option value="explorer">Explorer Corps</option>
+                    <option value="miner">Mining Guild</option>
+                    <option value="warrior">Warrior Clan</option>
+                    <option value="trader">Trade Federation</option>
+                </select>
+            </div>
+            
+            <button class="login-btn" id="launchButton">🚀 LAUNCH GAME</button>
+        </div>
+    </div>
+
+    <!-- Game Container -->
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- UI Overlay -->
+        <div id="uiOverlay">
+            <div id="crosshair">
+                <div class="crosshair-dot"></div>
+            </div>
+            
+            <div class="player-info">
+                <div class="player-name" id="playerName">COMMANDER</div>
+                <div class="planet-name" id="planetName">Terra Nova</div>
+            </div>
+            
+            <div class="resource-display">
+                <div class="resource-item">
+                    <span class="resource-label">IRON:</span>
+                    <span class="resource-value" id="ironValue">0</span>
+                </div>
+                <div class="resource-item">
+                    <span class="resource-label">ENERGY:</span>
+                    <span class="resource-value" id="energyValue">100</span>
+                </div>
+            </div>
+            
+            <div id="instructions">
+                WASD to move • Mouse to look • Click to mine • M: Toggle mining
+            </div>
+        </div>
+        
+        <!-- Mobile Controls -->
+        <div id="mobileControls">
+            <div class="joystick-container" id="joystickArea">
+                <div class="joystick-outer"></div>
+                <div class="joystick-inner" id="joystickHandle"></div>
+            </div>
+            <div class="action-button" id="jumpButton">⬆️</div>
+        </div>
+    </div>
 
     <script>
-        // SIMPLIFIED WORKING VERSION
-        console.log("Starting Eternal Empire...");
+// ======================
+// GAME STATE
+// ======================
+const gameState = {
+    player: {
+        name: "",
+        faction: "explorer",
+        health: 100,
+        energy: 100,
+        position: { x: 0, y: 2, z: 0 },
+        miningMode: false
+    },
+    resources: {
+        iron: 0,
+        energy: 100
+    },
+    currentPlanet: "terra_nova",
+    settings: {
+        autosave: true,
+        notifications: true
+    }
+};
+
+// ======================
+// THREE.JS VARIABLES
+// ======================
+let scene, camera, renderer;
+let terrain, playerObject;
+let resourceNodes = [];
+let keys = {};
+let mouseX = 0, mouseY = 0;
+let isPointerLocked = false;
+let movementVector = { x: 0, z: 0 };
+
+// ======================
+// INITIALIZATION
+// ======================
+function initGame() {
+    console.log("Initializing game...");
+    
+    // Get player info from login
+    gameState.player.name = document.getElementById('username').value || "Explorer";
+    gameState.player.faction = document.getElementById('faction').value;
+    
+    // Update UI
+    document.getElementById('playerName').textContent = gameState.player.name;
+    
+    // Create Three.js scene
+    scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x87CEEB, 50, 300);
+    
+    // Create camera
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 2, 0);
+    
+    // Create renderer
+    const canvas = document.getElementById('gameCanvas');
+    renderer = new THREE.WebGLRenderer({ 
+        canvas: canvas,
+        antialias: true 
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    
+    // Setup lighting
+    setupLighting();
+    
+    // Create terrain
+    createTerrain();
+    
+    // Create player
+    createPlayer();
+    
+    // Create resources
+    createResources();
+    
+    // Setup controls
+    setupControls();
+    
+    // Start game loop
+    animate();
+    
+    // Show game container
+    document.getElementById('gameContainer').style.display = 'block';
+    
+    // Show welcome message
+    showNotification(`Welcome to Terra Nova, ${gameState.player.name}!`, "info", 5000);
+}
+
+// ======================
+// LIGHTING
+// ======================
+function setupLighting() {
+    // Ambient light
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    
+    // Sun light
+    const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    sunLight.position.set(100, 100, 50);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.camera.near = 0.5;
+    sunLight.shadow.camera.far = 500;
+    sunLight.shadow.camera.left = -100;
+    sunLight.shadow.camera.right = 100;
+    sunLight.shadow.camera.top = 100;
+    sunLight.shadow.camera.bottom = -100;
+    scene.add(sunLight);
+    
+    // Sky color
+    scene.background = new THREE.Color(0x87CEEB);
+}
+
+// ======================
+// TERRAIN
+// ======================
+function createTerrain() {
+    const size = 200;
+    const segments = 128;
+    
+    const geometry = new THREE.PlaneGeometry(size, size, segments, segments);
+    
+    // Add some hills
+    const vertices = geometry.attributes.position.array;
+    for (let i = 0; i < vertices.length; i += 3) {
+        const x = vertices[i];
+        const z = vertices[i + 2];
         
-        // Hide loading screen
-        setTimeout(() => {
-            document.getElementById('loading').style.display = 'none';
-            startGame();
-        }, 1000);
+        // Create rolling hills
+        let height = 0;
+        height += Math.sin(x * 0.05) * Math.cos(z * 0.05) * 3;
+        height += Math.sin(x * 0.1) * Math.cos(z * 0.1) * 1.5;
+        height += Math.random() * 0.5; // Small randomness
         
-        function startGame() {
-            console.log("Initializing game...");
+        vertices[i + 1] = height;
+    }
+    
+    geometry.computeVertexNormals();
+    
+    const material = new THREE.MeshStandardMaterial({ 
+        color: 0x2ecc71,
+        roughness: 0.8,
+        metalness: 0.2
+    });
+    
+    terrain = new THREE.Mesh(geometry, material);
+    terrain.rotation.x = -Math.PI / 2;
+    terrain.receiveShadow = true;
+    terrain.castShadow = true;
+    
+    scene.add(terrain);
+    
+    // Add some trees and rocks
+    addTerrainDetails();
+}
+
+function addTerrainDetails() {
+    // Add some trees
+    for (let i = 0; i < 30; i++) {
+        const x = Math.random() * 180 - 90;
+        const z = Math.random() * 180 - 90;
+        
+        // Create tree trunk
+        const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.3, 2, 8);
+        const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+        const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+        
+        // Create leaves
+        const leavesGeometry = new THREE.ConeGeometry(1.5, 3, 8);
+        const leavesMaterial = new THREE.MeshStandardMaterial({ color: 0x228822 });
+        const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+        leaves.position.y = 1.5;
+        
+        const tree = new THREE.Group();
+        tree.add(trunk);
+        tree.add(leaves);
+        
+        // Position on terrain
+        const raycaster = new THREE.Raycaster(
+            new THREE.Vector3(x, 100, z),
+            new THREE.Vector3(0, -1, 0)
+        );
+        const intersects = raycaster.intersectObject(terrain);
+        
+        if (intersects.length > 0) {
+            tree.position.set(x, intersects[0].point.y, z);
+            tree.scale.setScalar(0.8 + Math.random() * 0.4);
+            tree.rotation.y = Math.random() * Math.PI * 2;
             
-            // Create scene
-            const scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87CEEB);
+            tree.traverse(child => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
             
-            // Create camera
-            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 2, 5);
+            scene.add(tree);
+        }
+    }
+    
+    // Add some rocks
+    for (let i = 0; i < 20; i++) {
+        const x = Math.random() * 180 - 90;
+        const z = Math.random() * 180 - 90;
+        
+        const rockGeometry = new THREE.DodecahedronGeometry(0.5 + Math.random() * 0.5, 0);
+        const rockMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x666666,
+            roughness: 0.9
+        });
+        const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+        
+        // Position on terrain
+        const raycaster = new THREE.Raycaster(
+            new THREE.Vector3(x, 100, z),
+            new THREE.Vector3(0, -1, 0)
+        );
+        const intersects = raycaster.intersectObject(terrain);
+        
+        if (intersects.length > 0) {
+            rock.position.set(x, intersects[0].point.y, z);
+            rock.rotation.set(
+                Math.random() * Math.PI,
+                Math.random() * Math.PI,
+                Math.random() * Math.PI
+            );
             
-            // Create renderer
-            const canvas = document.getElementById('gameCanvas');
-            const renderer = new THREE.WebGLRenderer({ canvas: canvas });
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            rock.castShadow = true;
+            rock.receiveShadow = true;
             
-            // Add lights
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambientLight);
-            
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(100, 100, 50);
-            scene.add(directionalLight);
-            
-            // Create ground
-            const groundGeometry = new THREE.PlaneGeometry(100, 100);
-            const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x2ecc71 });
-            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-            ground.rotation.x = -Math.PI / 2;
-            scene.add(ground);
-            
-            // Create player (cube)
-            const playerGeometry = new THREE.BoxGeometry(1, 2, 1);
-            const playerMaterial = new THREE.MeshStandardMaterial({ color: 0x3498db });
-            const player = new THREE.Mesh(playerGeometry, playerMaterial);
-            player.position.y = 1;
-            scene.add(player);
-            
-            // Create some resources
-            const resources = [];
-            for (let i = 0; i < 10; i++) {
-                const geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-                const material = new THREE.MeshStandardMaterial({ color: 0xffaa00 });
-                const resource = new THREE.Mesh(geometry, material);
-                
-                resource.position.x = Math.random() * 40 - 20;
-                resource.position.z = Math.random() * 40 - 20;
-                resource.position.y = 0.25;
-                
-                scene.add(resource);
-                resources.push(resource);
-            }
-            
-            // Controls
-            const keys = {};
-            document.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
-            document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
-            
-            // Game loop
-            function animate() {
-                requestAnimationFrame(animate);
-                
-                // Move player
-                const speed = 0.1;
-                if (keys['w'] || keys['arrowup']) player.position.z -= speed;
-                if (keys['s'] || keys['arrowdown']) player.position.z += speed;
-                if (keys['a'] || keys['arrowleft']) player.position.x -= speed;
-                if (keys['d'] || keys['arrowright']) player.position.x += speed;
-                
-                // Keep player on ground
-                player.position.y = 1;
-                
-                // Make camera follow player
-                camera.position.x = player.position.x;
-                camera.position.z = player.position.z + 5;
-                camera.lookAt(player.position);
-                
-                // Rotate resources
-                resources.forEach(resource => {
-                    resource.rotation.y += 0.02;
-                });
-                
-                renderer.render(scene, camera);
-            }
-            
-            // Start game loop
-            animate();
-            
-            console.log("Game started! Use WASD to move.");
-            
-            // Show controls
-            alert("Game Started!\n\nUse WASD keys to move around\nCollect the golden cubes (resources)\n\nClick OK to begin!");
+            scene.add(rock);
+        }
+    }
+}
+
+// ======================
+// PLAYER
+// ======================
+function createPlayer() {
+    // Create a simple player capsule
+    const group = new THREE.Group();
+    
+    // Body (cylinder)
+    const bodyGeometry = new THREE.CylinderGeometry(0.3, 0.3, 1.8, 8);
+    const bodyMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x3498db,
+        roughness: 0.7
+    });
+    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    body.position.y = 0.9;
+    
+    // Helmet (sphere)
+    const helmetGeometry = new THREE.SphereGeometry(0.4, 8, 8);
+    const helmetMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x2980b9,
+        roughness: 0.5,
+        metalness: 0.5
+    });
+    const helmet = new THREE.Mesh(helmetGeometry, helmetMaterial);
+    helmet.position.y = 1.6;
+    
+    group.add(body);
+    group.add(helmet);
+    
+    group.traverse(child => {
+        if (child.isMesh) {
+            child.castShadow = true;
+        }
+    });
+    
+    playerObject = group;
+    scene.add(playerObject);
+    
+    // Position player
+    playerObject.position.set(0, 2, 0);
+}
+
+// ======================
+// RESOURCES
+// ======================
+function createResources() {
+    resourceNodes = [];
+    
+    // Create iron deposits
+    for (let i = 0; i < 15; i++) {
+        createResourceNode('iron', 0xaaaaaa);
+    }
+    
+    // Create energy crystals
+    for (let i = 0; i < 10; i++) {
+        createResourceNode('energy', 0x00ff00);
+    }
+}
+
+function createResourceNode(type, color) {
+    const x = Math.random() * 160 - 80;
+    const z = Math.random() * 160 - 80;
+    
+    let geometry, material;
+    
+    if (type === 'iron') {
+        geometry = new THREE.OctahedronGeometry(0.6, 1);
+        material = new THREE.MeshStandardMaterial({
+            color: color,
+            roughness: 0.7,
+            metalness: 0.8
+        });
+    } else if (type === 'energy') {
+        geometry = new THREE.ConeGeometry(0.4, 1, 6);
+        material = new THREE.MeshStandardMaterial({
+            color: color,
+            emissive: color,
+            emissiveIntensity: 0.5,
+            roughness: 0.3,
+            metalness: 0.9
+        });
+    }
+    
+    const mesh = new THREE.Mesh(geometry, material);
+    
+    // Position on terrain
+    const raycaster = new THREE.Raycaster(
+        new THREE.Vector3(x, 100, z),
+        new THREE.Vector3(0, -1, 0)
+    );
+    const intersects = raycaster.intersectObject(terrain);
+    
+    if (intersects.length > 0) {
+        mesh.position.set(x, intersects[0].point.y + 0.3, z);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        
+        // Add floating animation
+        mesh.userData = {
+            floatSpeed: 0.5 + Math.random() * 0.5,
+            floatPhase: Math.random() * Math.PI * 2,
+            rotationSpeed: 0.5 + Math.random() * 0.5,
+            originalY: mesh.position.y,
+            type: type,
+            amount: 50 + Math.random() * 50,
+            collected: false
+        };
+        
+        scene.add(mesh);
+        resourceNodes.push(mesh);
+    }
+}
+
+// ======================
+// CONTROLS
+// ======================
+function setupControls() {
+    // Keyboard controls
+    document.addEventListener('keydown', (e) => {
+        const key = e.key.toLowerCase();
+        keys[key] = true;
+        
+        // Toggle mining mode
+        if (key === 'm') {
+            gameState.player.miningMode = !gameState.player.miningMode;
+            showNotification(
+                gameState.player.miningMode ? 
+                "Mining Mode: ON - Click resources to mine" : 
+                "Mining Mode: OFF",
+                gameState.player.miningMode ? "success" : "info"
+            );
         }
         
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            if (camera && renderer) {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
+        // Jump
+        if (key === ' ' && playerObject) {
+            playerObject.position.y += 0.5;
+        }
+    });
+    
+    document.addEventListener('keyup', (e) => {
+        keys[e.key.toLowerCase()] = false;
+    });
+    
+    // Mouse controls
+    document.addEventListener('mousemove', (e) => {
+        if (isPointerLocked) {
+            mouseX += e.movementX * 0.002;
+            mouseY += e.movementY * 0.002;
+            mouseY = Math.max(-Math.PI/2, Math.min(Math.PI/2, mouseY));
+        }
+    });
+    
+    // Click to mine
+    document.addEventListener('click', (e) => {
+        if (gameState.player.miningMode && isPointerLocked) {
+            mineResource();
+        }
+    });
+    
+    // Pointer lock
+    document.addEventListener('click', () => {
+        if (!isPointerLocked) {
+            document.body.requestPointerLock();
+        }
+    });
+    
+    document.addEventListener('pointerlockchange', () => {
+        isPointerLocked = document.pointerLockElement === document.body;
+    });
+    
+    // Mobile controls
+    setupMobileControls();
+    
+    // Window resize
+    window.addEventListener('resize', onWindowResize);
+}
+
+function setupMobileControls() {
+    const joystickArea = document.getElementById('joystickArea');
+    const joystickHandle = document.getElementById('joystickHandle');
+    
+    let joystickActive = false;
+    let startX = 0, startY = 0;
+    
+    joystickArea.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        joystickActive = true;
+        const touch = e.touches[0];
+        const rect = joystickArea.getBoundingClientRect();
+        startX = rect.left + rect.width / 2;
+        startY = rect.top + rect.height / 2;
+    });
+    
+    joystickArea.addEventListener('touchmove', (e) => {
+        if (!joystickActive) return;
+        e.preventDefault();
+        
+        const touch = e.touches[0];
+        let deltaX = touch.clientX - startX;
+        let deltaZ = touch.clientY - startY;
+        
+        // Limit movement
+        const maxDist = 40;
+        const dist = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
+        if (dist > maxDist) {
+            deltaX = (deltaX / dist) * maxDist;
+            deltaZ = (deltaZ / dist) * maxDist;
+        }
+        
+        // Update visual
+        joystickHandle.style.transform = `translate(${deltaX}px, ${deltaZ}px)`;
+        
+        // Update movement vector
+        movementVector.x = deltaX / maxDist;
+        movementVector.z = deltaZ / maxDist;
+    });
+    
+    joystickArea.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        joystickActive = false;
+        joystickHandle.style.transform = 'translate(0, 0)';
+        movementVector.x = 0;
+        movementVector.z = 0;
+    });
+    
+    // Jump button
+    document.getElementById('jumpButton').addEventListener('click', () => {
+        if (playerObject) {
+            playerObject.position.y += 0.5;
+        }
+    });
+}
+
+// ======================
+// MINING SYSTEM
+// ======================
+function mineResource() {
+    if (!camera) return;
+    
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+    
+    const intersects = raycaster.intersectObjects(resourceNodes);
+    
+    if (intersects.length > 0) {
+        const resource = intersects[0].object;
+        
+        if (resource.userData && !resource.userData.collected) {
+            // Mine the resource
+            const amount = Math.min(10, resource.userData.amount);
+            resource.userData.amount -= amount;
+            
+            // Add to player inventory
+            if (resource.userData.type === 'iron') {
+                gameState.resources.iron += amount;
+            } else if (resource.userData.type === 'energy') {
+                gameState.resources.energy = Math.min(100, gameState.resources.energy + amount);
             }
-        });
+            
+            // Update UI
+            updateUI();
+            
+            // Show notification
+            showNotification(`Mined ${amount} ${resource.userData.type}!`, "success");
+            
+            // Visual feedback
+            resource.scale.multiplyScalar(0.8);
+            
+            // Check if depleted
+            if (resource.userData.amount <= 0) {
+                resource.userData.collected = true;
+                scene.remove(resource);
+                
+                // Remove from array
+                const index = resourceNodes.indexOf(resource);
+                if (index > -1) {
+                    resourceNodes.splice(index, 1);
+                }
+                
+                showNotification("Resource depleted!", "info");
+            }
+        }
+    } else {
+        showNotification("No resource in sight", "warning");
+    }
+}
+
+// ======================
+// GAME LOOP
+// ======================
+function animate() {
+    requestAnimationFrame(animate);
+    
+    // Update player movement
+    updatePlayerMovement();
+    
+    // Update resource animations
+    updateResourceAnimations();
+    
+    // Update camera
+    updateCamera();
+    
+    // Render
+    renderer.render(scene, camera);
+}
+
+function updatePlayerMovement() {
+    if (!playerObject) return;
+    
+    const moveSpeed = 0.1;
+    
+    // Get movement direction
+    let moveX = 0;
+    let moveZ = 0;
+    
+    // Keyboard input
+    if (keys['w'] || keys['arrowup']) moveZ -= 1;
+    if (keys['s'] || keys['arrowdown']) moveZ += 1;
+    if (keys['a'] || keys['arrowleft']) moveX -= 1;
+    if (keys['d'] || keys['arrowright']) moveX += 1;
+    
+    // Mobile joystick input
+    moveX += movementVector.x;
+    moveZ += movementVector.z;
+    
+    // Normalize diagonal movement
+    if (moveX !== 0 || moveZ !== 0) {
+        const length = Math.sqrt(moveX * moveX + moveZ * moveZ);
+        moveX /= length;
+        moveZ /= length;
+    }
+    
+    // Apply movement
+    playerObject.position.x += moveX * moveSpeed;
+    playerObject.position.z += moveZ * moveSpeed;
+    
+    // Keep player on ground
+    if (terrain) {
+        const raycaster = new THREE.Raycaster(
+            new THREE.Vector3(playerObject.position.x, 100, playerObject.position.z),
+            new THREE.Vector3(0, -1, 0)
+        );
+        const intersects = raycaster.intersectObject(terrain);
+        
+        if (intersects.length > 0) {
+            const groundHeight = intersects[0].point.y;
+            if (playerObject.position.y < groundHeight + 0.9) {
+                playerObject.position.y = groundHeight + 0.9;
+            }
+        }
+    }
+    
+    // Apply gravity
+    playerObject.position.y -= 0.01;
+    playerObject.position.y = Math.max(0.9, playerObject.position.y);
+}
+
+function updateResourceAnimations() {
+    resourceNodes.forEach(resource => {
+        if (resource.userData && !resource.userData.collected) {
+            // Floating animation
+            resource.userData.floatPhase += 0.02;
+            const floatOffset = Math.sin(resource.userData.floatPhase * resource.userData.floatSpeed) * 0.1;
+            resource.position.y = resource.userData.originalY + floatOffset;
+            
+            // Rotation
+            resource.rotation.y += 0.01 * resource.userData.rotationSpeed;
+            
+            // Pulsing effect for energy crystals
+            if (resource.userData.type === 'energy') {
+                const pulse = Math.sin(Date.now() * 0.003) * 0.1 + 0.9;
+                resource.scale.setScalar(pulse);
+            }
+        }
+    });
+}
+
+function updateCamera() {
+    if (!playerObject || !camera) return;
+    
+    // Camera follows player
+    camera.position.x = playerObject.position.x;
+    camera.position.y = playerObject.position.y + 0.5;
+    camera.position.z = playerObject.position.z + 2;
+    
+    // Apply mouse look
+    camera.rotation.y = mouseX;
+    camera.rotation.x = mouseY;
+    
+    // Look at player
+    camera.lookAt(
+        playerObject.position.x,
+        playerObject.position.y + 0.5,
+        playerObject.position.z
+    );
+}
+
+// ======================
+// UI FUNCTIONS
+// ======================
+function updateUI() {
+    document.getElementById('ironValue').textContent = gameState.resources.iron;
+    document.getElementById('energyValue').textContent = Math.floor(gameState.resources.energy);
+}
+
+function showNotification(message, type = "info", duration = 3000) {
+    console.log(`[${type.toUpperCase()}] ${message}`);
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 20, 40, 0.9);
+        color: ${type === 'success' ? '#00ff88' : type === 'warning' ? '#ffaa00' : '#00aaff'};
+        padding: 15px 25px;
+        border-radius: 10px;
+        border: 2px solid ${type === 'success' ? '#00ff88' : type === 'warning' ? '#ffaa00' : '#00aaff'};
+        font-size: 16px;
+        font-weight: bold;
+        z-index: 1000;
+        pointer-events: none;
+        opacity: 0;
+        animation: fadeInOut 0.3s ease forwards;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Remove after duration
+    setTimeout(() => {
+        notification.style.animation = 'fadeInOut 0.3s ease reverse forwards';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, duration);
+}
+
+// Add fade animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes fadeInOut {
+        from { opacity: 0; transform: translate(-50%, -60%); }
+        to { opacity: 1; transform: translate(-50%, -50%); }
+    }
+`;
+document.head.appendChild(style);
+
+// ======================
+// WINDOW RESIZE
+// ======================
+function onWindowResize() {
+    if (camera && renderer) {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+}
+
+// ======================
+// STARTUP
+// ======================
+// Hide loading screen after 2 seconds
+setTimeout(() => {
+    document.getElementById('loadingScreen').style.opacity = '0';
+    setTimeout(() => {
+        document.getElementById('loadingScreen').style.display = 'none';
+        document.getElementById('loginScreen').style.opacity = '1';
+    }, 1000);
+}, 2000);
+
+// Launch button
+document.getElementById('launchButton').addEventListener('click', () => {
+    const username = document.getElementById('username').value.trim();
+    if (!username) {
+        showNotification("Please enter a commander name!", "warning");
+        return;
+    }
+    
+    // Fade out login screen
+    document.getElementById('loginScreen').style.opacity = '0';
+    setTimeout(() => {
+        document.getElementById('loginScreen').style.display = 'none';
+        initGame();
+    }, 500);
+});
+
+// Enter key to launch
+document.getElementById('username').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        document.getElementById('launchButton').click();
+    }
+});
+
+// Auto-focus username field
+setTimeout(() => {
+    document.getElementById('username').focus();
+}, 2500);
     </script>
 </body>
 </html>
