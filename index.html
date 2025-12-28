@@ -1,808 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Planet Empire Builder - Mobile</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <style>
-        /* Prevent all default touch behaviors */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
-            touch-action: manipulation;
-        }
-
-        html, body {
-            width: 100vw;
-            height: 100vh;
-            height: 100dvh;
-            overflow: hidden;
-            position: fixed;
-            top: 0;
-            left: 0;
-            background: #000;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            color: white;
-            overscroll-behavior: none;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        #game {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            height: 100dvh;
-        }
-
-        canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-
-        /* Mobile Controls */
-        #mobileControls {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100vw;
-            height: 250px;
-            z-index: 100;
-            pointer-events: none;
-            display: flex;
-            justify-content: space-between;
-            padding: 20px;
-            padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
-        }
-
-        .joystick-container {
-            width: 180px;
-            height: 180px;
-            pointer-events: auto;
-            position: relative;
-        }
-
-        .joystick-outer {
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 30, 60, 0.7);
-            border: 4px solid #00aaff;
-            border-radius: 50%;
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            box-shadow: 0 0 30px rgba(0, 170, 255, 0.3);
-        }
-
-        .joystick-inner {
-            width: 80px;
-            height: 80px;
-            background: rgba(0, 170, 255, 0.9);
-            border: 4px solid #00ffff;
-            border-radius: 50%;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            transition: transform 0.1s;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
-        }
-
-        .action-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            pointer-events: auto;
-            align-items: flex-end;
-        }
-
-        .action-button {
-            width: 100px;
-            height: 100px;
-            background: rgba(0, 60, 120, 0.9);
-            border: 4px solid #00aaff;
-            border-radius: 50%;
-            color: white;
-            font-size: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.1s;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-        }
-
-        .action-button:active {
-            background: rgba(0, 120, 240, 0.9);
-            transform: scale(0.95);
-            box-shadow: 0 2px 10px rgba(0, 170, 255, 0.5);
-        }
-
-        /* Resources HUD - Mobile Optimized */
-        #hud {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            padding: 15px;
-            background: linear-gradient(to bottom, rgba(0, 10, 30, 0.95), transparent);
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            z-index: 50;
-        }
-
-        .resource {
-            background: rgba(0, 0, 0, 0.8);
-            border: 2px solid;
-            border-radius: 15px;
-            padding: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            min-width: 140px;
-        }
-
-        .resource-icon {
-            font-size: 20px;
-            min-width: 30px;
-        }
-
-        .resource-info {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-        }
-
-        .resource-name {
-            font-size: 11px;
-            color: #aaa;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .resource-amount {
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        /* Wood */
-        .resource-wood {
-            border-color: #8B4513;
-        }
-        .resource-wood .resource-amount {
-            color: #8B4513;
-        }
-
-        /* Wheat */
-        .resource-wheat {
-            border-color: #FFD700;
-        }
-        .resource-wheat .resource-amount {
-            color: #FFD700;
-        }
-
-        /* Stone */
-        .resource-stone {
-            border-color: #888;
-        }
-        .resource-stone .resource-amount {
-            color: #888;
-        }
-
-        /* Gold */
-        .resource-gold {
-            border-color: #FFD700;
-        }
-        .resource-gold .resource-amount {
-            color: #FFD700;
-        }
-
-        /* Bread */
-        .resource-bread {
-            border-color: #D2691E;
-        }
-        .resource-bread .resource-amount {
-            color: #D2691E;
-        }
-
-        /* Health */
-        .resource-health {
-            border-color: #FF5555;
-        }
-        .resource-health .resource-amount {
-            color: #FF5555;
-        }
-
-        /* Toolbar - Mobile */
-        #toolbar {
-            position: absolute;
-            bottom: 260px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            border: 3px solid #00aaff;
-            border-radius: 20px;
-            padding: 15px;
-            display: flex;
-            gap: 12px;
-            z-index: 90;
-            max-width: 90vw;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-        }
-
-        #toolbar::-webkit-scrollbar {
-            display: none;
-        }
-
-        .tool {
-            width: 65px;
-            height: 65px;
-            background: rgba(0, 40, 80, 0.7);
-            border: 2px solid #00aaff;
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .tool:active {
-            background: rgba(0, 80, 160, 0.9);
-            transform: scale(0.95);
-        }
-
-        .tool.active {
-            background: rgba(0, 80, 160, 0.9);
-            border-color: #00ffff;
-            box-shadow: 0 0 15px #00ffff;
-        }
-
-        .tool-icon {
-            font-size: 24px;
-            margin-bottom: 3px;
-        }
-
-        .tool-name {
-            font-size: 10px;
-            color: #88aaff;
-            text-align: center;
-        }
-
-        /* Quick Actions */
-        .quick-action {
-            position: absolute;
-            top: 120px;
-            right: 20px;
-            width: 70px;
-            height: 70px;
-            background: rgba(0, 100, 200, 0.9);
-            border: 3px solid #00aaff;
-            border-radius: 50%;
-            color: white;
-            font-size: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 80;
-            box-shadow: 0 5px 15px rgba(0, 170, 255, 0.3);
-        }
-
-        .quick-action:active {
-            transform: scale(0.95);
-            background: rgba(0, 150, 255, 0.9);
-        }
-
-        #buildButton {
-            top: 200px;
-            background: rgba(0, 200, 100, 0.9);
-            border-color: #00ff88;
-        }
-
-        #breadButton {
-            top: 280px;
-            background: rgba(210, 105, 30, 0.9);
-            border-color: #D2691E;
-        }
-
-        /* Building Menu - Mobile */
-        #buildingMenu {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            height: 100dvh;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 200;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .building-container {
-            width: 100%;
-            max-width: 500px;
-            max-height: 80vh;
-            background: rgba(0, 30, 60, 0.98);
-            border-radius: 25px;
-            border: 4px solid #00ff88;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .building-header {
-            background: linear-gradient(90deg, #001133, #002255);
-            padding: 20px;
-            text-align: center;
-            border-bottom: 3px solid #00aaff;
-        }
-
-        .building-title {
-            color: #00ffff;
-            font-size: 24px;
-            font-weight: bold;
-        }
-
-        .building-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .building-option {
-            background: rgba(0, 40, 80, 0.7);
-            border: 2px solid #00aaff;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .building-option:active {
-            background: rgba(0, 80, 160, 0.9);
-            transform: scale(0.98);
-        }
-
-        .building-icon {
-            font-size: 30px;
-        }
-
-        .building-info {
-            flex: 1;
-        }
-
-        .building-name {
-            font-size: 18px;
-            font-weight: bold;
-            color: #00ffff;
-            margin-bottom: 5px;
-        }
-
-        .building-cost {
-            font-size: 14px;
-            color: #aaa;
-        }
-
-        .close-menu {
-            background: #ff5555;
-            border: none;
-            color: white;
-            padding: 18px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: 0 0 20px 20px;
-        }
-
-        .close-menu:active {
-            background: #ff3333;
-        }
-
-        /* Notifications */
-        .notification {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            border: 3px solid;
-            border-radius: 15px;
-            padding: 20px 30px;
-            color: white;
-            font-size: 18px;
-            font-weight: bold;
-            text-align: center;
-            z-index: 300;
-            pointer-events: none;
-            opacity: 0;
-            animation: fadeInOut 0.3s ease forwards;
-            max-width: 80vw;
-        }
-
-        @keyframes fadeInOut {
-            0% { opacity: 0; transform: translate(-50%, -60%); }
-            10% { opacity: 1; transform: translate(-50%, -50%); }
-            90% { opacity: 1; transform: translate(-50%, -50%); }
-            100% { opacity: 0; transform: translate(-50%, -40%); }
-        }
-
-        /* Crosshair */
-        #crosshair {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 20px;
-            height: 20px;
-            pointer-events: none;
-            z-index: 40;
-        }
-
-        .crosshair-dot {
-            position: absolute;
-            width: 4px;
-            height: 4px;
-            background: #00ffff;
-            border-radius: 50%;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            box-shadow: 0 0 5px #00ffff;
-        }
-
-        /* Instructions */
-        #instructions {
-            position: absolute;
-            top: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            border: 2px solid #00aaff;
-            border-radius: 15px;
-            padding: 15px;
-            color: #88ccff;
-            font-size: 14px;
-            text-align: center;
-            max-width: 90vw;
-            z-index: 40;
-            display: none;
-        }
-
-        /* Mobile specific optimizations */
-        @media (max-width: 768px) {
-            .resource {
-                min-width: 120px;
-                padding: 10px;
-            }
-            
-            .resource-icon {
-                font-size: 18px;
-                min-width: 25px;
-            }
-            
-            .resource-name {
-                font-size: 10px;
-            }
-            
-            .resource-amount {
-                font-size: 16px;
-            }
-            
-            .joystick-container {
-                width: 150px;
-                height: 150px;
-            }
-            
-            .joystick-inner {
-                width: 60px;
-                height: 60px;
-            }
-            
-            .action-button {
-                width: 85px;
-                height: 85px;
-                font-size: 35px;
-            }
-            
-            .tool {
-                width: 55px;
-                height: 55px;
-            }
-            
-            .tool-icon {
-                font-size: 20px;
-            }
-            
-            .quick-action {
-                width: 60px;
-                height: 60px;
-                font-size: 25px;
-            }
-            
-            #buildButton {
-                top: 180px;
-            }
-            
-            #breadButton {
-                top: 250px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            #hud {
-                padding: 10px;
-                gap: 8px;
-            }
-            
-            .resource {
-                min-width: 100px;
-                padding: 8px;
-            }
-            
-            .resource-icon {
-                font-size: 16px;
-                min-width: 20px;
-            }
-            
-            .resource-name {
-                font-size: 9px;
-            }
-            
-            .resource-amount {
-                font-size: 14px;
-            }
-            
-            .joystick-container {
-                width: 130px;
-                height: 130px;
-            }
-            
-            .joystick-inner {
-                width: 50px;
-                height: 50px;
-            }
-            
-            .action-button {
-                width: 75px;
-                height: 75px;
-                font-size: 30px;
-            }
-            
-            #toolbar {
-                bottom: 240px;
-                padding: 12px;
-                gap: 10px;
-            }
-            
-            .tool {
-                width: 50px;
-                height: 50px;
-            }
-            
-            .tool-icon {
-                font-size: 18px;
-            }
-            
-            .tool-name {
-                font-size: 9px;
-            }
-        }
-
-        /* Prevent zoom and other touch issues */
-        input, textarea, select, button {
-            font-size: 16px; /* Prevents iOS zoom on focus */
-        }
-
-        /* Make sure all interactive elements have proper touch behavior */
-        .action-button, .tool, .quick-action, .building-option, .close-menu {
-            -webkit-user-select: none;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
-        }
-
-        /* Disable pull-to-refresh */
-        body {
-            overscroll-behavior-y: contain;
-        }
-
-        /* Hide scrollbars but keep functionality */
-        .building-list::-webkit-scrollbar {
-            width: 5px;
-        }
-
-        .building-list::-webkit-scrollbar-thumb {
-            background: #00aaff;
-            border-radius: 10px;
-        }
-    </style>
-</head>
-<body>
-    <div id="game">
-        <canvas id="gameCanvas"></canvas>
-        
-        <!-- Resources HUD -->
-        <div id="hud">
-            <div class="resource resource-wood">
-                <div class="resource-icon">🌳</div>
-                <div class="resource-info">
-                    <div class="resource-name">WOOD</div>
-                    <div class="resource-amount" id="woodCount">0</div>
-                </div>
-            </div>
-            
-            <div class="resource resource-wheat">
-                <div class="resource-icon">🌾</div>
-                <div class="resource-info">
-                    <div class="resource-name">WHEAT</div>
-                    <div class="resource-amount" id="wheatCount">0</div>
-                </div>
-            </div>
-            
-            <div class="resource resource-stone">
-                <div class="resource-icon">🪨</div>
-                <div class="resource-info">
-                    <div class="resource-name">STONE</div>
-                    <div class="resource-amount" id="stoneCount">0</div>
-                </div>
-            </div>
-            
-            <div class="resource resource-gold">
-                <div class="resource-icon">💰</div>
-                <div class="resource-info">
-                    <div class="resource-name">GOLD</div>
-                    <div class="resource-amount" id="goldCount">0</div>
-                </div>
-            </div>
-            
-            <div class="resource resource-bread">
-                <div class="resource-icon">🍞</div>
-                <div class="resource-info">
-                    <div class="resource-name">BREAD</div>
-                    <div class="resource-amount" id="breadCount">0</div>
-                </div>
-            </div>
-            
-            <div class="resource resource-health">
-                <div class="resource-icon">❤️</div>
-                <div class="resource-info">
-                    <div class="resource-name">HEALTH</div>
-                    <div class="resource-amount" id="healthCount">100</div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Toolbar -->
-        <div id="toolbar">
-            <div class="tool active" data-tool="axe">
-                <div class="tool-icon">🪓</div>
-                <div class="tool-name">AXE</div>
-            </div>
-            <div class="tool" data-tool="pickaxe">
-                <div class="tool-icon">⛏️</div>
-                <div class="tool-name">PICK</div>
-            </div>
-            <div class="tool" data-tool="sickle">
-                <div class="tool-icon">🔪</div>
-                <div class="tool-name">SICKLE</div>
-            </div>
-            <div class="tool" data-tool="hammer">
-                <div class="tool-icon">🔨</div>
-                <div class="tool-name">BUILD</div>
-            </div>
-        </div>
-        
-        <!-- Quick Action Buttons -->
-        <div class="quick-action" id="mineButton">
-            ⛏️
-        </div>
-        
-        <div class="quick-action" id="buildButton">
-            🏠
-        </div>
-        
-        <div class="quick-action" id="breadButton">
-            🍞
-        </div>
-        
-        <!-- Mobile Controls -->
-        <div id="mobileControls">
-            <div class="joystick-container" id="joystickArea">
-                <div class="joystick-outer"></div>
-                <div class="joystick-inner" id="joystickHandle"></div>
-            </div>
-            
-            <div class="action-buttons">
-                <div class="action-button" id="actionButton">🪓</div>
-                <div class="action-button" id="jumpButton">⬆️</div>
-            </div>
-        </div>
-        
-        <!-- Crosshair -->
-        <div id="crosshair">
-            <div class="crosshair-dot"></div>
-        </div>
-        
-        <!-- Instructions -->
-        <div id="instructions">
-            Touch and drag to look around<br>
-            Use joystick to move<br>
-            Tap action buttons to interact
-        </div>
-        
-        <!-- Building Menu -->
-        <div id="buildingMenu">
-            <div class="building-container">
-                <div class="building-header">
-                    <div class="building-title">BUILD STRUCTURES</div>
-                </div>
-                
-                <div class="building-list">
-                    <div class="building-option" data-building="house">
-                        <div class="building-icon">🏠</div>
-                        <div class="building-info">
-                            <div class="building-name">HOUSE</div>
-                            <div class="building-cost">50 Wood, 20 Stone</div>
-                        </div>
-                    </div>
-                    
-                    <div class="building-option" data-building="farm">
-                        <div class="building-icon">🌾</div>
-                        <div class="building-info">
-                            <div class="building-name">FARM</div>
-                            <div class="building-cost">30 Wood, 10 Stone</div>
-                        </div>
-                    </div>
-                    
-                    <div class="building-option" data-building="mine">
-                        <div class="building-icon">⛏️</div>
-                        <div class="building-info">
-                            <div class="building-name">MINE</div>
-                            <div class="building-cost">40 Wood, 30 Stone</div>
-                        </div>
-                    </div>
-                    
-                    <div class="building-option" data-building="bakery">
-                        <div class="building-icon">🍞</div>
-                        <div class="building-info">
-                            <div class="building-name">BAKERY</div>
-                            <div class="building-cost">60 Wood, 40 Stone</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <button class="close-menu" id="closeMenu">CLOSE</button>
-            </div>
-        </div>
-    </div>
 
     <script>
 // ================ MOBILE-FRIENDLY PLANET EMPIRE BUILDER ================
@@ -819,7 +14,9 @@ const gameState = {
     player: {
         health: 100,
         hunger: 100,
-        stamina: 100
+        stamina: 100,
+        position: new THREE.Vector3(0, 0, 0),
+        rotation: new THREE.Quaternion()
     },
     currentTool: 'axe',
     buildings: []
@@ -827,7 +24,7 @@ const gameState = {
 
 // Three.js Variables
 let scene, camera, renderer;
-let terrain;
+let planet;
 let trees = [], rocks = [], wheatFields = [];
 let joystickActive = false;
 let joystickX = 0, joystickY = 0;
@@ -835,6 +32,13 @@ let movementVector = { x: 0, z: 0 };
 let touchLookActive = false;
 let lastTouchX = 0, lastTouchY = 0;
 let mouseX = 0, mouseY = 0;
+let playerCamera;
+let playerGroup;
+let isPlayerOnGround = true;
+
+// Planet parameters
+const PLANET_RADIUS = 50;
+const PLANET_SEGMENTS = 64;
 
 // Initialize Game
 function initGame() {
@@ -842,11 +46,36 @@ function initGame() {
     
     // Create scene
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x87CEEB);
+    scene.background = new THREE.Color(0x000020);
+    scene.fog = new THREE.Fog(0x000020, 100, 300);
     
-    // Create camera (first person)
+    // Setup lighting
+    setupLighting();
+    
+    // Create the planet
+    createPlanet();
+    
+    // Create atmosphere effect
+    createAtmosphere();
+    
+    // Create player group
+    playerGroup = new THREE.Group();
+    scene.add(playerGroup);
+    
+    // Create camera (third person)
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 2, 5);
+    camera.position.set(0, 3, -8);
+    playerGroup.add(camera);
+    
+    // Create player placeholder
+    const playerGeometry = new THREE.SphereGeometry(0.5, 8, 8);
+    const playerMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x00aaff,
+        emissive: 0x004466
+    });
+    const playerMesh = new THREE.Mesh(playerGeometry, playerMaterial);
+    playerMesh.position.set(0, 0, 0);
+    playerGroup.add(playerMesh);
     
     // Create renderer
     const canvas = document.getElementById('gameCanvas');
@@ -857,18 +86,15 @@ function initGame() {
         powerPreference: 'high-performance'
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit for performance
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     
-    // Setup lighting
-    setupLighting();
+    // Position player on planet surface
+    positionPlayerOnPlanet();
     
-    // Create terrain
-    createTerrain();
-    
-    // Create resources
-    createResources();
+    // Create resources on planet
+    createResourcesOnPlanet();
     
     // Setup controls
     setupMobileControls();
@@ -882,6 +108,7 @@ function initGame() {
     // Show instructions briefly
     setTimeout(() => {
         showNotification("Welcome to Planet Empire Builder!");
+        document.getElementById('instructions').textContent = "Touch and drag to look around\nUse joystick to move\nTap action buttons to interact";
         document.getElementById('instructions').style.display = 'block';
         setTimeout(() => {
             document.getElementById('instructions').style.display = 'none';
@@ -891,201 +118,346 @@ function initGame() {
 
 // Setup Lighting
 function setupLighting() {
-    // Sun light
-    const sunLight = new THREE.DirectionalLight(0xffffff, 1);
+    // Sun light (directional from far away to simulate sun)
+    const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
     sunLight.position.set(100, 100, 100);
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.width = 1024;
     sunLight.shadow.mapSize.height = 1024;
+    sunLight.shadow.camera.far = 200;
     scene.add(sunLight);
     
-    // Ambient light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    // Ambient light for shadow areas
+    const ambientLight = new THREE.AmbientLight(0x3333ff, 0.3);
     scene.add(ambientLight);
     
-    // Sky color and fog
-    scene.fog = new THREE.Fog(0x87CEEB, 50, 300);
+    // Add stars
+    createStars();
 }
 
-// Create Terrain
-function createTerrain() {
-    const size = 200;
-    const segments = 64; // Reduced for mobile performance
+// Create Planet
+function createPlanet() {
+    // Create planet geometry (sphere)
+    const geometry = new THREE.SphereGeometry(PLANET_RADIUS, PLANET_SEGMENTS, PLANET_SEGMENTS);
     
-    const geometry = new THREE.PlaneGeometry(size, size, segments, segments);
+    // Generate terrain with elevation
     const vertices = geometry.attributes.position.array;
+    const normals = geometry.attributes.normal.array;
     
-    // Create rolling hills
+    // Create continents and oceans
     for (let i = 0; i < vertices.length; i += 3) {
         const x = vertices[i];
+        const y = vertices[i + 1];
         const z = vertices[i + 2];
         
-        let height = 0;
-        height += Math.sin(x * 0.03) * Math.cos(z * 0.03) * 3;
-        height += Math.sin(x * 0.1) * Math.cos(z * 0.1) * 1;
+        // Calculate spherical coordinates
+        const radius = Math.sqrt(x*x + y*y + z*z);
+        const latitude = Math.acos(y / radius);
+        const longitude = Math.atan2(z, x);
         
-        vertices[i + 1] = height;
+        // Generate terrain noise
+        let elevation = 0;
+        
+        // Continent noise (low frequency)
+        elevation += Math.sin(longitude * 4) * Math.cos(latitude * 4) * 0.5;
+        
+        // Mountain noise (medium frequency)
+        elevation += Math.sin(longitude * 10) * Math.cos(latitude * 10) * 0.3;
+        
+        // Detail noise (high frequency)
+        elevation += Math.sin(longitude * 20) * Math.cos(latitude * 20) * 0.1;
+        
+        // Scale elevation
+        elevation *= 2;
+        
+        // Apply elevation to vertices
+        vertices[i] = x * (1 + elevation / PLANET_RADIUS);
+        vertices[i + 1] = y * (1 + elevation / PLANET_RADIUS);
+        vertices[i + 2] = z * (1 + elevation / PLANET_RADIUS);
     }
     
     geometry.computeVertexNormals();
     
+    // Create planet material with textures
     const material = new THREE.MeshStandardMaterial({
-        color: 0x4CAF50,
+        color: 0x2E8B57, // Sea Green
         roughness: 0.8,
-        metalness: 0.1
+        metalness: 0.1,
+        flatShading: false
     });
     
-    terrain = new THREE.Mesh(geometry, material);
-    terrain.rotation.x = -Math.PI / 2;
-    terrain.receiveShadow = true;
-    scene.add(terrain);
+    planet = new THREE.Mesh(geometry, material);
+    planet.receiveShadow = true;
+    planet.castShadow = true;
+    scene.add(planet);
 }
 
-// Create Resources
-function createResources() {
-    // Create trees
-    for (let i = 0; i < 20; i++) { // Reduced count for mobile
-        createTree();
+// Create Atmosphere
+function createAtmosphere() {
+    const atmosphereGeometry = new THREE.SphereGeometry(PLANET_RADIUS * 1.02, PLANET_SEGMENTS, PLANET_SEGMENTS);
+    const atmosphereMaterial = new THREE.MeshStandardMaterial({
+        color: 0x87CEEB,
+        transparent: true,
+        opacity: 0.2,
+        side: THREE.BackSide
+    });
+    
+    const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
+    scene.add(atmosphere);
+}
+
+// Create Stars
+function createStars() {
+    const starGeometry = new THREE.BufferGeometry();
+    const starCount = 1000;
+    const positions = new Float32Array(starCount * 3);
+    
+    for (let i = 0; i < starCount * 3; i += 3) {
+        const radius = 300 + Math.random() * 200;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        
+        positions[i] = radius * Math.sin(phi) * Math.cos(theta);
+        positions[i + 1] = radius * Math.sin(phi) * Math.sin(theta);
+        positions[i + 2] = radius * Math.cos(phi);
     }
     
-    // Create rocks
-    for (let i = 0; i < 15; i++) {
-        createRock();
+    starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    
+    const starMaterial = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 1,
+        sizeAttenuation: true
+    });
+    
+    const stars = new THREE.Points(starGeometry, starMaterial);
+    scene.add(stars);
+}
+
+// Position player on planet surface
+function positionPlayerOnPlanet() {
+    // Position at north pole
+    const startPosition = new THREE.Vector3(0, PLANET_RADIUS + 2, 0);
+    
+    // Rotate player to stand on surface
+    const normal = startPosition.clone().normalize();
+    playerGroup.position.copy(startPosition);
+    
+    // Align player with surface normal
+    const up = new THREE.Vector3(0, 1, 0);
+    const quaternion = new THREE.Quaternion();
+    quaternion.setFromUnitVectors(up, normal);
+    playerGroup.quaternion.copy(quaternion);
+    
+    gameState.player.position.copy(startPosition);
+}
+
+// Create resources on planet surface
+function createResourcesOnPlanet() {
+    // Create trees in forests
+    for (let i = 0; i < 50; i++) {
+        createTreeOnPlanet();
     }
     
-    // Create wheat fields
-    for (let i = 0; i < 10; i++) {
-        createWheatField();
+    // Create rocks in mountains
+    for (let i = 0; i < 30; i++) {
+        createRockOnPlanet();
+    }
+    
+    // Create wheat fields in plains
+    for (let i = 0; i < 20; i++) {
+        createWheatFieldOnPlanet();
     }
 }
 
-function createTree() {
-    const x = Math.random() * 60 - 30;
-    const z = Math.random() * 60 - 30;
+function createTreeOnPlanet() {
+    // Random position on planet surface
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
     
-    if (Math.abs(x) < 5 && Math.abs(z) < 5) return;
+    const x = Math.sin(phi) * Math.cos(theta) * (PLANET_RADIUS + 1);
+    const y = Math.sin(phi) * Math.sin(theta) * (PLANET_RADIUS + 1);
+    const z = Math.cos(phi) * (PLANET_RADIUS + 1);
     
-    // Simplified tree for mobile
-    const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.4, 2, 6); // Reduced segments
+    const position = new THREE.Vector3(x, y, z);
+    const normal = position.clone().normalize();
+    
+    // Create tree
+    const treeHeight = 2 + Math.random() * 2;
+    const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.3, treeHeight, 6);
     const trunkMaterial = new THREE.MeshStandardMaterial({ 
         color: 0x8B4513
     });
     const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
     
-    const leavesGeometry = new THREE.SphereGeometry(1.5, 6, 6); // Reduced segments
+    const leavesGeometry = new THREE.SphereGeometry(treeHeight * 0.6, 6, 6);
     const leavesMaterial = new THREE.MeshStandardMaterial({ 
         color: 0x2E7D32
     });
     const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
-    leaves.position.y = 1.5;
+    leaves.position.y = treeHeight * 0.7;
     
     const tree = new THREE.Group();
     tree.add(trunk);
     tree.add(leaves);
     
-    // Position on terrain
-    const raycaster = new THREE.Raycaster(
-        new THREE.Vector3(x, 100, z),
-        new THREE.Vector3(0, -1, 0)
-    );
-    const intersects = raycaster.intersectObject(terrain);
+    // Position on planet surface
+    tree.position.copy(position);
     
-    if (intersects.length > 0) {
-        tree.position.set(x, intersects[0].point.y, z);
-        tree.scale.setScalar(0.8 + Math.random() * 0.4);
-        tree.rotation.y = Math.random() * Math.PI * 2;
-        
-        tree.userData = {
-            type: 'tree',
-            health: 3,
-            woodYield: 5 + Math.floor(Math.random() * 5)
-        };
-        
-        scene.add(tree);
-        trees.push(tree);
-    }
+    // Align tree with surface normal
+    const up = new THREE.Vector3(0, 1, 0);
+    const quaternion = new THREE.Quaternion();
+    quaternion.setFromUnitVectors(up, normal);
+    tree.quaternion.copy(quaternion);
+    
+    tree.scale.setScalar(0.8 + Math.random() * 0.4);
+    tree.rotation.y = Math.random() * Math.PI * 2;
+    
+    tree.userData = {
+        type: 'tree',
+        health: 3,
+        woodYield: 5 + Math.floor(Math.random() * 5)
+    };
+    
+    scene.add(tree);
+    trees.push(tree);
 }
 
-function createRock() {
-    const x = Math.random() * 60 - 30;
-    const z = Math.random() * 60 - 30;
+function createRockOnPlanet() {
+    // Random position on planet surface
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
     
-    if (Math.abs(x) < 5 && Math.abs(z) < 5) return;
+    const x = Math.sin(phi) * Math.cos(theta) * (PLANET_RADIUS + 0.5);
+    const y = Math.sin(phi) * Math.sin(theta) * (PLANET_RADIUS + 0.5);
+    const z = Math.cos(phi) * (PLANET_RADIUS + 0.5);
     
-    const rockGeometry = new THREE.DodecahedronGeometry(0.8, 0); // Low poly
+    const position = new THREE.Vector3(x, y, z);
+    const normal = position.clone().normalize();
+    
+    const rockGeometry = new THREE.DodecahedronGeometry(0.8 + Math.random() * 0.5, 0);
     const rockMaterial = new THREE.MeshStandardMaterial({ 
         color: 0x757575
     });
     const rock = new THREE.Mesh(rockGeometry, rockMaterial);
     
-    const raycaster = new THREE.Raycaster(
-        new THREE.Vector3(x, 100, z),
-        new THREE.Vector3(0, -1, 0)
-    );
-    const intersects = raycaster.intersectObject(terrain);
+    rock.position.copy(position);
     
-    if (intersects.length > 0) {
-        rock.position.set(x, intersects[0].point.y, z);
-        rock.rotation.set(
-            Math.random() * Math.PI,
-            Math.random() * Math.PI,
-            Math.random() * Math.PI
-        );
-        
-        rock.userData = {
-            type: 'rock',
-            health: 5,
-            stoneYield: 3 + Math.floor(Math.random() * 3),
-            hasGold: Math.random() < 0.2
-        };
-        
-        scene.add(rock);
-        rocks.push(rock);
-    }
+    // Align rock with surface normal
+    const up = new THREE.Vector3(0, 1, 0);
+    const quaternion = new THREE.Quaternion();
+    quaternion.setFromUnitVectors(up, normal);
+    rock.quaternion.copy(quaternion);
+    
+    rock.rotation.x = Math.random() * Math.PI;
+    rock.rotation.y = Math.random() * Math.PI;
+    rock.rotation.z = Math.random() * Math.PI;
+    
+    rock.userData = {
+        type: 'rock',
+        health: 5,
+        stoneYield: 3 + Math.floor(Math.random() * 3),
+        hasGold: Math.random() < 0.2
+    };
+    
+    scene.add(rock);
+    rocks.push(rock);
 }
 
-function createWheatField() {
-    const x = Math.random() * 60 - 30;
-    const z = Math.random() * 60 - 30;
+function createWheatFieldOnPlanet() {
+    // Random position on planet surface
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
     
-    if (Math.abs(x) < 5 && Math.abs(z) < 5) return;
+    const x = Math.sin(phi) * Math.cos(theta) * (PLANET_RADIUS + 0.3);
+    const y = Math.sin(phi) * Math.sin(theta) * (PLANET_RADIUS + 0.3);
+    const z = Math.cos(phi) * (PLANET_RADIUS + 0.3);
+    
+    const position = new THREE.Vector3(x, y, z);
+    const normal = position.clone().normalize();
     
     const wheatGroup = new THREE.Group();
-    const wheatCount = 5 + Math.floor(Math.random() * 8); // Reduced count
+    const wheatCount = 8 + Math.floor(Math.random() * 10);
     
     for (let i = 0; i < wheatCount; i++) {
-        const wheatGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1, 4); // Low poly
+        const wheatGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1 + Math.random() * 0.5, 4);
         const wheatMaterial = new THREE.MeshStandardMaterial({ 
             color: 0xFFD700
         });
         const wheat = new THREE.Mesh(wheatGeometry, wheatMaterial);
         
+        const angle = (i / wheatCount) * Math.PI * 2;
+        const radius = Math.random() * 2;
         wheat.position.set(
-            (Math.random() - 0.5) * 3,
-            0.5,
-            (Math.random() - 0.5) * 3
+            Math.cos(angle) * radius,
+            Math.sin(angle) * radius,
+            0
         );
         
         wheatGroup.add(wheat);
     }
     
-    const raycaster = new THREE.Raycaster(
-        new THREE.Vector3(x, 100, z),
-        new THREE.Vector3(0, -1, 0)
-    );
-    const intersects = raycaster.intersectObject(terrain);
+    wheatGroup.position.copy(position);
     
-    if (intersects.length > 0) {
-        wheatGroup.position.set(x, intersects[0].point.y, z);
-        
-        wheatGroup.userData = {
-            type: 'wheat',
-            wheatYield: wheatCount
-        };
-        
-        scene.add(wheatGroup);
-        wheatFields.push(wheatGroup);
-    }
+    // Align wheat field with surface normal
+    const up = new THREE.Vector3(0, 1, 0);
+    const quaternion = new THREE.Quaternion();
+    quaternion.setFromUnitVectors(up, normal);
+    wheatGroup.quaternion.copy(quaternion);
+    
+    wheatGroup.userData = {
+        type: 'wheat',
+        wheatYield: wheatCount
+    };
+    
+    scene.add(wheatGroup);
+    wheatFields.push(wheatGroup);
+}
+
+// Get surface normal at position
+function getSurfaceNormal(position) {
+    return position.clone().normalize();
+}
+
+// Move player on planet surface
+function movePlayerOnPlanet(forward, right) {
+    if (!isPlayerOnGround) return;
+    
+    const speed = 0.1;
+    const playerPosition = playerGroup.position.clone();
+    const normal = getSurfaceNormal(playerPosition);
+    
+    // Calculate forward direction (tangent to surface)
+    const cameraForward = new THREE.Vector3(0, 0, -1);
+    cameraForward.applyQuaternion(camera.quaternion);
+    
+    // Project forward onto tangent plane
+    const forwardTangent = cameraForward.clone().sub(normal.clone().multiplyScalar(cameraForward.dot(normal))).normalize();
+    
+    // Calculate right direction
+    const rightTangent = new THREE.Vector3().crossVectors(normal, forwardTangent).normalize();
+    
+    // Combine movement
+    const moveVector = new THREE.Vector3(0, 0, 0);
+    moveVector.add(forwardTangent.multiplyScalar(forward * speed));
+    moveVector.add(rightTangent.multiplyScalar(right * speed));
+    
+    // Move player
+    playerPosition.add(moveVector);
+    
+    // Normalize to stay on planet surface
+    playerPosition.normalize().multiplyScalar(PLANET_RADIUS + 2);
+    
+    // Update player position
+    playerGroup.position.copy(playerPosition);
+    gameState.player.position.copy(playerPosition);
+    
+    // Re-align player with surface normal
+    const newNormal = getSurfaceNormal(playerPosition);
+    const up = new THREE.Vector3(0, 1, 0);
+    const quaternion = new THREE.Quaternion();
+    quaternion.setFromUnitVectors(up, newNormal);
+    playerGroup.quaternion.copy(quaternion);
 }
 
 // Setup Mobile Controls
@@ -1150,7 +522,6 @@ function setupMobileControls() {
     let lookStartX = 0, lookStartY = 0;
     
     document.addEventListener('touchstart', (e) => {
-        // Only activate look if not on joystick or UI buttons
         const touch = e.touches[0];
         const target = document.elementFromPoint(touch.clientX, touch.clientY);
         
@@ -1162,8 +533,8 @@ function setupMobileControls() {
             
             touchLookActive = true;
             lookStartX = touch.clientX;
-            lookStartY = touch.clientY
-                        e.preventDefault();
+            lookStartY = touch.clientY;
+            e.preventDefault();
         }
     }, { passive: false });
     
@@ -1176,7 +547,7 @@ function setupMobileControls() {
         
         // Update camera rotation
         camera.rotation.y -= deltaX * 0.005;
-        camera.rotation.x = Math.max(-Math.PI/2.5, Math.min(Math.PI/2.5, camera.rotation.x - deltaY * 0.005));
+        camera.rotation.x = Math.max(-Math.PI/3, Math.min(Math.PI/3, camera.rotation.x - deltaY * 0.005));
         
         lookStartX = touch.clientX;
         lookStartY = touch.clientY;
@@ -1188,7 +559,7 @@ function setupMobileControls() {
     });
 }
 
-// Setup UI
+// Setup UI (same as before with minor adjustments)
 function setupUI() {
     // Tool selection
     document.querySelectorAll('.tool').forEach(tool => {
@@ -1197,7 +568,6 @@ function setupUI() {
             tool.classList.add('active');
             gameState.currentTool = tool.dataset.tool;
             
-            // Update action button icon
             const actionButton = document.getElementById('actionButton');
             switch(gameState.currentTool) {
                 case 'axe': actionButton.textContent = '🪓'; break;
@@ -1215,11 +585,14 @@ function setupUI() {
     
     // Jump button
     document.getElementById('jumpButton').addEventListener('click', () => {
-        // Simple jump animation
-        camera.position.y += 0.5;
-        setTimeout(() => {
-            camera.position.y -= 0.5;
-        }, 200);
+        if (isPlayerOnGround) {
+            isPlayerOnGround = false;
+            playerGroup.position.y += 1;
+            setTimeout(() => {
+                playerGroup.position.y -= 1;
+                isPlayerOnGround = true;
+            }, 300);
+        }
     });
     
     // Quick action buttons
@@ -1264,7 +637,7 @@ function setupUI() {
     document.addEventListener('contextmenu', (e) => e.preventDefault());
 }
 
-// Handle action based on current tool
+// Handle action (updated for planet)
 function handleAction() {
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
@@ -1313,7 +686,6 @@ function chopTree(tree) {
         tree.userData.health--;
         showNotification(`🪓 Chopping tree... ${tree.userData.health} hits left`);
         
-        // Shake animation
         const originalScale = tree.scale.x;
         tree.scale.setScalar(originalScale * 0.9);
         setTimeout(() => {
@@ -1321,17 +693,14 @@ function chopTree(tree) {
         }, 100);
         
         if (tree.userData.health <= 0) {
-            // Tree falls
             gameState.resources.wood += tree.userData.woodYield;
             updateResourceDisplay();
             showNotification(`🌳 Tree chopped! +${tree.userData.woodYield} Wood`);
             
-            // Remove tree
             scene.remove(tree);
             trees = trees.filter(t => t !== tree);
             
-            // Spawn new tree after delay
-            setTimeout(createTree, 30000 + Math.random() * 30000); // 30-60 seconds
+            setTimeout(createTreeOnPlanet, 30000 + Math.random() * 30000);
         }
     }
 }
@@ -1341,12 +710,10 @@ function mineRock(rock) {
         rock.userData.health--;
         showNotification(`⛏️ Mining rock... ${rock.userData.health} hits left`);
         
-        // Shake animation
         rock.rotation.x += 0.1;
         rock.rotation.z += 0.1;
         
         if (rock.userData.health <= 0) {
-            // Rock breaks
             gameState.resources.stone += rock.userData.stoneYield;
             if (rock.userData.hasGold) {
                 gameState.resources.gold += Math.floor(Math.random() * 3) + 1;
@@ -1356,12 +723,10 @@ function mineRock(rock) {
             }
             updateResourceDisplay();
             
-            // Remove rock
             scene.remove(rock);
             rocks = rocks.filter(r => r !== rock);
             
-            // Spawn new rock after delay
-            setTimeout(createRock, 40000 + Math.random() * 40000); // 40-80 seconds
+            setTimeout(createRockOnPlanet, 40000 + Math.random() * 40000);
         }
     }
 }
@@ -1372,12 +737,10 @@ function harvestWheat(wheatField) {
     updateResourceDisplay();
     showNotification(`🌾 Harvested wheat! +${yieldAmount} Wheat`);
     
-    // Remove wheat field
     scene.remove(wheatField);
     wheatFields = wheatFields.filter(w => w !== wheatField);
     
-    // Spawn new wheat field after delay
-    setTimeout(createWheatField, 20000 + Math.random() * 20000); // 20-40 seconds
+    setTimeout(createWheatFieldOnPlanet, 20000 + Math.random() * 20000);
 }
 
 function showBuildingMenu() {
@@ -1407,13 +770,11 @@ function buildStructure(type) {
             break;
     }
     
-    // Check resources
     if (gameState.resources.wood >= cost.wood && gameState.resources.stone >= cost.stone) {
         gameState.resources.wood -= cost.wood;
         gameState.resources.stone -= cost.stone;
         
-        // Create building
-        const building = createBuilding(type);
+        const building = createBuildingOnPlanet(type);
         scene.add(building);
         gameState.buildings.push(building);
         
@@ -1421,20 +782,17 @@ function buildStructure(type) {
         updateResourceDisplay();
         document.getElementById('buildingMenu').style.display = 'none';
         
-        // Special effects for different buildings
         switch(type) {
             case 'farm':
-                // Farm automatically produces wheat
                 setInterval(() => {
                     if (gameState.buildings.includes(building)) {
                         gameState.resources.wheat += 2;
                         updateResourceDisplay();
                     }
-                }, 30000); // Every 30 seconds
+                }, 30000);
                 break;
                 
             case 'bakery':
-                // Bakery converts wheat to bread
                 setInterval(() => {
                     if (gameState.buildings.includes(building) && gameState.resources.wheat >= 5) {
                         gameState.resources.wheat -= 5;
@@ -1442,7 +800,7 @@ function buildStructure(type) {
                         updateResourceDisplay();
                         showNotification("🍞 Bakery produced bread!");
                     }
-                }, 60000); // Every minute
+                }, 60000);
                 break;
         }
     } else {
@@ -1450,24 +808,24 @@ function buildStructure(type) {
     }
 }
 
-function createBuilding(type) {
+function createBuildingOnPlanet(type) {
     let geometry, material, color;
     
     switch(type) {
         case 'house':
-            geometry = new THREE.BoxGeometry(3, 2, 3);
+            geometry = new THREE.BoxGeometry(2, 2, 2);
             color = 0xD2691E;
             break;
         case 'farm':
-            geometry = new THREE.BoxGeometry(4, 1, 4);
+            geometry = new THREE.BoxGeometry(3, 1, 3);
             color = 0x8BC34A;
             break;
         case 'mine':
-            geometry = new THREE.ConeGeometry(2, 3, 4);
+            geometry = new THREE.ConeGeometry(1.5, 2.5, 4);
             color = 0x607D8B;
             break;
         case 'bakery':
-            geometry = new THREE.BoxGeometry(3, 2.5, 3);
+            geometry = new THREE.BoxGeometry(2, 2, 2);
             color = 0xFF9800;
             break;
     }
@@ -1475,20 +833,26 @@ function createBuilding(type) {
     material = new THREE.MeshStandardMaterial({ color });
     const building = new THREE.Mesh(geometry, material);
     
-    // Position in front of player
-    const direction = new THREE.Vector3(0, 0, -5);
-    direction.applyQuaternion(camera.quaternion);
-    building.position.copy(camera.position).add(direction);
+    // Position in front of player on planet surface
+    const playerPos = playerGroup.position.clone();
+    const normal = getSurfaceNormal(playerPos);
     
-    // Snap to terrain
-    const raycaster = new THREE.Raycaster(
-        building.position.clone().add(new THREE.Vector3(0, 100, 0)),
-        new THREE.Vector3(0, -1, 0)
-    );
-    const intersects = raycaster.intersectObject(terrain);
-    if (intersects.length > 0) {
-        building.position.y = intersects[0].point.y;
-    }
+    // Calculate forward direction
+    const cameraForward = new THREE.Vector3(0, 0, -1);
+    cameraForward.applyQuaternion(camera.quaternion);
+    const forwardTangent = cameraForward.clone().sub(normal.clone().multiplyScalar(cameraForward.dot(normal))).normalize();
+    
+    const buildingPos = playerPos.clone().add(forwardTangent.multiplyScalar(5));
+    buildingPos.normalize().multiplyScalar(PLANET_RADIUS + 2);
+    
+    building.position.copy(buildingPos);
+    
+    // Align building with surface normal
+    const buildingNormal = getSurfaceNormal(buildingPos);
+    const up = new THREE.Vector3(0, 1, 0);
+    const quaternion = new THREE.Quaternion();
+    quaternion.setFromUnitVectors(up, buildingNormal);
+    building.quaternion.copy(quaternion);
     
     building.castShadow = true;
     building.receiveShadow = true;
@@ -1516,7 +880,6 @@ function showNotification(message) {
     
     document.body.appendChild(notification);
     
-    // Remove after animation
     setTimeout(() => {
         notification.remove();
     }, 3000);
@@ -1533,37 +896,16 @@ function onWindowResize() {
 function animate() {
     requestAnimationFrame(animate);
     
-    // Update movement
+    // Update movement on planet
     if (joystickActive) {
-        const moveSpeed = 0.1;
-        const moveVector = new THREE.Vector3(movementVector.x, 0, movementVector.z);
-        
-        // Rotate movement vector based on camera rotation
-        moveVector.applyQuaternion(camera.quaternion);
-        
-        // Keep player on terrain
-        camera.position.x += moveVector.x * moveSpeed;
-        camera.position.z += moveVector.z * moveSpeed;
-        
-        // Snap to terrain
-        const raycaster = new THREE.Raycaster(
-            camera.position.clone().add(new THREE.Vector3(0, 100, 0)),
-            new THREE.Vector3(0, -1, 0)
-        );
-        const intersects = raycaster.intersectObject(terrain);
-        if (intersects.length > 0) {
-            camera.position.y = intersects[0].point.y + 2;
-        }
+        movePlayerOnPlanet(-movementVector.z, movementVector.x);
     }
     
-    // Simple day/night cycle
-    const time = Date.now() * 0.0001;
-    const sun = scene.children.find(child => child instanceof THREE.DirectionalLight);
-    if (sun) {
-        sun.position.x = Math.cos(time) * 100;
-        sun.position.y = Math.sin(time) * 100;
-        sun.position.z = Math.sin(time) * 100;
-    }
+    // Rotate planet slowly
+    planet.rotation.y += 0.0005;
+    
+    // Update camera to follow player
+    camera.lookAt(playerGroup.position);
     
     // Render
     renderer.render(scene, camera);
@@ -1576,22 +918,19 @@ if (document.readyState === 'loading') {
     initGame();
 }
 
-// Handle device orientation if available
+// Handle device orientation
 if (window.DeviceOrientationEvent) {
     window.addEventListener('deviceorientation', (e) => {
-        // Optional: Use device tilt for subtle camera movement
-        if (Math.abs(e.beta) < 90) { // Prevent upside down
-            camera.rotation.z = e.gamma * 0.01; // Slight tilt
+        if (Math.abs(e.beta) < 90) {
+            camera.rotation.z = e.gamma * 0.01;
         }
     });
 }
 
-// Prevent pull-to-refresh on iOS
+// Prevent pull-to-refresh
 document.addEventListener('touchmove', (e) => {
     if (e.scale !== 1) {
         e.preventDefault();
     }
 }, { passive: false });
     </script>
-</body>
-</html>
