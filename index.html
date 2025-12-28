@@ -1,607 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Planet Empire Builder - Mobile</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background: #000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            color: white;
+            overscroll-behavior: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #game {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+        }
+
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            background: black !important;
+        }
+
+        /* Mobile Controls */
+        #mobileControls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100vw;
+            height: 250px;
+            z-index: 100;
+            pointer-events: none;
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
+        }
+
+        .joystick-container {
+            width: 180px;
+            height: 180px;
+            pointer-events: auto;
+            position: relative;
+        }
+
+        .joystick-outer {
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 30, 60, 0.7);
+            border: 4px solid #00aaff;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            box-shadow: 0 0 30px rgba(0, 170, 255, 0.3);
+        }
+
+        .joystick-inner {
+            width: 80px;
+            height: 80px;
+            background: rgba(0, 170, 255, 0.9);
+            border: 4px solid #00ffff;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: transform 0.1s;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            pointer-events: auto;
+            align-items: flex-end;
+        }
+
+        .action-button {
+            width: 100px;
+            height: 100px;
+            background: rgba(0, 60, 120, 0.9);
+            border: 4px solid #00aaff;
+            border-radius: 50%;
+            color: white;
+            font-size: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.1s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .action-button:active {
+            background: rgba(0, 120, 240, 0.9);
+            transform: scale(0.95);
+            box-shadow: 0 2px 10px rgba(0, 170, 255, 0.5);
+        }
+
+        /* Resources HUD */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            padding: 15px;
+            background: linear-gradient(to bottom, rgba(0, 10, 30, 0.95), transparent);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            z-index: 50;
+        }
+
+        .resource {
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid;
+            border-radius: 15px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 140px;
+        }
+
+        .resource-icon {
+            font-size: 20px;
+            min-width: 30px;
+        }
+
+        .resource-info {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .resource-name {
+            font-size: 11px;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .resource-amount {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* Wood */
+        .resource-wood {
+            border-color: #8B4513;
+        }
+        .resource-wood .resource-amount {
+            color: #8B4513;
+        }
+
+        /* Wheat */
+        .resource-wheat {
+            border-color: #FFD700;
+        }
+        .resource-wheat .resource-amount {
+            color: #FFD700;
+        }
+
+        /* Stone */
+        .resource-stone {
+            border-color: #888;
+        }
+        .resource-stone .resource-amount {
+            color: #888;
+        }
+
+        /* Gold */
+        .resource-gold {
+            border-color: #FFD700;
+        }
+        .resource-gold .resource-amount {
+            color: #FFD700;
+        }
+
+        /* Bread */
+        .resource-bread {
+            border-color: #D2691E;
+        }
+        .resource-bread .resource-amount {
+            color: #D2691E;
+        }
+
+        /* Health */
+        .resource-health {
+            border-color: #FF5555;
+        }
+        .resource-health .resource-amount {
+            color: #FF5555;
+        }
+
+        /* Toolbar */
+        #toolbar {
+            position: absolute;
+            bottom: 260px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            border: 3px solid #00aaff;
+            border-radius: 20px;
+            padding: 15px;
+            display: flex;
+            gap: 12px;
+            z-index: 90;
+            max-width: 90vw;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #toolbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .tool {
+            width: 65px;
+            height: 65px;
+            background: rgba(0, 40, 80, 0.7);
+            border: 2px solid #00aaff;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tool:active {
+            background: rgba(0, 80, 160, 0.9);
+            transform: scale(0.95);
+        }
+
+        .tool.active {
+            background: rgba(0, 80, 160, 0.9);
+            border-color: #00ffff;
+            box-shadow: 0 0 15px #00ffff;
+        }
+
+        .tool-icon {
+            font-size: 24px;
+            margin-bottom: 3px;
+        }
+
+        .tool-name {
+            font-size: 10px;
+            color: #88aaff;
+            text-align: center;
+        }
+
+        /* Quick Actions */
+        .quick-action {
+            position: absolute;
+            top: 120px;
+            right: 20px;
+            width: 70px;
+            height: 70px;
+            background: rgba(0, 100, 200, 0.9);
+            border: 3px solid #00aaff;
+            border-radius: 50%;
+            color: white;
+            font-size: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 80;
+            box-shadow: 0 5px 15px rgba(0, 170, 255, 0.3);
+        }
+
+        .quick-action:active {
+            transform: scale(0.95);
+            background: rgba(0, 150, 255, 0.9);
+        }
+
+        #buildButton {
+            top: 200px;
+            background: rgba(0, 200, 100, 0.9);
+            border-color: #00ff88;
+        }
+
+        #breadButton {
+            top: 280px;
+            background: rgba(210, 105, 30, 0.9);
+            border-color: #D2691E;
+        }
+
+        /* Building Menu */
+        #buildingMenu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 200;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .building-container {
+            width: 100%;
+            max-width: 500px;
+            max-height: 80vh;
+            background: rgba(0, 30, 60, 0.98);
+            border-radius: 25px;
+            border: 4px solid #00ff88;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .building-header {
+            background: linear-gradient(90deg, #001133, #002255);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 3px solid #00aaff;
+        }
+
+        .building-title {
+            color: #00ffff;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .building-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .building-option {
+            background: rgba(0, 40, 80, 0.7);
+            border: 2px solid #00aaff;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .building-option:active {
+            background: rgba(0, 80, 160, 0.9);
+            transform: scale(0.98);
+        }
+
+        .building-icon {
+            font-size: 30px;
+        }
+
+        .building-info {
+            flex: 1;
+        }
+
+        .building-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #00ffff;
+            margin-bottom: 5px;
+        }
+
+        .building-cost {
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        .close-menu {
+            background: #ff5555;
+            border: none;
+            color: white;
+            padding: 18px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 0 0 20px 20px;
+        }
+
+        .close-menu:active {
+            background: #ff3333;
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 3px solid;
+            border-radius: 15px;
+            padding: 20px 30px;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            z-index: 300;
+            pointer-events: none;
+            opacity: 0;
+            animation: fadeInOut 0.3s ease forwards;
+            max-width: 80vw;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translate(-50%, -60%); }
+            10% { opacity: 1; transform: translate(-50%, -50%); }
+            90% { opacity: 1; transform: translate(-50%, -50%); }
+            100% { opacity: 0; transform: translate(-50%, -40%); }
+        }
+
+        /* Crosshair */
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            pointer-events: none;
+            z-index: 40;
+        }
+
+        .crosshair-dot {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #00ffff;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 5px #00ffff;
+        }
+
+        /* Instructions */
+        #instructions {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00aaff;
+            border-radius: 15px;
+            padding: 15px;
+            color: #88ccff;
+            font-size: 14px;
+            text-align: center;
+            max-width: 90vw;
+            z-index: 40;
+            display: none;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .resource {
+                min-width: 120px;
+                padding: 10px;
+            }
+            
+            .resource-icon {
+                font-size: 18px;
+                min-width: 25px;
+            }
+            
+            .resource-name {
+                font-size: 10px;
+            }
+            
+            .resource-amount {
+                font-size: 16px;
+            }
+            
+            .joystick-container {
+                width: 150px;
+                height: 150px;
+            }
+            
+            .joystick-inner {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .action-button {
+                width: 85px;
+                height: 85px;
+                font-size: 35px;
+            }
+            
+            .tool {
+                width: 55px;
+                height: 55px;
+            }
+            
+            .tool-icon {
+                font-size: 20px;
+            }
+            
+            .quick-action {
+                width: 60px;
+                height: 60px;
+                font-size: 25px;
+            }
+            
+            #buildButton {
+                top: 180px;
+            }
+            
+            #breadButton {
+                top: 250px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #hud {
+                padding: 10px;
+                gap: 8px;
+            }
+            
+            .resource {
+                min-width: 100px;
+                padding: 8px;
+            }
+            
+            .resource-icon {
+                font-size: 16px;
+                min-width: 20px;
+            }
+            
+            .resource-name {
+                font-size: 9px;
+            }
+            
+            .resource-amount {
+                font-size: 14px;
+            }
+            
+            .joystick-container {
+                width: 130px;
+                height: 130px;
+            }
+            
+            .joystick-inner {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .action-button {
+                width: 75px;
+                height: 75px;
+                font-size: 30px;
+            }
+            
+            #toolbar {
+                bottom: 240px;
+                padding: 12px;
+                gap: 10px;
+            }
+            
+            .tool {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .tool-icon {
+                font-size: 18px;
+            }
+            
+            .tool-name {
+                font-size: 9px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game">
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- Resources HUD -->
+        <div id="hud">
+            <div class="resource resource-wood">
+                <div class="resource-icon">🌳</div>
+                <div class="resource-info">
+                    <div class="resource-name">WOOD</div>
+                    <div class="resource-amount" id="woodCount">0</div>
+                </div>
+            </div>
+            
+            <div class="resource resource-wheat">
+                <div class="resource-icon">🌾</div>
+                <div class="resource-info">
+                    <div class="resource-name">WHEAT</div>
+                    <div class="resource-amount" id="wheatCount">0</div>
+                </div>
+            </div>
+            
+            <div class="resource resource-stone">
+                <div class="resource-icon">🪨</div>
+                <div class="resource-info">
+                    <div class="resource-name">STONE</div>
+                    <div class="resource-amount" id="stoneCount">0</div>
+                </div>
+            </div>
+            
+            <div class="resource resource-gold">
+                <div class="resource-icon">💰</div>
+                <div class="resource-info">
+                    <div class="resource-name">GOLD</div>
+                    <div class="resource-amount" id="goldCount">0</div>
+                </div>
+            </div>
+            
+            <div class="resource resource-bread">
+                <div class="resource-icon">🍞</div>
+                <div class="resource-info">
+                    <div class="resource-name">BREAD</div>
+                    <div class="resource-amount" id="breadCount">0</div>
+                </div>
+            </div>
+            
+            <div class="resource resource-health">
+                <div class="resource-icon">❤️</div>
+                <div class="resource-info">
+                    <div class="resource-name">HEALTH</div>
+                    <div class="resource-amount" id="healthCount">100</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Toolbar -->
+        <div id="toolbar">
+            <div class="tool active" data-tool="axe">
+                <div class="tool-icon">🪓</div>
+                <div class="tool-name">AXE</div>
+            </div>
+            <div class="tool" data-tool="pickaxe">
+                <div class="tool-icon">⛏️</div>
+                <div class="tool-name">PICK</div>
+            </div>
+            <div class="tool" data-tool="sickle">
+                <div class="tool-icon">🔪</div>
+                <div class="tool-name">SICKLE</div>
+            </div>
+            <div class="tool" data-tool="hammer">
+                <div class="tool-icon">🔨</div>
+                <div class="tool-name">BUILD</div>
+            </div>
+        </div>
+        
+        <!-- Quick Action Buttons -->
+        <div class="quick-action" id="mineButton">
+            ⛏️
+        </div>
+        
+        <div class="quick-action" id="buildButton">
+            🏠
+        </div>
+        
+        <div class="quick-action" id="breadButton">
+            🍞
+        </div>
+        
+        <!-- Mobile Controls -->
+        <div id="mobileControls">
+            <div class="joystick-container" id="joystickArea">
+                <div class="joystick-outer"></div>
+                <div class="joystick-inner" id="joystickHandle"></div>
+            </div>
+            
+            <div class="action-buttons">
+                <div class="action-button" id="actionButton">🪓</div>
+                <div class="action-button" id="jumpButton">⬆️</div>
+            </div>
+        </div>
+        
+        <!-- Crosshair -->
+        <div id="crosshair">
+            <div class="crosshair-dot"></div>
+        </div>
+        
+        <!-- Instructions -->
+        <div id="instructions">
+            Touch and drag to look around<br>
+            Use joystick to move<br>
+            Tap action buttons to interact
+        </div>
+        
+        <!-- Building Menu -->
+        <div id="buildingMenu">
+            <div class="building-container">
+                <div class="building-header">
+                    <div class="building-title">BUILD STRUCTURES</div>
+                </div>
+                
+                <div class="building-list">
+                    <div class="building-option" data-building="house">
+                        <div class="building-icon">🏠</div>
+                        <div class="building-info">
+                            <div class="building-name">HOUSE</div>
+                            <div class="building-cost">50 Wood, 20 Stone</div>
+                        </div>
+                    </div>
+                    
+                    <div class="building-option" data-building="farm">
+                        <div class="building-icon">🌾</div>
+                        <div class="building-info">
+                            <div class="building-name">FARM</div>
+                            <div class="building-cost">30 Wood, 10 Stone</div>
+                        </div>
+                    </div>
+                    
+                    <div class="building-option" data-building="mine">
+                        <div class="building-icon">⛏️</div>
+                        <div class="building-info">
+                            <div class="building-name">MINE</div>
+                            <div class="building-cost">40 Wood, 30 Stone</div>
+                        </div>
+                    </div>
+                    
+                    <div class="building-option" data-building="bakery">
+                        <div class="building-icon">🍞</div>
+                        <div class="building-info">
+                            <div class="building-name">BAKERY</div>
+                            <div class="building-cost">60 Wood, 40 Stone</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="close-menu" id="closeMenu">CLOSE</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-// ================ MOBILE PLANET EMPIRE BUILDER ================
+// ================ ULTRA SIMPLE PLANET BUILDER ================
 
 // Game State
 const gameState = {
-    resources: {
-        wood: 0,
-        wheat: 0,
-        stone: 0,
-        gold: 0,
-        bread: 0
-    },
-    player: {
-        health: 100,
-        position: new THREE.Vector3(0, 0, 0)
-    },
-    currentTool: 'axe',
-    buildings: []
+    resources: { wood: 0, wheat: 0, stone: 0, gold: 0, bread: 0 },
+    player: { health: 100 },
+    currentTool: 'axe'
 };
 
 // Three.js Variables
 let scene, camera, renderer;
 let planet;
-let trees = [], rocks = [], wheatFields = [];
-let joystickActive = false;
-let movementVector = { x: 0, z: 0 };
-let playerGroup;
-let isPlayerOnGround = true;
-
-// Planet parameters
-const PLANET_RADIUS = 30;
+let trees = [];
 
 // Initialize Game
 function initGame() {
-    console.log("Initializing game...");
+    console.log("Starting game...");
     
-    // Create scene
+    // 1. Create scene
     scene = new THREE.Scene();
     
-    // Set black background
-    scene.background = new THREE.Color(0x000000);
+    // 2. Create camera
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 30;
+    camera.position.y = 10;
     
-    // Create renderer
+    // 3. Create renderer
     const canvas = document.getElementById('gameCanvas');
     renderer = new THREE.WebGLRenderer({ 
         canvas: canvas,
-        antialias: true,
-        powerPreference: 'default'
+        alpha: false,
+        antialias: true
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setClearColor(0x000000); // Black background
     
-    // Create camera
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    // 4. Add LIGHTS FIRST (this is critical)
+    const light1 = new THREE.DirectionalLight(0xffffff, 1);
+    light1.position.set(10, 10, 10);
+    scene.add(light1);
     
-    // Create player group
-    playerGroup = new THREE.Group();
-    scene.add(playerGroup);
+    const light2 = new THREE.AmbientLight(0x404040, 0.5);
+    scene.add(light2);
     
-    // Set up simple lighting FIRST
-    setupBasicLighting();
+    // 5. Create PLANET (simple green sphere)
+    const planetGeometry = new THREE.SphereGeometry(10, 32, 32);
+    const planetMaterial = new THREE.MeshPhongMaterial({ 
+        color: 0x00ff00, // BRIGHT GREEN
+        shininess: 30
+    });
+    planet = new THREE.Mesh(planetGeometry, planetMaterial);
+    planet.position.y = 5;
+    scene.add(planet);
     
-    // Create the planet
-    createBasicPlanet();
+    // 6. Create a simple tree to test
+    const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.6, 4, 8);
+    const trunkMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 }); // Brown
+    const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+    trunk.position.set(8, 7, 0);
     
-    // Create atmosphere
-    createBasicAtmosphere();
+    const leavesGeometry = new THREE.SphereGeometry(2, 8, 8);
+    const leavesMaterial = new THREE.MeshPhongMaterial({ color: 0x008000 }); // Green
+    const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
+    leaves.position.set(8, 10, 0);
     
-    // Create stars
-    createBasicStars();
+    scene.add(trunk);
+    scene.add(leaves);
     
-    // Position camera
-    camera.position.set(0, 5, -10);
-    playerGroup.add(camera);
+    // Store tree data
+    trees.push({
+        trunk: trunk,
+        leaves: leaves,
+        userData: { type: 'tree', health: 3 }
+    });
     
-    // Create simple player
-    const playerGeometry = new THREE.BoxGeometry(1, 2, 1);
-    const playerMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
-    const playerMesh = new THREE.Mesh(playerGeometry, playerMaterial);
-    playerMesh.position.set(0, -1, 0);
-    playerGroup.add(playerMesh);
+    // 7. Create a test cube (red)
+    const cubeGeometry = new THREE.BoxGeometry(2, 2, 2);
+    const cubeMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 }); // Red
+    const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+    cube.position.set(-8, 7, 0);
+    scene.add(cube);
     
-    // Position player on planet
-    positionPlayer();
-    
-    // Create some resources
-    createBasicResources();
-    
-    // Setup controls
-    setupMobileControls();
-    
-    // Setup UI
+    // 8. Setup UI
     setupUI();
     
-    // Start animation
+    // 9. Start animation
     animate();
     
-    // Show welcome message
-    setTimeout(() => {
-        showNotification("Welcome to Planet Empire!");
-    }, 1000);
+    // 10. Force render once
+    renderer.render(scene, camera);
+    
+    console.log("Game initialized. You should see a green planet!");
 }
 
-// Basic lighting setup
-function setupBasicLighting() {
-    // Main light
-    const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(10, 10, 10);
-    scene.add(light);
-    
-    // Ambient light
-    const ambient = new THREE.AmbientLight(0x404040, 0.5);
-    scene.add(ambient);
-    
-    // Add a second light
-    const light2 = new THREE.DirectionalLight(0xffffff, 0.5);
-    light2.position.set(-10, 5, -10);
-    scene.add(light2);
-}
-
-// Create basic planet
-function createBasicPlanet() {
-    const geometry = new THREE.SphereGeometry(PLANET_RADIUS, 32, 32);
-    
-    // Create green planet material
-    const material = new THREE.MeshPhongMaterial({
-        color: 0x228B22, // Green
-        shininess: 30,
-        specular: 0x111111
-    });
-    
-    planet = new THREE.Mesh(geometry, material);
-    scene.add(planet);
-}
-
-// Create basic atmosphere
-function createBasicAtmosphere() {
-    const geometry = new THREE.SphereGeometry(PLANET_RADIUS * 1.05, 32, 32);
-    const material = new THREE.MeshBasicMaterial({
-        color: 0x87CEEB,
-        transparent: true,
-        opacity: 0.1,
-        side: THREE.BackSide
-    });
-    
-    const atmosphere = new THREE.Mesh(geometry, material);
-    scene.add(atmosphere);
-}
-
-// Create basic stars
-function createBasicStars() {
-    const starsGeometry = new THREE.BufferGeometry();
-    const starsCount = 1000;
-    const positions = new Float32Array(starsCount * 3);
-    
-    for (let i = 0; i < starsCount * 3; i += 3) {
-        positions[i] = (Math.random() - 0.5) * 2000;
-        positions[i + 1] = (Math.random() - 0.5) * 2000;
-        positions[i + 2] = (Math.random() - 0.5) * 2000;
-    }
-    
-    starsGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    
-    const starsMaterial = new THREE.PointsMaterial({
-        color: 0xffffff,
-        size: 1,
-        sizeAttenuation: false
-    });
-    
-    const stars = new THREE.Points(starsGeometry, starsMaterial);
-    scene.add(stars);
-}
-
-// Position player
-function positionPlayer() {
-    playerGroup.position.set(0, PLANET_RADIUS + 2, 0);
-    gameState.player.position.copy(playerGroup.position);
-}
-
-// Create basic resources
-function createBasicResources() {
-    // Create some trees
-    for (let i = 0; i < 15; i++) {
-        createBasicTree();
-    }
-    
-    // Create some rocks
-    for (let i = 0; i < 10; i++) {
-        createBasicRock();
-    }
-    
-    // Create some wheat
-    for (let i = 0; i < 8; i++) {
-        createBasicWheat();
-    }
-}
-
-function createBasicTree() {
-    const angle = Math.random() * Math.PI * 2;
-    const distance = PLANET_RADIUS + 2;
-    const x = Math.cos(angle) * distance;
-    const y = Math.sin(angle) * distance;
-    
-    const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.4, 3, 8);
-    const trunkMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
-    const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-    
-    const leavesGeometry = new THREE.SphereGeometry(1.5, 8, 8);
-    const leavesMaterial = new THREE.MeshPhongMaterial({ color: 0x2E7D32 });
-    const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
-    leaves.position.y = 2;
-    
-    const tree = new THREE.Group();
-    tree.add(trunk);
-    tree.add(leaves);
-    
-    tree.position.set(x, y, 0);
-    tree.rotation.z = -angle;
-    
-    tree.userData = {
-        type: 'tree',
-        health: 3,
-        woodYield: 5 + Math.floor(Math.random() * 5)
-    };
-    
-    scene.add(tree);
-    trees.push(tree);
-}
-
-function createBasicRock() {
-    const angle = Math.random() * Math.PI * 2;
-    const distance = PLANET_RADIUS + 1;
-    const x = Math.cos(angle) * distance;
-    const y = Math.sin(angle) * distance;
-    
-    const rockGeometry = new THREE.BoxGeometry(1, 1, 1);
-    const rockMaterial = new THREE.MeshPhongMaterial({ color: 0x808080 });
-    const rock = new THREE.Mesh(rockGeometry, rockMaterial);
-    
-    rock.position.set(x, y, 0);
-    rock.rotation.z = -angle;
-    rock.rotation.x = Math.random() * Math.PI;
-    rock.rotation.y = Math.random() * Math.PI;
-    
-    rock.userData = {
-        type: 'rock',
-        health: 5,
-        stoneYield: 3 + Math.floor(Math.random() * 3),
-        hasGold: Math.random() < 0.2
-    };
-    
-    scene.add(rock);
-    rocks.push(rock);
-}
-
-function createBasicWheat() {
-    const angle = Math.random() * Math.PI * 2;
-    const distance = PLANET_RADIUS + 1.5;
-    const x = Math.cos(angle) * distance;
-    const y = Math.sin(angle) * distance;
-    
-    const wheatGroup = new THREE.Group();
-    const wheatCount = 5 + Math.floor(Math.random() * 8);
-    
-    for (let i = 0; i < wheatCount; i++) {
-        const wheatGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1, 4);
-        const wheatMaterial = new THREE.MeshPhongMaterial({ color: 0xDAA520 });
-        const wheat = new THREE.Mesh(wheatGeometry, wheatMaterial);
-        
-        wheat.position.set(
-            (Math.random() - 0.5) * 2,
-            (Math.random() - 0.5) * 2,
-            0
-        );
-        
-        wheatGroup.add(wheat);
-    }
-    
-    wheatGroup.position.set(x, y, 0);
-    wheatGroup.rotation.z = -angle;
-    
-    wheatGroup.userData = {
-        type: 'wheat',
-        wheatYield: wheatCount
-    };
-    
-    scene.add(wheatGroup);
-    wheatFields.push(wheatGroup);
-}
-
-// Setup Mobile Controls
-function setupMobileControls() {
-    // Joystick
-    const joystickArea = document.getElementById('joystickArea');
-    const joystickHandle = document.getElementById('joystickHandle');
-    const joystickRadius = 70;
-    
-    joystickArea.addEventListener('touchstart', handleJoystickStart);
-    joystickArea.addEventListener('touchmove', handleJoystickMove);
-    joystickArea.addEventListener('touchend', handleJoystickEnd);
-    
-    function handleJoystickStart(e) {
-        e.preventDefault();
-        joystickActive = true;
-        updateJoystick(e.touches[0]);
-    }
-    
-    function handleJoystickMove(e) {
-        if (!joystickActive) return;
-        e.preventDefault();
-        updateJoystick(e.touches[0]);
-    }
-    
-    function handleJoystickEnd(e) {
-        e.preventDefault();
-        joystickActive = false;
-        movementVector.x = 0;
-        movementVector.z = 0;
-        joystickHandle.style.transform = 'translate(0, 0)';
-    }
-    
-    function updateJoystick(touch) {
-        const rect = joystickArea.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        
-        let joystickX = touch.clientX - centerX;
-        let joystickY = touch.clientY - centerY;
-        
-        const distance = Math.sqrt(joystickX * joystickX + joystickY * joystickY);
-        if (distance > joystickRadius) {
-            joystickX = (joystickX / distance) * joystickRadius;
-            joystickY = (joystickY / distance) * joystickRadius;
-        }
-        
-        joystickHandle.style.transform = `translate(${joystickX}px, ${joystickY}px)`;
-        
-        movementVector.x = joystickX / joystickRadius;
-        movementVector.z = joystickY / joystickRadius;
-    }
-    
-    // Touch to look
-    let touchLookActive = false;
-    let lastTouchX = 0, lastTouchY = 0;
-    
-    document.addEventListener('touchstart', (e) => {
-        const touch = e.touches[0];
-        const target = document.elementFromPoint(touch.clientX, touch.clientY);
-        
-        if (!target.closest('#joystickArea') && 
-            !target.closest('.action-button') && 
-            !target.closest('.tool') && 
-            !target.closest('.quick-action')) {
-            
-            touchLookActive = true;
-            lastTouchX = touch.clientX;
-            lastTouchY = touch.clientY;
-            e.preventDefault();
-        }
-    });
-    
-    document.addEventListener('touchmove', (e) => {
-        if (!touchLookActive) return;
-        
-        const touch = e.touches[0];
-        const deltaX = touch.clientX - lastTouchX;
-        const deltaY = touch.clientY - lastTouchY;
-        
-        playerGroup.rotation.y -= deltaX * 0.01;
-        camera.rotation.x = Math.max(-Math.PI/3, Math.min(Math.PI/3, camera.rotation.x - deltaY * 0.005));
-        
-        lastTouchX = touch.clientX;
-        lastTouchY = touch.clientY;
-        e.preventDefault();
-    });
-    
-    document.addEventListener('touchend', () => {
-        touchLookActive = false;
-    });
-}
-
-// Setup UI
+// Setup UI (simplified)
 function setupUI() {
+    // Update resource display
+    updateResourceDisplay();
+    
     // Tool selection
     document.querySelectorAll('.tool').forEach(tool => {
         tool.addEventListener('click', () => {
             document.querySelectorAll('.tool').forEach(t => t.classList.remove('active'));
             tool.classList.add('active');
             gameState.currentTool = tool.dataset.tool;
-            
-            const actionButton = document.getElementById('actionButton');
-            switch(gameState.currentTool) {
-                case 'axe': actionButton.textContent = '🪓'; break;
-                case 'pickaxe': actionButton.textContent = '⛏️'; break;
-                case 'sickle': actionButton.textContent = '🔪'; break;
-                case 'hammer': actionButton.textContent = '🔨'; break;
-            }
-            
             showNotification(`${tool.dataset.tool.toUpperCase()} selected`);
         });
     });
     
     // Action button
     document.getElementById('actionButton').addEventListener('click', () => {
-        const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-        
-        const intersects = raycaster.intersectObjects([...trees, ...rocks, ...wheatFields], true);
-        
-        if (intersects.length > 0) {
-            const object = intersects[0].object.parent || intersects[0].object;
-            
-            switch(gameState.currentTool) {
-                case 'axe':
-                    if (object.userData.type === 'tree') chopTree(object);
-                    else showNotification('🪓 Can only chop trees!');
-                    break;
-                case 'pickaxe':
-                    if (object.userData.type === 'rock') mineRock(object);
-                    else showNotification('⛏️ Can only mine rocks!');
-                    break;
-                case 'sickle':
-                    if (object.userData.type === 'wheat') harvestWheat(object);
-                    else showNotification('🔪 Can only harvest wheat!');
-                    break;
-                case 'hammer':
-                    showNotification('🔨 Select a building from the menu!');
-                    break;
+        if (trees.length > 0) {
+            const tree = trees[0];
+            if (tree.userData.health > 0) {
+                tree.userData.health--;
+                showNotification(`🪓 Chopping... ${tree.userData.health} hits left`);
+                
+                if (tree.userData.health <= 0) {
+                    gameState.resources.wood += 5;
+                    updateResourceDisplay();
+                    showNotification("🌳 Tree chopped! +5 Wood");
+                    scene.remove(tree.trunk);
+                    scene.remove(tree.leaves);
+                    trees = [];
+                }
             }
         } else {
-            showNotification('❌ Nothing to interact with');
+            showNotification("No trees nearby!");
         }
     });
     
     // Jump button
     document.getElementById('jumpButton').addEventListener('click', () => {
-        if (isPlayerOnGround) {
-            isPlayerOnGround = false;
-            playerGroup.position.y += 1;
-            setTimeout(() => {
-                playerGroup.position.y -= 1;
-                isPlayerOnGround = true;
-            }, 300);
-        }
+        camera.position.y += 2;
+        setTimeout(() => camera.position.y -= 2, 200);
     });
     
-    // Quick action buttons
-    document.getElementById('mineButton').addEventListener('click', () => {
-        gameState.currentTool = 'pickaxe';
-        document.querySelectorAll('.tool').forEach(t => t.classList.remove('active'));
-        document.querySelector('.tool[data-tool="pickaxe"]').classList.add('active');
-    });
-    
-    document.getElementById('buildButton').addEventListener('click', () => {
-        document.getElementById('buildingMenu').style.display = 'flex';
-    });
-    
-    document.getElementById('breadButton').addEventListener('click', () => {
-        if (gameState.resources.bread > 0) {
-            gameState.player.health = Math.min(100, gameState.player.health + 10);
-            gameState.resources.bread--;
-            updateResourceDisplay();
-            showNotification('🍞 Bread consumed! +10 Health');
-        } else {
-            showNotification('❌ Not enough bread!');
-        }
-    });
-    
-    // Building menu
+    // Close building menu
     document.getElementById('closeMenu').addEventListener('click', () => {
         document.getElementById('buildingMenu').style.display = 'none';
     });
-    
-    document.querySelectorAll('.building-option').forEach(building => {
-        building.addEventListener('click', () => {
-            const buildingType = building.dataset.building;
-            
-            let cost, name;
-            switch(buildingType) {
-                case 'house': cost = { wood: 50, stone: 20 }; name = "House"; break;
-                case 'farm': cost = { wood: 30, stone: 10 }; name = "Farm"; break;
-                case 'mine': cost = { wood: 40, stone: 30 }; name = "Mine"; break;
-                case 'bakery': cost = { wood: 60, stone: 40 }; name = "Bakery"; break;
-            }
-            
-            if (gameState.resources.wood >= cost.wood && gameState.resources.stone >= cost.stone) {
-                gameState.resources.wood -= cost.wood;
-                gameState.resources.stone -= cost.stone;
-                
-                const buildingMesh = createBuilding(buildingType);
-                scene.add(buildingMesh);
-                gameState.buildings.push(buildingMesh);
-                
-                showNotification(`🏠 ${name} built!`);
-                updateResourceDisplay();
-                document.getElementById('buildingMenu').style.display = 'none';
-            } else {
-                showNotification(`❌ Need ${cost.wood} Wood and ${cost.stone} Stone`);
-            }
-        });
-    });
-    
-    // Window resize
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
 }
 
-// Resource functions
-function chopTree(tree) {
-    if (tree.userData.health > 0) {
-        tree.userData.health--;
-        showNotification(`🪓 Chopping... ${tree.userData.health} hits left`);
-        
-        if (tree.userData.health <= 0) {
-            gameState.resources.wood += tree.userData.woodYield;
-            updateResourceDisplay();
-            showNotification(`🌳 +${tree.userData.woodYield} Wood`);
-            
-            scene.remove(tree);
-            trees = trees.filter(t => t !== tree);
-            
-            setTimeout(createBasicTree, 10000);
-        }
-    }
-}
-
-function mineRock(rock) {
-    if (rock.userData.health > 0) {
-        rock.userData.health--;
-        showNotification(`⛏️ Mining... ${rock.userData.health} hits left`);
-        
-        if (rock.userData.health <= 0) {
-            gameState.resources.stone += rock.userData.stoneYield;
-            if (rock.userData.hasGold) {
-                gameState.resources.gold += Math.floor(Math.random() * 3) + 1;
-                showNotification(`💰 Found gold! +${rock.userData.stoneYield} Stone, +Gold!`);
-            } else {
-                showNotification(`🪨 +${rock.userData.stoneYield} Stone`);
-            }
-            updateResourceDisplay();
-            
-            scene.remove(rock);
-            rocks = rocks.filter(r => r !== rock);
-            
-            setTimeout(createBasicRock, 15000);
-        }
-    }
-}
-
-function harvestWheat(wheatField) {
-    const yieldAmount = wheatField.userData.wheatYield;
-    gameState.resources.wheat += yieldAmount;
-    updateResourceDisplay();
-    showNotification(`🌾 +${yieldAmount} Wheat`);
-    
-    scene.remove(wheatField);
-    wheatFields = wheatFields.filter(w => w !== wheatField);
-    
-    setTimeout(createBasicWheat, 8000);
-}
-
-function createBuilding(type) {
-    let geometry, color;
-    
-    switch(type) {
-        case 'house':
-            geometry = new THREE.BoxGeometry(2, 2, 2);
-            color = 0xD2691E;
-            break;
-        case 'farm':
-            geometry = new THREE.BoxGeometry(3, 1, 3);
-            color = 0x8BC34A;
-            break;
-        case 'mine':
-            geometry = new THREE.ConeGeometry(1.5, 2, 4);
-            color = 0x607D8B;
-            break;
-        case 'bakery':
-            geometry = new THREE.BoxGeometry(2, 2, 2);
-            color = 0xFF9800;
-            break;
-    }
-    
-    const material = new THREE.MeshPhongMaterial({ color: color });
-    const building = new THREE.Mesh(geometry, material);
-    
-    // Position in front of player
-    const angle = Math.atan2(playerGroup.position.y, playerGroup.position.x);
-    const distance = PLANET_RADIUS + 3;
-    building.position.set(
-        Math.cos(angle) * distance,
-        Math.sin(angle) * distance,
-        0
-    );
-    
-    building.rotation.z = -angle;
-    
-    return building;
-}
-
-// Update resource display
 function updateResourceDisplay() {
     document.getElementById('woodCount').textContent = gameState.resources.wood;
     document.getElementById('wheatCount').textContent = gameState.resources.wheat;
@@ -611,57 +930,38 @@ function updateResourceDisplay() {
     document.getElementById('healthCount').textContent = gameState.player.health;
 }
 
-// Show notification
 function showNotification(message) {
     const notification = document.createElement('div');
     notification.className = 'notification';
     notification.textContent = message;
-    notification.style.borderColor = '#00ffff';
-    
     document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
+    setTimeout(() => notification.remove(), 3000);
 }
 
 // Game loop
 function animate() {
     requestAnimationFrame(animate);
     
-    // Move player
-    if (joystickActive) {
-        const speed = 0.1;
-        const angle = Math.atan2(playerGroup.position.y, playerGroup.position.x);
-        
-        // Move around the circle
-        const newAngle = angle + movementVector.x * speed;
-        const distance = Math.sqrt(playerGroup.position.x * playerGroup.position.x + 
-                                 playerGroup.position.y * playerGroup.position.y);
-        
-        playerGroup.position.x = Math.cos(newAngle) * distance;
-        playerGroup.position.y = Math.sin(newAngle) * distance;
-        
-        // Update rotation to face direction
-        playerGroup.rotation.z = -newAngle;
-    }
-    
     // Rotate planet slowly
-    planet.rotation.z += 0.001;
-    
-    // Make resources rotate with planet
-    trees.forEach(tree => tree.rotation.z = -planet.rotation.z);
-    rocks.forEach(rock => rock.rotation.z = -planet.rotation.z);
-    wheatFields.forEach(wheat => wheat.rotation.z = -planet.rotation.z);
+    planet.rotation.y += 0.01;
     
     // Render
     renderer.render(scene, camera);
 }
 
-// Start game
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initGame);
-} else {
-    initGame();
-}
+// Window resize
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Start game immediately
+initGame();
+
+// Debug: Log to verify Three.js is loaded
+console.log("Three.js version:", THREE.REVISION);
+console.log("WebGL supported:", renderer.capabilities.isWebGL2 || renderer.capabilities.isWebGL1);
     </script>
+</body>
+</html>
