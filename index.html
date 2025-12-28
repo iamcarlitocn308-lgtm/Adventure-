@@ -1,5 +1,5 @@
     <script>
-// ================ MOBILE-FRIENDLY PLANET EMPIRE BUILDER ================
+// ================ MOBILE PLANET EMPIRE BUILDER ================
 
 // Game State
 const gameState = {
@@ -12,10 +12,7 @@ const gameState = {
     },
     player: {
         health: 100,
-        hunger: 100,
-        stamina: 100,
-        position: new THREE.Vector3(0, 0, 0),
-        rotation: new THREE.Quaternion()
+        position: new THREE.Vector3(0, 0, 0)
     },
     currentTool: 'axe',
     buildings: []
@@ -26,300 +23,199 @@ let scene, camera, renderer;
 let planet;
 let trees = [], rocks = [], wheatFields = [];
 let joystickActive = false;
-let joystickX = 0, joystickY = 0;
 let movementVector = { x: 0, z: 0 };
-let touchLookActive = false;
-let lastTouchX = 0, lastTouchY = 0;
 let playerGroup;
 let isPlayerOnGround = true;
 
 // Planet parameters
-const PLANET_RADIUS = 50;
-const PLANET_SEGMENTS = 32; // Reduced for better performance
+const PLANET_RADIUS = 30;
 
 // Initialize Game
 function initGame() {
-    console.log("Starting Mobile Planet Empire Builder...");
+    console.log("Initializing game...");
     
-    // Create scene with dark background
+    // Create scene
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000010);
     
-    // Create renderer FIRST (important for canvas context)
+    // Set black background
+    scene.background = new THREE.Color(0x000000);
+    
+    // Create renderer
     const canvas = document.getElementById('gameCanvas');
     renderer = new THREE.WebGLRenderer({ 
-        canvas: canvas, 
+        canvas: canvas,
         antialias: true,
-        alpha: false,
-        powerPreference: 'high-performance'
+        powerPreference: 'default'
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.setPixelRatio(window.devicePixelRatio);
     
-    // Setup lighting FIRST
-    setupLighting();
-    
-    // Create the planet
-    createPlanet();
-    
-    // Create atmosphere effect
-    createAtmosphere();
-    
-    // Create stars
-    createStars();
+    // Create camera
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     
     // Create player group
     playerGroup = new THREE.Group();
     scene.add(playerGroup);
     
-    // Create camera (third person)
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 3, -8);
+    // Set up simple lighting FIRST
+    setupBasicLighting();
+    
+    // Create the planet
+    createBasicPlanet();
+    
+    // Create atmosphere
+    createBasicAtmosphere();
+    
+    // Create stars
+    createBasicStars();
+    
+    // Position camera
+    camera.position.set(0, 5, -10);
     playerGroup.add(camera);
     
-    // Create simple player mesh
-    const playerGeometry = new THREE.BoxGeometry(0.8, 1.6, 0.8);
-    const playerMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x00aaff
-    });
+    // Create simple player
+    const playerGeometry = new THREE.BoxGeometry(1, 2, 1);
+    const playerMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
     const playerMesh = new THREE.Mesh(playerGeometry, playerMaterial);
-    playerMesh.position.set(0, 0, 0);
+    playerMesh.position.set(0, -1, 0);
     playerGroup.add(playerMesh);
     
-    // Position player on planet surface
-    positionPlayerOnPlanet();
+    // Position player on planet
+    positionPlayer();
     
-    // Create resources on planet
-    createResourcesOnPlanet();
+    // Create some resources
+    createBasicResources();
     
     // Setup controls
     setupMobileControls();
     
-    // Setup UI events
+    // Setup UI
     setupUI();
     
-    // Start game loop
+    // Start animation
     animate();
     
-    // Show instructions briefly
+    // Show welcome message
     setTimeout(() => {
-        showNotification("Welcome to Planet Empire Builder!");
-        document.getElementById('instructions').style.display = 'block';
-        setTimeout(() => {
-            document.getElementById('instructions').style.display = 'none';
-        }, 5000);
+        showNotification("Welcome to Planet Empire!");
     }, 1000);
 }
 
-// Setup Lighting
-function setupLighting() {
-    // Main directional light (sun)
-    const sunLight = new THREE.DirectionalLight(0xffffff, 1.0);
-    sunLight.position.set(50, 100, 50);
-    sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = 512;
-    sunLight.shadow.mapSize.height = 512;
-    sunLight.shadow.camera.near = 0.5;
-    sunLight.shadow.camera.far = 100;
-    scene.add(sunLight);
-    
-    // Fill light
-    const fillLight = new THREE.DirectionalLight(0x4444ff, 0.3);
-    fillLight.position.set(-50, -50, -50);
-    scene.add(fillLight);
+// Basic lighting setup
+function setupBasicLighting() {
+    // Main light
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(10, 10, 10);
+    scene.add(light);
     
     // Ambient light
-    const ambientLight = new THREE.AmbientLight(0x333333, 0.5);
-    scene.add(ambientLight);
+    const ambient = new THREE.AmbientLight(0x404040, 0.5);
+    scene.add(ambient);
     
-    // Hemisphere light for natural outdoor lighting
-    const hemisphereLight = new THREE.HemisphereLight(0x87CEEB, 0x006400, 0.3);
-    scene.add(hemisphereLight);
+    // Add a second light
+    const light2 = new THREE.DirectionalLight(0xffffff, 0.5);
+    light2.position.set(-10, 5, -10);
+    scene.add(light2);
 }
 
-// Create Planet
-function createPlanet() {
-    // Create planet geometry (sphere)
-    const geometry = new THREE.SphereGeometry(PLANET_RADIUS, PLANET_SEGMENTS, PLANET_SEGMENTS);
+// Create basic planet
+function createBasicPlanet() {
+    const geometry = new THREE.SphereGeometry(PLANET_RADIUS, 32, 32);
     
-    // Generate terrain with elevation
-    const vertices = geometry.attributes.position.array;
-    
-    // Create terrain variation
-    for (let i = 0; i < vertices.length; i += 3) {
-        const x = vertices[i];
-        const y = vertices[i + 1];
-        const z = vertices[i + 2];
-        
-        const radius = Math.sqrt(x*x + y*y + z*z);
-        const phi = Math.acos(y / radius);
-        const theta = Math.atan2(z, x);
-        
-        // Generate noise-based terrain
-        let elevation = 0;
-        elevation += Math.sin(theta * 3) * Math.cos(phi * 3) * 0.3;
-        elevation += Math.sin(theta * 7) * Math.cos(phi * 7) * 0.2;
-        elevation += Math.sin(theta * 15) * Math.cos(phi * 15) * 0.1;
-        
-        // Apply elevation
-        const scale = 1 + (elevation * 0.2);
-        vertices[i] *= scale;
-        vertices[i + 1] *= scale;
-        vertices[i + 2] *= scale;
-    }
-    
-    geometry.computeVertexNormals();
-    
-    // Create planet material
-    const material = new THREE.MeshStandardMaterial({
-        color: 0x228B22, // Forest green
-        roughness: 0.8,
-        metalness: 0.2,
-        side: THREE.FrontSide,
-        flatShading: false
+    // Create green planet material
+    const material = new THREE.MeshPhongMaterial({
+        color: 0x228B22, // Green
+        shininess: 30,
+        specular: 0x111111
     });
     
     planet = new THREE.Mesh(geometry, material);
-    planet.receiveShadow = true;
-    planet.castShadow = false; // Planet doesn't cast shadow on itself
     scene.add(planet);
 }
 
-// Create Atmosphere
-function createAtmosphere() {
-    const atmosphereGeometry = new THREE.SphereGeometry(PLANET_RADIUS * 1.02, 32, 32);
-    const atmosphereMaterial = new THREE.MeshBasicMaterial({
+// Create basic atmosphere
+function createBasicAtmosphere() {
+    const geometry = new THREE.SphereGeometry(PLANET_RADIUS * 1.05, 32, 32);
+    const material = new THREE.MeshBasicMaterial({
         color: 0x87CEEB,
         transparent: true,
-        opacity: 0.15,
+        opacity: 0.1,
         side: THREE.BackSide
     });
     
-    const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
+    const atmosphere = new THREE.Mesh(geometry, material);
     scene.add(atmosphere);
 }
 
-// Create Stars
-function createStars() {
-    const starCount = 500;
-    const starGeometry = new THREE.BufferGeometry();
-    const starPositions = new Float32Array(starCount * 3);
+// Create basic stars
+function createBasicStars() {
+    const starsGeometry = new THREE.BufferGeometry();
+    const starsCount = 1000;
+    const positions = new Float32Array(starsCount * 3);
     
-    for (let i = 0; i < starCount * 3; i += 3) {
-        const radius = 200 + Math.random() * 300;
-        const theta = Math.random() * Math.PI * 2;
-        const phi = Math.acos(2 * Math.random() - 1);
-        
-        starPositions[i] = radius * Math.sin(phi) * Math.cos(theta);
-        starPositions[i + 1] = radius * Math.sin(phi) * Math.sin(theta);
-        starPositions[i + 2] = radius * Math.cos(phi);
+    for (let i = 0; i < starsCount * 3; i += 3) {
+        positions[i] = (Math.random() - 0.5) * 2000;
+        positions[i + 1] = (Math.random() - 0.5) * 2000;
+        positions[i + 2] = (Math.random() - 0.5) * 2000;
     }
     
-    starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    starsGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     
-    const starMaterial = new THREE.PointsMaterial({
-        color: 0xFFFFFF,
-        size: 1.5,
-        sizeAttenuation: true
+    const starsMaterial = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 1,
+        sizeAttenuation: false
     });
     
-    const stars = new THREE.Points(starGeometry, starMaterial);
+    const stars = new THREE.Points(starsGeometry, starsMaterial);
     scene.add(stars);
 }
 
-// Position player on planet surface
-function positionPlayerOnPlanet() {
-    // Start at a reasonable position (not at exact pole)
-    const startAngle = Math.PI * 0.1; // Slightly off north pole
-    const startPosition = new THREE.Vector3(
-        0,
-        Math.cos(startAngle) * (PLANET_RADIUS + 2),
-        Math.sin(startAngle) * (PLANET_RADIUS + 2)
-    );
-    
-    playerGroup.position.copy(startPosition);
-    gameState.player.position.copy(startPosition);
-    
-    // Align player with surface normal
-    alignWithSurface(startPosition);
+// Position player
+function positionPlayer() {
+    playerGroup.position.set(0, PLANET_RADIUS + 2, 0);
+    gameState.player.position.copy(playerGroup.position);
 }
 
-// Align object with planet surface
-function alignWithSurface(position) {
-    const normal = position.clone().normalize();
-    const up = new THREE.Vector3(0, 1, 0);
-    const quaternion = new THREE.Quaternion();
-    quaternion.setFromUnitVectors(up, normal);
-    playerGroup.quaternion.copy(quaternion);
-}
-
-// Get surface normal at position
-function getSurfaceNormal(position) {
-    return position.clone().normalize();
-}
-
-// Create resources on planet surface
-function createResourcesOnPlanet() {
-    // Create trees
-    for (let i = 0; i < 30; i++) {
-        createTreeOnPlanet();
-    }
-    
-    // Create rocks
-    for (let i = 0; i < 20; i++) {
-        createRockOnPlanet();
-    }
-    
-    // Create wheat fields
+// Create basic resources
+function createBasicResources() {
+    // Create some trees
     for (let i = 0; i < 15; i++) {
-        createWheatFieldOnPlanet();
+        createBasicTree();
+    }
+    
+    // Create some rocks
+    for (let i = 0; i < 10; i++) {
+        createBasicRock();
+    }
+    
+    // Create some wheat
+    for (let i = 0; i < 8; i++) {
+        createBasicWheat();
     }
 }
 
-function createTreeOnPlanet() {
-    // Random position on sphere
-    const theta = Math.random() * Math.PI * 2;
-    const phi = Math.acos(2 * Math.random() - 1);
+function createBasicTree() {
+    const angle = Math.random() * Math.PI * 2;
+    const distance = PLANET_RADIUS + 2;
+    const x = Math.cos(angle) * distance;
+    const y = Math.sin(angle) * distance;
     
-    const x = Math.sin(phi) * Math.cos(theta) * (PLANET_RADIUS + 1.5);
-    const y = Math.sin(phi) * Math.sin(theta) * (PLANET_RADIUS + 1.5);
-    const z = Math.cos(phi) * (PLANET_RADIUS + 1.5);
-    
-    const position = new THREE.Vector3(x, y, z);
-    const normal = getSurfaceNormal(position);
-    
-    // Create tree
-    const treeHeight = 2 + Math.random();
-    const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.3, treeHeight, 6);
-    const trunkMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x8B4513,
-        roughness: 0.9
-    });
+    const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.4, 3, 8);
+    const trunkMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
     const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
     
-    const leavesGeometry = new THREE.SphereGeometry(treeHeight * 0.6, 6, 6);
-    const leavesMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x228B22,
-        roughness: 0.8
-    });
+    const leavesGeometry = new THREE.SphereGeometry(1.5, 8, 8);
+    const leavesMaterial = new THREE.MeshPhongMaterial({ color: 0x2E7D32 });
     const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
-    leaves.position.y = treeHeight * 0.7;
+    leaves.position.y = 2;
     
     const tree = new THREE.Group();
     tree.add(trunk);
     tree.add(leaves);
     
-    // Position and align
-    tree.position.copy(position);
-    
-    const up = new THREE.Vector3(0, 1, 0);
-    const quaternion = new THREE.Quaternion();
-    quaternion.setFromUnitVectors(up, normal);
-    tree.quaternion.copy(quaternion);
-    
-    tree.scale.setScalar(0.8 + Math.random() * 0.4);
+    tree.position.set(x, y, 0);
+    tree.rotation.z = -angle;
     
     tree.userData = {
         type: 'tree',
@@ -327,42 +223,24 @@ function createTreeOnPlanet() {
         woodYield: 5 + Math.floor(Math.random() * 5)
     };
     
-    tree.castShadow = true;
-    tree.receiveShadow = false;
     scene.add(tree);
     trees.push(tree);
 }
 
-function createRockOnPlanet() {
-    // Random position on sphere
-    const theta = Math.random() * Math.PI * 2;
-    const phi = Math.acos(2 * Math.random() - 1);
+function createBasicRock() {
+    const angle = Math.random() * Math.PI * 2;
+    const distance = PLANET_RADIUS + 1;
+    const x = Math.cos(angle) * distance;
+    const y = Math.sin(angle) * distance;
     
-    const x = Math.sin(phi) * Math.cos(theta) * (PLANET_RADIUS + 0.8);
-    const y = Math.sin(phi) * Math.sin(theta) * (PLANET_RADIUS + 0.8);
-    const z = Math.cos(phi) * (PLANET_RADIUS + 0.8);
-    
-    const position = new THREE.Vector3(x, y, z);
-    const normal = getSurfaceNormal(position);
-    
-    const rockSize = 0.8 + Math.random() * 0.5;
-    const rockGeometry = new THREE.BoxGeometry(rockSize, rockSize * 0.6, rockSize);
-    const rockMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x808080,
-        roughness: 0.9
-    });
+    const rockGeometry = new THREE.BoxGeometry(1, 1, 1);
+    const rockMaterial = new THREE.MeshPhongMaterial({ color: 0x808080 });
     const rock = new THREE.Mesh(rockGeometry, rockMaterial);
     
-    rock.position.copy(position);
-    
-    // Align with surface
-    const up = new THREE.Vector3(0, 1, 0);
-    const quaternion = new THREE.Quaternion();
-    quaternion.setFromUnitVectors(up, normal);
-    rock.quaternion.copy(quaternion);
-    
-    // Random rotation
-    rock.rotateY(Math.random() * Math.PI * 2);
+    rock.position.set(x, y, 0);
+    rock.rotation.z = -angle;
+    rock.rotation.x = Math.random() * Math.PI;
+    rock.rotation.y = Math.random() * Math.PI;
     
     rock.userData = {
         type: 'rock',
@@ -371,116 +249,55 @@ function createRockOnPlanet() {
         hasGold: Math.random() < 0.2
     };
     
-    rock.castShadow = true;
-    rock.receiveShadow = false;
     scene.add(rock);
     rocks.push(rock);
 }
 
-function createWheatFieldOnPlanet() {
-    // Random position on sphere
-    const theta = Math.random() * Math.PI * 2;
-    const phi = Math.acos(2 * Math.random() - 1);
-    
-    const x = Math.sin(phi) * Math.cos(theta) * (PLANET_RADIUS + 0.3);
-    const y = Math.sin(phi) * Math.sin(theta) * (PLANET_RADIUS + 0.3);
-    const z = Math.cos(phi) * (PLANET_RADIUS + 0.3);
-    
-    const position = new THREE.Vector3(x, y, z);
-    const normal = getSurfaceNormal(position);
+function createBasicWheat() {
+    const angle = Math.random() * Math.PI * 2;
+    const distance = PLANET_RADIUS + 1.5;
+    const x = Math.cos(angle) * distance;
+    const y = Math.sin(angle) * distance;
     
     const wheatGroup = new THREE.Group();
-    const wheatCount = 6 + Math.floor(Math.random() * 8);
+    const wheatCount = 5 + Math.floor(Math.random() * 8);
     
     for (let i = 0; i < wheatCount; i++) {
-        const wheatHeight = 0.8 + Math.random() * 0.4;
-        const wheatGeometry = new THREE.CylinderGeometry(0.03, 0.03, wheatHeight, 4);
-        const wheatMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0xDAA520,
-            roughness: 0.8
-        });
+        const wheatGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1, 4);
+        const wheatMaterial = new THREE.MeshPhongMaterial({ color: 0xDAA520 });
         const wheat = new THREE.Mesh(wheatGeometry, wheatMaterial);
         
-        const angle = (i / wheatCount) * Math.PI * 2;
-        const radius = 0.5 + Math.random() * 1.5;
         wheat.position.set(
-            Math.cos(angle) * radius,
-            0,
-            Math.sin(angle) * radius
+            (Math.random() - 0.5) * 2,
+            (Math.random() - 0.5) * 2,
+            0
         );
         
         wheatGroup.add(wheat);
     }
     
-    wheatGroup.position.copy(position);
-    
-    // Align with surface
-    const up = new THREE.Vector3(0, 1, 0);
-    const quaternion = new THREE.Quaternion();
-    quaternion.setFromUnitVectors(up, normal);
-    wheatGroup.quaternion.copy(quaternion);
+    wheatGroup.position.set(x, y, 0);
+    wheatGroup.rotation.z = -angle;
     
     wheatGroup.userData = {
         type: 'wheat',
         wheatYield: wheatCount
     };
     
-    wheatGroup.castShadow = true;
-    wheatGroup.receiveShadow = false;
     scene.add(wheatGroup);
     wheatFields.push(wheatGroup);
 }
 
-// Move player on planet surface
-function movePlayerOnPlanet(forward, right) {
-    if (!isPlayerOnGround) return;
-    
-    const speed = 0.05;
-    const playerPos = playerGroup.position.clone();
-    const normal = getSurfaceNormal(playerPos);
-    
-    // Calculate camera forward direction
-    const cameraForward = new THREE.Vector3(0, 0, -1);
-    cameraForward.applyQuaternion(camera.quaternion);
-    
-    // Project onto tangent plane
-    const forwardProj = cameraForward.clone().sub(normal.clone().multiplyScalar(cameraForward.dot(normal)));
-    const forwardTangent = forwardProj.normalize();
-    
-    // Calculate right direction
-    const rightTangent = new THREE.Vector3().crossVectors(normal, forwardTangent).normalize();
-    
-    // Calculate movement
-    const moveVector = new THREE.Vector3();
-    moveVector.addScaledVector(forwardTangent, -forward * speed);
-    moveVector.addScaledVector(rightTangent, right * speed);
-    
-    // Apply movement
-    playerPos.add(moveVector);
-    
-    // Keep on planet surface
-    playerPos.normalize().multiplyScalar(PLANET_RADIUS + 1.6);
-    
-    playerGroup.position.copy(playerPos);
-    gameState.player.position.copy(playerPos);
-    
-    // Re-align with surface
-    const newNormal = getSurfaceNormal(playerPos);
-    alignWithSurface(playerPos);
-}
-
 // Setup Mobile Controls
 function setupMobileControls() {
-    console.log("Setting up mobile controls...");
-    
-    // Joystick Controls
+    // Joystick
     const joystickArea = document.getElementById('joystickArea');
     const joystickHandle = document.getElementById('joystickHandle');
     const joystickRadius = 70;
     
-    joystickArea.addEventListener('touchstart', handleJoystickStart, { passive: false });
-    joystickArea.addEventListener('touchmove', handleJoystickMove, { passive: false });
-    joystickArea.addEventListener('touchend', handleJoystickEnd, { passive: false });
+    joystickArea.addEventListener('touchstart', handleJoystickStart);
+    joystickArea.addEventListener('touchmove', handleJoystickMove);
+    joystickArea.addEventListener('touchend', handleJoystickEnd);
     
     function handleJoystickStart(e) {
         e.preventDefault();
@@ -497,11 +314,9 @@ function setupMobileControls() {
     function handleJoystickEnd(e) {
         e.preventDefault();
         joystickActive = false;
-        joystickX = 0;
-        joystickY = 0;
-        joystickHandle.style.transform = 'translate(0, 0)';
         movementVector.x = 0;
         movementVector.z = 0;
+        joystickHandle.style.transform = 'translate(0, 0)';
     }
     
     function updateJoystick(touch) {
@@ -509,26 +324,24 @@ function setupMobileControls() {
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
         
-        joystickX = touch.clientX - centerX;
-        joystickY = touch.clientY - centerY;
+        let joystickX = touch.clientX - centerX;
+        let joystickY = touch.clientY - centerY;
         
-        // Limit to joystick radius
         const distance = Math.sqrt(joystickX * joystickX + joystickY * joystickY);
         if (distance > joystickRadius) {
             joystickX = (joystickX / distance) * joystickRadius;
             joystickY = (joystickY / distance) * joystickRadius;
         }
         
-        // Update visual
         joystickHandle.style.transform = `translate(${joystickX}px, ${joystickY}px)`;
         
-        // Update movement vector
         movementVector.x = joystickX / joystickRadius;
         movementVector.z = joystickY / joystickRadius;
     }
     
-    // Touch-to-look controls
-    let lookStartX = 0, lookStartY = 0;
+    // Touch to look
+    let touchLookActive = false;
+    let lastTouchX = 0, lastTouchY = 0;
     
     document.addEventListener('touchstart', (e) => {
         const touch = e.touches[0];
@@ -537,33 +350,31 @@ function setupMobileControls() {
         if (!target.closest('#joystickArea') && 
             !target.closest('.action-button') && 
             !target.closest('.tool') && 
-            !target.closest('.quick-action') &&
-            !target.closest('#buildingMenu')) {
+            !target.closest('.quick-action')) {
             
             touchLookActive = true;
-            lookStartX = touch.clientX;
-            lookStartY = touch.clientY;
+            lastTouchX = touch.clientX;
+            lastTouchY = touch.clientY;
             e.preventDefault();
         }
-    }, { passive: false });
+    });
     
     document.addEventListener('touchmove', (e) => {
         if (!touchLookActive) return;
         
         const touch = e.touches[0];
-        const deltaX = touch.clientX - lookStartX;
-        const deltaY = touch.clientY - lookStartY;
+        const deltaX = touch.clientX - lastTouchX;
+        const deltaY = touch.clientY - lastTouchY;
         
-        // Rotate camera around player
-        camera.rotation.y -= deltaX * 0.005;
+        playerGroup.rotation.y -= deltaX * 0.01;
         camera.rotation.x = Math.max(-Math.PI/3, Math.min(Math.PI/3, camera.rotation.x - deltaY * 0.005));
         
-        lookStartX = touch.clientX;
-        lookStartY = touch.clientY;
+        lastTouchX = touch.clientX;
+        lastTouchY = touch.clientY;
         e.preventDefault();
-    }, { passive: false });
+    });
     
-    document.addEventListener('touchend', (e) => {
+    document.addEventListener('touchend', () => {
         touchLookActive = false;
     });
 }
@@ -590,16 +401,44 @@ function setupUI() {
     });
     
     // Action button
-    document.getElementById('actionButton').addEventListener('click', handleAction);
+    document.getElementById('actionButton').addEventListener('click', () => {
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+        
+        const intersects = raycaster.intersectObjects([...trees, ...rocks, ...wheatFields], true);
+        
+        if (intersects.length > 0) {
+            const object = intersects[0].object.parent || intersects[0].object;
+            
+            switch(gameState.currentTool) {
+                case 'axe':
+                    if (object.userData.type === 'tree') chopTree(object);
+                    else showNotification('🪓 Can only chop trees!');
+                    break;
+                case 'pickaxe':
+                    if (object.userData.type === 'rock') mineRock(object);
+                    else showNotification('⛏️ Can only mine rocks!');
+                    break;
+                case 'sickle':
+                    if (object.userData.type === 'wheat') harvestWheat(object);
+                    else showNotification('🔪 Can only harvest wheat!');
+                    break;
+                case 'hammer':
+                    showNotification('🔨 Select a building from the menu!');
+                    break;
+            }
+        } else {
+            showNotification('❌ Nothing to interact with');
+        }
+    });
     
     // Jump button
     document.getElementById('jumpButton').addEventListener('click', () => {
         if (isPlayerOnGround) {
             isPlayerOnGround = false;
-            // Simple jump
-            playerGroup.position.y += 0.5;
+            playerGroup.position.y += 1;
             setTimeout(() => {
-                playerGroup.position.y -= 0.5;
+                playerGroup.position.y -= 1;
                 isPlayerOnGround = true;
             }, 300);
         }
@@ -610,11 +449,10 @@ function setupUI() {
         gameState.currentTool = 'pickaxe';
         document.querySelectorAll('.tool').forEach(t => t.classList.remove('active'));
         document.querySelector('.tool[data-tool="pickaxe"]').classList.add('active');
-        handleAction();
     });
     
     document.getElementById('buildButton').addEventListener('click', () => {
-        showBuildingMenu();
+        document.getElementById('buildingMenu').style.display = 'flex';
     });
     
     document.getElementById('breadButton').addEventListener('click', () => {
@@ -636,81 +474,55 @@ function setupUI() {
     document.querySelectorAll('.building-option').forEach(building => {
         building.addEventListener('click', () => {
             const buildingType = building.dataset.building;
-            buildStructure(buildingType);
+            
+            let cost, name;
+            switch(buildingType) {
+                case 'house': cost = { wood: 50, stone: 20 }; name = "House"; break;
+                case 'farm': cost = { wood: 30, stone: 10 }; name = "Farm"; break;
+                case 'mine': cost = { wood: 40, stone: 30 }; name = "Mine"; break;
+                case 'bakery': cost = { wood: 60, stone: 40 }; name = "Bakery"; break;
+            }
+            
+            if (gameState.resources.wood >= cost.wood && gameState.resources.stone >= cost.stone) {
+                gameState.resources.wood -= cost.wood;
+                gameState.resources.stone -= cost.stone;
+                
+                const buildingMesh = createBuilding(buildingType);
+                scene.add(buildingMesh);
+                gameState.buildings.push(buildingMesh);
+                
+                showNotification(`🏠 ${name} built!`);
+                updateResourceDisplay();
+                document.getElementById('buildingMenu').style.display = 'none';
+            } else {
+                showNotification(`❌ Need ${cost.wood} Wood and ${cost.stone} Stone`);
+            }
         });
     });
     
     // Window resize
-    window.addEventListener('resize', onWindowResize);
-    
-    // Prevent context menu
-    document.addEventListener('contextmenu', (e) => e.preventDefault());
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
 }
 
-// Handle action
-function handleAction() {
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-    
-    const intersects = raycaster.intersectObjects([...trees, ...rocks, ...wheatFields], true);
-    
-    if (intersects.length > 0) {
-        const object = intersects[0].object.parent || intersects[0].object;
-        
-        switch(gameState.currentTool) {
-            case 'axe':
-                if (object.userData.type === 'tree') {
-                    chopTree(object);
-                } else {
-                    showNotification('🪓 Can only chop trees!');
-                }
-                break;
-                
-            case 'pickaxe':
-                if (object.userData.type === 'rock') {
-                    mineRock(object);
-                } else {
-                    showNotification('⛏️ Can only mine rocks!');
-                }
-                break;
-                
-            case 'sickle':
-                if (object.userData.type === 'wheat') {
-                    harvestWheat(object);
-                } else {
-                    showNotification('🔪 Can only harvest wheat!');
-                }
-                break;
-                
-            case 'hammer':
-                showNotification('🔨 Select a building from the menu!');
-                break;
-        }
-    } else {
-        showNotification('❌ Nothing to interact with');
-    }
-}
-
+// Resource functions
 function chopTree(tree) {
     if (tree.userData.health > 0) {
         tree.userData.health--;
-        showNotification(`🪓 Chopping tree... ${tree.userData.health} hits left`);
-        
-        const originalScale = tree.scale.x;
-        tree.scale.setScalar(originalScale * 0.9);
-        setTimeout(() => {
-            tree.scale.setScalar(originalScale);
-        }, 100);
+        showNotification(`🪓 Chopping... ${tree.userData.health} hits left`);
         
         if (tree.userData.health <= 0) {
             gameState.resources.wood += tree.userData.woodYield;
             updateResourceDisplay();
-            showNotification(`🌳 Tree chopped! +${tree.userData.woodYield} Wood`);
+            showNotification(`🌳 +${tree.userData.woodYield} Wood`);
             
             scene.remove(tree);
             trees = trees.filter(t => t !== tree);
             
-            setTimeout(createTreeOnPlanet, 30000 + Math.random() * 30000);
+            setTimeout(createBasicTree, 10000);
         }
     }
 }
@@ -718,25 +530,22 @@ function chopTree(tree) {
 function mineRock(rock) {
     if (rock.userData.health > 0) {
         rock.userData.health--;
-        showNotification(`⛏️ Mining rock... ${rock.userData.health} hits left`);
-        
-        rock.rotation.x += 0.1;
-        rock.rotation.z += 0.1;
+        showNotification(`⛏️ Mining... ${rock.userData.health} hits left`);
         
         if (rock.userData.health <= 0) {
             gameState.resources.stone += rock.userData.stoneYield;
             if (rock.userData.hasGold) {
                 gameState.resources.gold += Math.floor(Math.random() * 3) + 1;
-                showNotification(`💰 Found gold in rock! +${rock.userData.stoneYield} Stone, +Gold!`);
+                showNotification(`💰 Found gold! +${rock.userData.stoneYield} Stone, +Gold!`);
             } else {
-                showNotification(`🪨 Rock mined! +${rock.userData.stoneYield} Stone`);
+                showNotification(`🪨 +${rock.userData.stoneYield} Stone`);
             }
             updateResourceDisplay();
             
             scene.remove(rock);
             rocks = rocks.filter(r => r !== rock);
             
-            setTimeout(createRockOnPlanet, 40000 + Math.random() * 40000);
+            setTimeout(createBasicRock, 15000);
         }
     }
 }
@@ -745,82 +554,16 @@ function harvestWheat(wheatField) {
     const yieldAmount = wheatField.userData.wheatYield;
     gameState.resources.wheat += yieldAmount;
     updateResourceDisplay();
-    showNotification(`🌾 Harvested wheat! +${yieldAmount} Wheat`);
+    showNotification(`🌾 +${yieldAmount} Wheat`);
     
     scene.remove(wheatField);
     wheatFields = wheatFields.filter(w => w !== wheatField);
     
-    setTimeout(createWheatFieldOnPlanet, 20000 + Math.random() * 20000);
+    setTimeout(createBasicWheat, 8000);
 }
 
-function showBuildingMenu() {
-    document.getElementById('buildingMenu').style.display = 'flex';
-}
-
-function buildStructure(type) {
-    let cost;
-    let name;
-    
-    switch(type) {
-        case 'house':
-            cost = { wood: 50, stone: 20 };
-            name = "House";
-            break;
-        case 'farm':
-            cost = { wood: 30, stone: 10 };
-            name = "Farm";
-            break;
-        case 'mine':
-            cost = { wood: 40, stone: 30 };
-            name = "Mine";
-            break;
-        case 'bakery':
-            cost = { wood: 60, stone: 40 };
-            name = "Bakery";
-            break;
-    }
-    
-    if (gameState.resources.wood >= cost.wood && gameState.resources.stone >= cost.stone) {
-        gameState.resources.wood -= cost.wood;
-        gameState.resources.stone -= cost.stone;
-        
-        const building = createBuildingOnPlanet(type);
-        scene.add(building);
-        gameState.buildings.push(building);
-        
-        showNotification(`🏠 ${name} built!`);
-        updateResourceDisplay();
-        document.getElementById('buildingMenu').style.display = 'none';
-        
-        // Production effects
-        switch(type) {
-            case 'farm':
-                setInterval(() => {
-                    if (gameState.buildings.includes(building)) {
-                        gameState.resources.wheat += 2;
-                        updateResourceDisplay();
-                    }
-                }, 30000);
-                break;
-                
-            case 'bakery':
-                setInterval(() => {
-                    if (gameState.buildings.includes(building) && gameState.resources.wheat >= 5) {
-                        gameState.resources.wheat -= 5;
-                        gameState.resources.bread += 2;
-                        updateResourceDisplay();
-                        showNotification("🍞 Bakery produced bread!");
-                    }
-                }, 60000);
-                break;
-        }
-    } else {
-        showNotification(`❌ Not enough resources! Need: ${cost.wood} Wood, ${cost.stone} Stone`);
-    }
-}
-
-function createBuildingOnPlanet(type) {
-    let geometry, material, color;
+function createBuilding(type) {
+    let geometry, color;
     
     switch(type) {
         case 'house':
@@ -832,7 +575,7 @@ function createBuildingOnPlanet(type) {
             color = 0x8BC34A;
             break;
         case 'mine':
-            geometry = new THREE.ConeGeometry(1.5, 2.5, 4);
+            geometry = new THREE.ConeGeometry(1.5, 2, 4);
             color = 0x607D8B;
             break;
         case 'bakery':
@@ -841,36 +584,19 @@ function createBuildingOnPlanet(type) {
             break;
     }
     
-    material = new THREE.MeshStandardMaterial({ 
-        color: color,
-        roughness: 0.7
-    });
+    const material = new THREE.MeshPhongMaterial({ color: color });
     const building = new THREE.Mesh(geometry, material);
     
     // Position in front of player
-    const playerPos = playerGroup.position.clone();
-    const normal = getSurfaceNormal(playerPos);
+    const angle = Math.atan2(playerGroup.position.y, playerGroup.position.x);
+    const distance = PLANET_RADIUS + 3;
+    building.position.set(
+        Math.cos(angle) * distance,
+        Math.sin(angle) * distance,
+        0
+    );
     
-    const cameraForward = new THREE.Vector3(0, 0, -1);
-    cameraForward.applyQuaternion(camera.quaternion);
-    const forwardProj = cameraForward.clone().sub(normal.clone().multiplyScalar(cameraForward.dot(normal)));
-    const forwardTangent = forwardProj.normalize();
-    
-    const buildingPos = playerPos.clone().add(forwardTangent.multiplyScalar(5));
-    buildingPos.normalize().multiplyScalar(PLANET_RADIUS + 2);
-    
-    building.position.copy(buildingPos);
-    
-    // Align with surface
-    const buildingNormal = getSurfaceNormal(buildingPos);
-    const up = new THREE.Vector3(0, 1, 0);
-    const quaternion = new THREE.Quaternion();
-    quaternion.setFromUnitVectors(up, buildingNormal);
-    building.quaternion.copy(quaternion);
-    
-    building.castShadow = true;
-    building.receiveShadow = false;
-    building.userData = { type };
+    building.rotation.z = -angle;
     
     return building;
 }
@@ -899,49 +625,43 @@ function showNotification(message) {
     }, 3000);
 }
 
-// Window resize handler
-function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-}
-
 // Game loop
 function animate() {
     requestAnimationFrame(animate);
     
-    // Update movement
+    // Move player
     if (joystickActive) {
-        movePlayerOnPlanet(-movementVector.z, movementVector.x);
+        const speed = 0.1;
+        const angle = Math.atan2(playerGroup.position.y, playerGroup.position.x);
+        
+        // Move around the circle
+        const newAngle = angle + movementVector.x * speed;
+        const distance = Math.sqrt(playerGroup.position.x * playerGroup.position.x + 
+                                 playerGroup.position.y * playerGroup.position.y);
+        
+        playerGroup.position.x = Math.cos(newAngle) * distance;
+        playerGroup.position.y = Math.sin(newAngle) * distance;
+        
+        // Update rotation to face direction
+        playerGroup.rotation.z = -newAngle;
     }
     
-    // Slowly rotate planet
-    planet.rotation.y += 0.0002;
+    // Rotate planet slowly
+    planet.rotation.z += 0.001;
+    
+    // Make resources rotate with planet
+    trees.forEach(tree => tree.rotation.z = -planet.rotation.z);
+    rocks.forEach(rock => rock.rotation.z = -planet.rotation.z);
+    wheatFields.forEach(wheat => wheat.rotation.z = -planet.rotation.z);
     
     // Render
     renderer.render(scene, camera);
 }
 
-// Initialize game
+// Start game
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initGame);
 } else {
     initGame();
 }
-
-// Handle device orientation
-if (window.DeviceOrientationEvent) {
-    window.addEventListener('deviceorientation', (e) => {
-        if (Math.abs(e.beta) < 90) {
-            camera.rotation.z = e.gamma * 0.01;
-        }
-    });
-}
-
-// Prevent pull-to-refresh
-document.addEventListener('touchmove', (e) => {
-    if (e.scale !== 1) {
-        e.preventDefault();
-    }
-}, { passive: false });
     </script>
